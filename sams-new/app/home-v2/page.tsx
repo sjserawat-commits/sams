@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const actions = [
-  ["Register Patient", "/patients", "♙"],
-  ["New Encounter", "/encounters", "✚"],
-  ["Clinical Modules", "/clinical", "⌁"],
-  ["PM&R Workspace", "/pmr", "◈"],
-  ["Billing & Finance", "/billing", "₹"],
-  ["Reports & Analytics", "/reports", "▤"],
+  ["Register Patient", "Register a new patient", "/patients", "♙"],
+  ["New Encounter", "Start clinical documentation", "/encounters", "✚"],
+  ["Clinical Modules", "Open clinical tools", "/clinical", "⌁"],
+  ["PM&R Workspace", "Rehabilitation workflows", "/pmr", "◈"],
+  ["Billing & Finance", "Manage financial workflows", "/billing", "₹"],
+  ["Reports & Analytics", "Review operational insights", "/reports", "▤"],
 ];
 
 type Summary = {
@@ -70,7 +70,7 @@ export default function HomeV2() {
 
         <section className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7"><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0b63ce]">Clinical activity</p><h2 className="mt-2 text-xl font-bold text-[#082b61]">A focused workspace for your team</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">Move from registration to encounter documentation, rehabilitation workflows, billing and reporting without leaving the SAMS workspace.</p><div className="mt-6 grid gap-3 sm:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-400">PATIENT CARE</p><p className="mt-2 text-sm font-bold text-slate-700">Registration & records</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-400">DOCUMENTATION</p><p className="mt-2 text-sm font-bold text-slate-700">Encounters & clinical notes</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-400">OPERATIONS</p><p className="mt-2 text-sm font-bold text-slate-700">Reports & finance</p></div></div></div>
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-6 py-5"><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0b63ce]">Quick actions</p><h2 className="mt-1 font-bold text-[#082b61]">Common workflows</h2></div><div className="grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-1">{actions.map(([label,href,icon]) => <Link key={href} href={href} className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 hover:border-blue-100 hover:bg-blue-50"><span className="flex items-center gap-3 text-sm font-semibold text-slate-700 group-hover:text-[#0b63ce]"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#0b63ce] shadow-sm">{icon}</span>{label}</span><span className="text-slate-300 group-hover:text-[#0b63ce]">→</span></Link>)}</div></div>
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-6 py-5"><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0b63ce]">Quick actions</p><h2 className="mt-1 font-bold text-[#082b61]">Common workflows</h2></div><div className="grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-1">{actions.map(([label,note,href,icon], index) => <Link key={href} href={href} className={`group flex items-center justify-between rounded-2xl border px-4 py-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${index === 0 ? "border-blue-100 bg-blue-50/70 hover:border-blue-200 hover:bg-blue-50" : "border-slate-100 bg-slate-50/80 hover:border-blue-100 hover:bg-blue-50"}`}><span className="flex items-center gap-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-bold shadow-sm transition-transform group-hover:scale-105 ${index === 0 ? "bg-[#0b63ce] text-white" : "bg-white text-[#0b63ce]"}`}>{icon}</span><span><span className="block text-sm font-bold text-slate-700 group-hover:text-[#0b63ce]">{label}</span><span className="mt-0.5 block text-[11px] font-medium text-slate-400">{note}</span></span></span><span className="text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-[#0b63ce]">→</span></Link>)}</div></div>
         </section>
 
         <section className="rounded-2xl bg-[#082b61] p-6 text-white shadow-lg sm:p-8"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">SAMS platform</p><h2 className="mt-2 text-2xl font-bold">Ready for clinical operations.</h2><p className="mt-2 text-sm text-blue-100">Open the command center to manage live patient and encounter activity.</p></div><Link href="/dashboard" className="shrink-0 rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#082b61] hover:bg-blue-50">Go to Dashboard →</Link></div></section>
