@@ -3,59 +3,53 @@ import Sidebar from "@/components/Sidebar";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
-export default async function PatientProfilePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function PatientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const patientId = Number(id);
+  if (!Number.isInteger(patientId)) notFound();
 
-  if (!Number.isInteger(patientId)) {
-    notFound();
-  }
+  const patient = await prisma.patient.findFirst({ where: { id: patientId } });
+  if (!patient) notFound();
 
-  const patient = await prisma.patient.findFirst({
-    where: {
-      id: patientId,
-    },
-  });
-
-  if (!patient) {
-    notFound();
-  }
+  const dob = patient.dateOfBirth ? patient.dateOfBirth.toLocaleDateString("en-GB") : "-";
+  const gender = patient.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : "-";
+  const initials = `${patient.firstName?.[0] || ""}${patient.lastName?.[0] || ""}`.toUpperCase();
 
   return (
-    <main>
+    <main className="min-h-screen bg-[#f5f8fc] text-slate-900">
       <Sidebar />
-      <div>
+      <div className="min-h-screen lg:pl-0">
         <Navigation />
-        <header>
-          <h1>Patient Profile</h1>
-          <p>Complete patient record</p>
-        </header>
+        <div className="mx-auto max-w-[1400px] px-5 py-6 sm:px-8 lg:py-8">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#0b63ce]">SAMS · Clinical Workspace</p><p className="mt-1 text-sm text-slate-500">Patient record / active chart</p></div>
+            <a href="/patients/list" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm hover:border-blue-200 hover:text-[#0b63ce]">← Patient Directory</a>
+          </div>
 
-        <section>
-          <h2>Patient Information</h2>
-          <p><strong>Patient ID:</strong> {patient.patientId}</p>
-          <p><strong>Name:</strong> {patient.firstName} {patient.lastName}</p>
-          <p><strong>Gender:</strong> {patient.gender || "-"}</p>
-          <p>
-            <strong>Date of Birth:</strong>{" "}
-            {patient.dateOfBirth ? patient.dateOfBirth.toLocaleDateString() : "-"}
-          </p>
-          <p><strong>Phone:</strong> {patient.phone || "-"}</p>
-          <p><strong>Address:</strong> {patient.address || "-"}</p>
-        </section>
+          <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0b63ce] via-[#0959b8] to-[#082b61] text-white shadow-[0_24px_70px_rgba(8,43,97,0.18)]">
+            <div className="flex flex-col gap-7 p-7 sm:p-9 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-5">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.5rem] border border-white/20 bg-white/15 text-2xl font-black shadow-inner">{initials || "PT"}</div>
+                <div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">Patient profile</p><h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">{patient.firstName} {patient.lastName}</h1><p className="mt-2 text-sm text-blue-100">Patient ID · <span className="font-bold text-white">{patient.patientId}</span></p></div>
+              </div>
+              <div className="flex flex-wrap gap-3"><a href={`/patients/profile/${patient.id}/encounters/new`} className="rounded-xl bg-white px-5 py-3 text-sm font-black text-[#0b63ce] shadow-lg hover:bg-blue-50">+ New Encounter</a><a href="/patients" className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur hover:bg-white/15">All Patients</a></div>
+            </div>
+            <div className="grid border-t border-white/10 bg-black/10 sm:grid-cols-3"><div className="px-6 py-4"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-blue-200">Status</p><p className="mt-1 text-sm font-bold">● Active record</p></div><div className="border-white/10 px-6 py-4 sm:border-x"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-blue-200">Record type</p><p className="mt-1 text-sm font-bold">Clinical patient</p></div><div className="px-6 py-4"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-blue-200">Workspace</p><p className="mt-1 text-sm font-bold">Ready for care</p></div></div>
+          </section>
 
-        <section>
-          <h2>Medical Record</h2>
-          <p>No clinical records added yet.</p>
-        </section>
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.45fr_0.75fr]">
+            <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(8,43,97,0.06)] sm:p-8">
+              <div className="flex items-end justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">Patient snapshot</p><h2 className="mt-1 text-2xl font-black tracking-tight text-[#082b61]">Demographics & contact</h2></div><span className="rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-blue-700">Verified record</span></div>
+              <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                {[ ["Date of birth", dob], ["Gender", gender], ["Phone", patient.phone || "-"], ["Patient ID", patient.patientId], ["Address", patient.address || "-"], ["Database record", `#${patient.id}`] ].map(([label,value], index) => <div key={label} className={`rounded-2xl border border-slate-100 bg-slate-50/80 p-4 ${index === 4 ? "sm:col-span-2" : ""}`}><p className="text-[9px] font-black uppercase tracking-[0.17em] text-slate-400">{label}</p><p className="mt-2 text-sm font-bold text-[#082b61] break-words">{value}</p></div>)}
+              </div>
+            </section>
 
-        <p>
-          <a href="/patients/list">← Back to Patient List</a>
-        </p>
+            <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(8,43,97,0.06)] sm:p-8"><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">Quick actions</p><h2 className="mt-1 text-2xl font-black tracking-tight text-[#082b61]">Clinical tools</h2><div className="mt-6 space-y-3"><a href={`/patients/profile/${patient.id}/encounters/new`} className="flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/60 p-4 transition hover:-translate-y-0.5 hover:bg-blue-50"><span><span className="block text-sm font-black text-[#082b61]">New encounter</span><span className="mt-1 block text-xs text-slate-500">Start a clinical note</span></span><span className="text-xl font-black text-[#0b63ce]">→</span></a><a href="/patients/list" className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-4 hover:bg-slate-100"><span><span className="block text-sm font-black text-[#082b61]">Patient directory</span><span className="mt-1 block text-xs text-slate-500">Find another patient</span></span><span className="text-xl font-black text-slate-400">→</span></a></div></section>
+          </div>
+
+          <section className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(8,43,97,0.06)] sm:p-8"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">Clinical activity</p><h2 className="mt-1 text-2xl font-black tracking-tight text-[#082b61]">Encounter timeline</h2><p className="mt-1 text-sm text-slate-500">Clinical documentation will appear here as encounters are recorded.</p></div><a href={`/patients/profile/${patient.id}/encounters/new`} className="rounded-xl bg-[#0b63ce] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/15 hover:bg-[#0958b5]">Create encounter →</a></div><div className="mt-7 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 py-12 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-xl text-[#0b63ce]">＋</div><h3 className="mt-4 text-base font-black text-[#082b61]">No encounters yet</h3><p className="mx-auto mt-1 max-w-md text-sm leading-6 text-slate-500">Create the first encounter to begin the patient's clinical timeline.</p></div></section>
+        </div>
       </div>
     </main>
   );
