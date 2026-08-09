@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const actions = [
@@ -11,7 +12,30 @@ const actions = [
   ["Reports & Analytics", "/reports", "▤"],
 ];
 
+type Summary = {
+  patientsToday: number;
+  encountersToday: number;
+  diagnosesToday: number;
+  systemStatus: string;
+};
+
 export default function HomeV2() {
+  const [summary, setSummary] = useState<Summary | null>(null);
+
+  useEffect(() => {
+    fetch("/api/home-v2/summary")
+      .then((response) => response.json())
+      .then((data) => setSummary(data))
+      .catch(() => setSummary(null));
+  }, []);
+
+  const cards = [
+    ["Patients Today", "Patients registered today", summary ? String(summary.patientsToday) : "—", "♙"],
+    ["Encounters Today", "Clinical encounters today", summary ? String(summary.encountersToday) : "—", "✚"],
+    ["Diagnoses", "Encounters with diagnosis", summary ? String(summary.diagnosesToday) : "—", "✓"],
+    ["System Status", "Core SAMS services", summary?.systemStatus ?? "Checking…", "●"],
+  ];
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
@@ -40,7 +64,7 @@ export default function HomeV2() {
         <section>
           <div className="mb-4"><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0b63ce]">Today at a glance</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-[#082b61]">Clinical command center</h2></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[['Patients Today','Live clinical count','♙'],['Encounters Today','Documented activity','✚'],['Diagnoses','Clinical documentation','✓'],['System Status','All core services operational','●']].map(([title,note,icon]) => <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-sm font-medium text-slate-500">{title}</p><p className="mt-3 text-2xl font-bold text-[#082b61]">Ready</p></div><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 font-bold text-[#0b63ce]">{icon}</span></div><p className="mt-3 text-xs font-medium text-slate-400">{note}</p></div>)}
+            {cards.map(([title, note, value, icon]) => <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-sm font-medium text-slate-500">{title}</p><p className="mt-3 text-2xl font-bold text-[#082b61]">{value}</p></div><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 font-bold text-[#0b63ce]">{icon}</span></div><p className="mt-3 text-xs font-medium text-slate-400">{note}</p></div>)}
           </div>
         </section>
 
