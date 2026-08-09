@@ -1,17 +1,34 @@
-import Navigation from "@/components/Navigation";
-
 export default function ClinicalPage() {
   return (
-    <main>
-      <Navigation />
-      <h1>Clinical Modules</h1>
-      <p>SAMS Clinical Management</p>
-      <h2>PM&R</h2>
-      <p>Physical Medicine & Rehabilitation</p>
-      <h2>Physiotherapy</h2>
-      <p>Physiotherapy assessment and treatment</p>
-      <h2>Occupational Therapy</h2>
-      <p>Occupational therapy services</p>
+    <main className="min-h-screen bg-slate-50 p-6">
+      <div className="mx-auto max-w-7xl">
+        <h1 className="text-3xl font-bold text-blue-700">
+          Clinical Encounters
+        </h1>
+
+        <p className="mt-2 text-slate-600">
+          Clinical visits, assessments, diagnoses, treatment plans and follow-up.
+        </p>
+
+        <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <ClinicalCard title="New Encounter" />
+          <ClinicalCard title="Active Encounters" />
+          <ClinicalCard title="Assessments" />
+          <ClinicalCard title="Treatment Plans" />
+        </div>
+      </div>
     </main>
+  );
+}
+
+function ClinicalCard({ title }: { title: string }) {
+  return (
+    <div className="rounded-xl border bg-white p-6 shadow-sm">
+      <h2 className="font-semibold text-slate-900">{title}</h2>
+
+      <p className="mt-2 text-sm text-slate-500">
+        Clinical workflow will be available here.
+      </p>
+    </div>
   );
 }
