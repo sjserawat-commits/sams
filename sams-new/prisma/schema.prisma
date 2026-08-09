@@ -6,7 +6,8 @@ datasource db {
   provider = "sqlite"
 }
 
-model Patient {encounter ClinicalEncounter[]
+model Patient {
+  encounters  ClinicalEncounter[]
   id          Int       @id @default(autoincrement())
   patientId   String    @unique
   firstName   String
@@ -18,9 +19,6 @@ model Patient {encounter ClinicalEncounter[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
-
-
-
 
 model ClinicalEncounter {
   id              Int      @id @default(autoincrement())
