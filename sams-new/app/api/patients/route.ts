@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export async function GET() {
+  try {
+    const patients = await prisma.patient.findMany({
+      orderBy: { createdAt: "desc" },
+      select: { id: true, patientId: true, firstName: true, lastName: true, gender: true },
+    });
+    return NextResponse.json(patients);
+  } catch (error) {
+    console.error("Patient listing error:", error);
+    return NextResponse.json({ error: "Unable to load patients." }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -9,14 +22,10 @@ export async function POST(request: Request) {
     const lastName = String(body.lastName || "").trim();
 
     if (!firstName || !lastName) {
-      return NextResponse.json(
-        { error: "First name and last name are required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "First name and last name are required." }, { status: 400 });
     }
 
     const patientCount = await prisma.patient.count();
-
     const patientId = `SAMS-${String(patientCount + 1).padStart(4, "0")}`;
 
     const patient = await prisma.patient.create({
@@ -24,9 +33,7 @@ export async function POST(request: Request) {
         patientId,
         firstName,
         lastName,
-        dateOfBirth: body.dateOfBirth
-          ? new Date(body.dateOfBirth)
-          : null,
+        dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : null,
         gender: body.gender || null,
         phone: body.phone || null,
         address: body.address || null,
@@ -36,10 +43,6 @@ export async function POST(request: Request) {
     return NextResponse.json(patient, { status: 201 });
   } catch (error) {
     console.error("Patient registration error:", error);
-
-    return NextResponse.json(
-      { error: "Unable to register patient." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Unable to register patient." }, { status: 500 });
   }
 }
