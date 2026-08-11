@@ -1,7 +1,6 @@
-import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
+import { prisma } from "@/lib/prisma";
 
 export default async function EncountersPage() {
   const patients = await prisma.patient.findMany({ orderBy: { id: "desc" }, take: 50 });
@@ -34,7 +33,7 @@ export default async function EncountersPage() {
                       <p className="font-bold text-slate-800">{patient.firstName} {patient.lastName}</p>
                       <p className="mt-1 text-xs text-slate-400">{patient.patientId}</p>
                     </div>
-                    <Link href={`/encounters/${patient.id}`} className="rounded-xl bg-[#082b61] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0b63ce]">New Encounter →</Link>
+                    <a href={`/encounters/${patient.id}`} className="rounded-xl bg-[#082b61] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0b63ce]">New Encounter →</a>
                   </div>
                 ))}
               </div>
