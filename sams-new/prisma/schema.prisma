@@ -24,6 +24,7 @@ model ClinicalEncounter {
   id              Int      @id @default(autoincrement())
   patientId       Int
   encounterDate   DateTime @default(now())
+  speciality      String?
   chiefComplaint  String?
   diagnosis       String?
   clinicalNotes   String?
