@@ -31,14 +31,14 @@ export default function HomeV2() {
       <section className="relative overflow-hidden bg-[#071f46] text-white">
         <div className="absolute -right-40 -top-40 h-[320px] w-[320px] rounded-full bg-blue-500/20 blur-3xl" />
         <div className="absolute -bottom-40 left-1/3 h-[280px] w-[280px] rounded-full bg-cyan-400/10 blur-3xl" />
-        <div className="relative mx-auto grid max-w-[1400px] items-center gap-6 px-5 py-6 sm:px-8 sm:py-8 lg:grid-cols-[1.05fr_.95fr] lg:gap-7 lg:py-9">
+        <div className="relative mx-auto grid max-w-[1400px] items-center gap-6 px-5 py-4 sm:px-8 sm:py-6 lg:grid-cols-[1fr_1.08fr] lg:gap-7 lg:py-6">
           <div className="max-w-2xl">
             <p className="text-[9px] font-black uppercase tracking-[0.25em] text-blue-200">Serawat Advanced Musculoskeletal, Joint & Spine Centre</p>
             <h1 className="mt-3 max-w-3xl font-serif text-4xl font-medium leading-[1] tracking-[-0.03em] sm:text-5xl lg:text-5xl">{hi ? <>दर्द से आगे।<br /><em className="text-blue-300">बेहतर जीवन की ओर।</em></> : <>Advanced care for<br /><em className="text-blue-300">pain, movement & recovery.</em></>}</h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-blue-100/80 sm:text-base">{hi ? "दर्द, गतिशीलता और पुनर्वास के लिए विशेषज्ञ, व्यक्तिगत और उद्देश्यपूर्ण देखभाल।" : "Specialized, personalised care for pain, movement, function and recovery — bringing specialist rehabilitation together under one roof."}</p>
             <div className="mt-5 flex flex-wrap gap-3"><Link href="/patients" className="rounded-xl bg-white px-5 py-3 text-sm font-black text-[#082b61] shadow-xl">{hi ? "परामर्श शुरू करें" : "Begin Your Consultation"} →</Link><a href="#doctor" className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur">{hi ? "डॉक्टर से मिलें" : "Meet Your Specialist"} ↓</a></div>
           </div>
-          <div id="doctor" className="mx-auto w-full max-w-[420px] lg:justify-self-end"><ClinicalLeadCard /></div>
+          <div id="doctor" className="mx-auto w-full max-w-[500px] lg:justify-self-end"><ClinicalLeadCard /></div>
         </div>
       </section>
 
