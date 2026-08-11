@@ -34,7 +34,7 @@ export default async function EncountersPage() {
                       <p className="font-bold text-slate-800">{patient.firstName} {patient.lastName}</p>
                       <p className="mt-1 text-xs text-slate-400">{patient.patientId}</p>
                     </div>
-                    <Link href={`/patients/profile/${patient.id}/encounter`} className="rounded-xl bg-[#082b61] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0b63ce]">New Encounter →</Link>
+                    <Link href={`/encounters/${patient.id}`} className="rounded-xl bg-[#082b61] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0b63ce]">New Encounter →</Link>
                   </div>
                 ))}
               </div>
