@@ -29,18 +29,18 @@ export default function HomeV2() {
       </header>
 
       <section className="relative overflow-hidden bg-[#071f46] text-white">
-        <div className="absolute -right-40 -top-40 h-[260px] w-[260px] rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="absolute -bottom-40 left-1/3 h-[220px] w-[220px] rounded-full bg-cyan-400/10 blur-3xl" />
-        <div className="relative mx-auto grid max-w-[1400px] items-center gap-5 px-5 py-2 sm:px-8 sm:py-4 lg:grid-cols-[1fr_1.08fr] lg:gap-6 lg:py-4">
-          <div className="max-w-2xl">
+        <div className="absolute -right-40 -top-40 h-[260px] w-[260px] rounded-full bg-blue-500/20 blur-3xl" /><div className="absolute -bottom-40 left-1/3 h-[220px] w-[220px] rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="relative mx-auto max-w-[1400px] px-5 py-7 sm:px-8 sm:py-9 lg:py-10">
+          <div className="max-w-4xl">
             <p className="text-[9px] font-black uppercase tracking-[0.25em] text-blue-200">Serawat Advanced Musculoskeletal, Joint & Spine Centre</p>
             <h1 className="mt-3 max-w-3xl font-serif text-4xl font-medium leading-[1] tracking-[-0.03em] sm:text-5xl lg:text-5xl">{hi ? <>दर्द से आगे।<br /><em className="text-blue-300">बेहतर जीवन की ओर।</em></> : <>Advanced care for<br /><em className="text-blue-300">pain, movement & recovery.</em></>}</h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-blue-100/80 sm:text-base">{hi ? "दर्द, गतिशीलता और पुनर्वास के लिए विशेषज्ञ, व्यक्तिगत और उद्देश्यपूर्ण देखभाल।" : "Specialized, personalised care for pain, movement, function and recovery — bringing specialist rehabilitation together under one roof."}</p>
             <div className="mt-4 flex flex-wrap gap-3"><Link href="/patients" className="rounded-xl bg-white px-5 py-3 text-sm font-black text-[#082b61] shadow-xl">{hi ? "परामर्श शुरू करें" : "Begin Your Consultation"} →</Link><a href="#doctor" className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur">{hi ? "डॉक्टर से मिलें" : "Meet Your Specialist"} ↓</a></div>
           </div>
-          <div id="doctor" className="mx-auto w-full max-w-[500px] lg:justify-self-end"><ClinicalLeadCard /></div>
         </div>
       </section>
+
+      <section id="doctor" className="border-b border-[#cfd4bd] bg-[#e8eadb]"><div className="mx-auto max-w-[1200px] px-5 py-9 sm:px-8 sm:py-12"><div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#58703b]">Meet the Clinical Lead</p><h2 className="mt-2 font-serif text-3xl font-medium text-[#082b61] sm:text-4xl">{hi ? "क्लिनिकल लीड से मिलें" : "Meet the Clinical Lead"}</h2></div><p className="max-w-md text-xs leading-5 text-[#536047]">{hi ? "विशेषज्ञ मूल्यांकन, दर्द चिकित्सा और पुनर्वास के लिए व्यक्तिगत देखभाल।" : "Specialist assessment, pain medicine and rehabilitation with personalised clinical care."}</p></div><div className="mx-auto max-w-[900px]"><ClinicalLeadCard /></div></div></section>
 
       <section className="mx-auto max-w-[1200px] px-5 py-10 sm:px-8 sm:py-14"><div className="grid gap-7 lg:grid-cols-[.72fr_1.28fr] lg:items-start"><div><p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0b63ce]">A message from your doctor</p><h2 className="mt-3 font-serif text-4xl font-medium leading-tight text-[#082b61] sm:text-5xl">{hi ? "हर मरीज की कहानी अलग है।" : "Every patient has a different story."}</h2></div><div className="border-l border-[#ded5c5] pl-5 sm:pl-8"><p className="font-serif text-2xl leading-[1.4] text-[#203b5d] sm:text-3xl">{hi ? "SAMS में हम पहले आपकी कहानी समझते हैं—आपकी समस्या, आपकी गतिविधि और आपके लक्ष्य। हमारा उद्देश्य केवल बीमारी का उपचार नहीं, बल्कि बेहतर गति, बेहतर कार्यक्षमता और अधिक स्वतंत्रता की ओर आपकी यात्रा में साथ देना है।" : "At SAMS, we understand your story first — your problem, your movement, your daily life and your goals. Our aim is not simply to treat a condition, but to help you move better, function better and live better."}</p><p className="mt-4 text-xs font-black uppercase tracking-[0.16em] text-slate-500">— Dr. Suraj Serawat</p></div></div></section>
 
