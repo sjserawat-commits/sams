@@ -13,19 +13,21 @@ type ClinicalLeadCardProps = {
 
 const defaultLead = {
   name: "Dr. Suraj Serawat",
-  credentials: "MBBS, MS Orthopaedics",
-  specialty: "Musculoskeletal • Joint • Spine & Rehabilitation Care",
+  credentials: "MBBS, MD Physical Medicine & Rehabilitation",
+  specialty: "Pain Medicine • Joint & Spine Specialist",
   description:
-    "Clinical leadership focused on musculoskeletal, joint and spine conditions, with an integrated rehabilitation approach for restoring movement, function and independence.",
+    "Clinical leadership focused on pain medicine, musculoskeletal and joint conditions, spine disorders, neurological rehabilitation and comprehensive functional recovery at Serawat Advanced Musculoskeletal, Joint & Spine Centre.",
 };
 
 const expertise = [
   "Musculoskeletal & joint conditions",
   "Spine-related disorders",
-  "Sports and activity-related injuries",
-  "Pain and functional disorders",
-  "Orthopaedic rehabilitation",
-  "Rehabilitation-focused treatment planning",
+  "Pain medicine",
+  "Brain and neurological rehabilitation",
+  "Peripheral nerve-related conditions",
+  "Paediatric rehabilitation",
+  "Spinal cord rehabilitation",
+  "Specialized rehabilitation and functional recovery",
 ];
 
 export default function ClinicalLeadCard({
@@ -39,18 +41,9 @@ export default function ClinicalLeadCard({
     <section className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_15px_50px_rgba(8,43,97,0.06)]">
       <div className="grid lg:grid-cols-[330px_1fr]">
         <div className="relative min-h-[360px] overflow-hidden bg-[#082b61]">
-          <Image
-            src={imageSrc}
-            alt={name}
-            fill
-            sizes="(max-width: 1024px) 100vw, 330px"
-            className="object-cover object-top"
-            priority
-          />
+          <Image src={imageSrc} alt={name} fill sizes="(max-width: 1024px) 100vw, 330px" className="object-cover object-top" priority />
           <div className="absolute inset-0 bg-gradient-to-t from-[#082b61]/75 via-transparent to-transparent" />
-          <div className="absolute left-5 top-5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-blue-100 backdrop-blur-md">
-            Clinical Lead
-          </div>
+          <div className="absolute left-5 top-5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-blue-100 backdrop-blur-md">Clinical Lead</div>
           <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-md">
             <p className="text-[9px] font-black uppercase tracking-[0.18em] text-blue-200">SAMS</p>
             <p className="mt-1 text-xs font-bold text-white">Serawat Advanced Musculoskeletal, Joint & Spine Centre</p>
