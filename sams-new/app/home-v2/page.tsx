@@ -32,16 +32,16 @@ export default function HomeV2() {
       </header>
 
       <section className="relative overflow-hidden bg-[#071f46] text-white">
-        <div className="absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="absolute -bottom-48 left-1/3 h-[480px] w-[480px] rounded-full bg-cyan-400/10 blur-3xl" />
-        <div className="relative mx-auto grid max-w-[1400px] items-center gap-12 px-5 py-20 sm:px-8 sm:py-24 lg:grid-cols-[1.15fr_.85fr] lg:py-28">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-blue-200">Serawat Advanced Musculoskeletal, Joint & Spine Centre</p>
-            <h1 className="mt-6 max-w-4xl font-serif text-5xl font-medium leading-[.98] tracking-[-0.035em] sm:text-6xl lg:text-8xl">{hi ? <>दर्द से आगे।<br /><em className="text-blue-300">बेहतर जीवन की ओर।</em></> : <>Advanced care for<br /><em className="text-blue-300">pain, movement & recovery.</em></>}</h1>
-            <p className="mt-7 max-w-2xl text-base leading-8 text-blue-100/80 sm:text-lg">{hi ? "दर्द, गतिशीलता और पुनर्वास के लिए विशेषज्ञ, व्यक्तिगत और उद्देश्यपूर्ण देखभाल।" : "Specialized, personalised care for pain, movement, function and recovery — bringing specialist rehabilitation together under one roof."}</p>
-            <div className="mt-9 flex flex-wrap gap-3"><Link href="/patients" className="rounded-xl bg-white px-6 py-3.5 text-sm font-black text-[#082b61] shadow-xl">{hi ? "परामर्श शुरू करें" : "Begin Your Consultation"} →</Link><a href="#doctor" className="rounded-xl border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-black text-white backdrop-blur">{hi ? "डॉक्टर से मिलें" : "Meet Your Specialist"} ↓</a></div>
+        <div className="absolute -right-40 -top-40 h-[420px] w-[420px] rounded-full bg-blue-500/20 blur-3xl" />
+        <div className="absolute -bottom-40 left-1/3 h-[380px] w-[380px] rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="relative mx-auto grid max-w-[1400px] items-center gap-8 px-5 py-10 sm:px-8 sm:py-14 lg:grid-cols-[1.05fr_.95fr] lg:gap-8 lg:py-16">
+          <div className="max-w-2xl">
+            <p className="text-[9px] font-black uppercase tracking-[0.25em] text-blue-200">Serawat Advanced Musculoskeletal, Joint & Spine Centre</p>
+            <h1 className="mt-4 max-w-3xl font-serif text-4xl font-medium leading-[1] tracking-[-0.03em] sm:text-5xl lg:text-6xl">{hi ? <>दर्द से आगे।<br /><em className="text-blue-300">बेहतर जीवन की ओर।</em></> : <>Advanced care for<br /><em className="text-blue-300">pain, movement & recovery.</em></>}</h1>
+            <p className="mt-5 max-w-xl text-sm leading-7 text-blue-100/80 sm:text-base">{hi ? "दर्द, गतिशीलता और पुनर्वास के लिए विशेषज्ञ, व्यक्तिगत और उद्देश्यपूर्ण देखभाल।" : "Specialized, personalised care for pain, movement, function and recovery — bringing specialist rehabilitation together under one roof."}</p>
+            <div className="mt-6 flex flex-wrap gap-3"><Link href="/patients" className="rounded-xl bg-white px-5 py-3 text-sm font-black text-[#082b61] shadow-xl">{hi ? "परामर्श शुरू करें" : "Begin Your Consultation"} →</Link><a href="#doctor" className="rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white backdrop-blur">{hi ? "डॉक्टर से मिलें" : "Meet Your Specialist"} ↓</a></div>
           </div>
-          <div id="doctor" className="lg:pl-8"><ClinicalLeadCard /></div>
+          <div id="doctor" className="mx-auto w-full max-w-[460px] lg:justify-self-end"><ClinicalLeadCard /></div>
         </div>
       </section>
 
