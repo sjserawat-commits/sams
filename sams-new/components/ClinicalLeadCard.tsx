@@ -78,7 +78,7 @@ export default function ClinicalLeadCard({
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-            <Link href="/dashboard" className="rounded-lg bg-[#082b61] px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-blue-950/10 transition hover:-translate-y-0.5 hover:bg-[#0b63ce]">Open Command Center <span className="ml-1">→</span></Link>
+            <Link href="/dashboard" className="rounded-lg border border-[#082b61] bg-white px-4 py-2.5 text-xs font-black text-[#082b61] shadow-sm transition hover:-translate-y-0.5 hover:bg-[#eef4fb]">Open Command Center <span className="ml-1">→</span></Link>
             <Link href="/patients" className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-black text-[#082b61] transition hover:bg-blue-50">Patient Workspace <span className="ml-1">↗</span></Link>
           </div>
         </div>
