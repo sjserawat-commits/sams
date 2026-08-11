@@ -9,13 +9,14 @@ const actions = [["New Patient", "Register and open a patient record", "/patient
 
 export default function HomeV2() {
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
+    setNow(new Date());
     const load = () => fetch("/api/home-v2/summary").then(r => r.json()).then(setSummary).catch(() => setSummary(null));
     load(); const timer = window.setInterval(() => setNow(new Date()), 1000); return () => window.clearInterval(timer);
   }, []);
-  const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const date = now.toLocaleDateString([], { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+  const time = now ? now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—";
+  const date = now ? now.toLocaleDateString([], { weekday: "long", day: "2-digit", month: "long", year: "numeric" }) : "—";
 
   return <main className="min-h-screen bg-[#f4f7fb] text-[#082b61]">
     <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl">
