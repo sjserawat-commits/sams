@@ -47,7 +47,7 @@ export default function PatientsPage() {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div>
               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]">Patient management</span>
-              <h2 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">Patient Management.</h2>
+              <h2 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">One workspace for every patient.</h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-100">Find records quickly, review patient information and move directly into clinical care.</p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-4 backdrop-blur-sm"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-200">Total records</p><p className="mt-1 text-3xl font-black tabular-nums">{patients.length}</p></div>

@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-export default function NewVisitPage() {
+export default function NewEncounterPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const patientId = params.id;
@@ -56,7 +56,7 @@ export default function NewVisitPage() {
         <div className="mt-5 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(8,43,97,0.06)] sm:p-8">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">SAMS · Clinical Workspace</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-[#082b61]">New Visit</h1>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-[#082b61]">New Encounter</h1>
             <p className="mt-2 text-sm text-slate-500">Create a clinical encounter for patient #{patientId}.</p>
           </div>
 
@@ -133,7 +133,7 @@ export default function NewVisitPage() {
                 disabled={saving}
                 className="rounded-xl bg-[#0b63ce] px-6 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/15 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {saving ? "Saving…" : "Save Visit"}
+                {saving ? "Saving…" : "Save Encounter"}
               </button>
             </div>
           </form>

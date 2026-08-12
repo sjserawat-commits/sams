@@ -102,8 +102,8 @@ export default function NewVisitPage() {
           <aside className="rounded-[2rem] border border-blue-100 bg-[#f7faff] p-6">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">Workflow</p>
             <h2 className="mt-2 text-xl font-black">Clinical visit</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-500">Create the visit first. Clinical documentation can then be attached to the same underlying ClinicalVisit record.</p>
-            <div className="mt-6 border-t border-blue-100 pt-5 text-xs font-semibold leading-5 text-slate-500">SAMS uses “Visit” in the clinical interface while retaining the existing ClinicalVisit model in the backend.</div>
+            <p className="mt-3 text-sm leading-6 text-slate-500">Create the visit first. Clinical documentation can then be attached to the same underlying ClinicalEncounter record.</p>
+            <div className="mt-6 border-t border-blue-100 pt-5 text-xs font-semibold leading-5 text-slate-500">SAMS uses “Visit” in the clinical interface while retaining the existing ClinicalEncounter model in the backend.</div>
           </aside>
         </div>
       </div>

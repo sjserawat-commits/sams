@@ -3,7 +3,7 @@ export default function ClinicalPage() {
     <main className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-7xl">
         <h1 className="text-3xl font-bold text-blue-700">
-          Clinical Visits
+          Clinical Encounters
         </h1>
 
         <p className="mt-2 text-slate-600">
@@ -11,8 +11,8 @@ export default function ClinicalPage() {
         </p>
 
         <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <ClinicalCard title="New Visit" />
-          <ClinicalCard title="Active Visits" />
+          <ClinicalCard title="New Encounter" />
+          <ClinicalCard title="Active Encounters" />
           <ClinicalCard title="Assessments" />
           <ClinicalCard title="Treatment Plans" />
         </div>

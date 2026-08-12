@@ -1,0 +1,15 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
+type Patient = { id:number; patientId?:string; firstName?:string; lastName?:string|null; gender?:string };
+
+export default function PatientSearchPage(){
+ const [patients,setPatients]=useState<Patient[]>([]);
+ const [query,setQuery]=useState("");
+ const [loading,setLoading]=useState(true);
+ useEffect(()=>{fetch("/api/patients",{cache:"no-store"}).then(r=>r.ok?r.json():[]).then(d=>setPatients(Array.isArray(d)?d:[])).catch(()=>setPatients([])).finally(()=>setLoading(false))},[]);
+ const results=useMemo(()=>{const q=query.trim().toLowerCase();if(!q)return patients.slice(0,10);return patients.filter(p=>`${p.firstName||""} ${p.lastName||""} ${p.patientId||""} ${p.id}`.toLowerCase().includes(q)).slice(0,20)},[patients,query]);
+ return <main className="min-h-screen bg-slate-50 p-5 sm:p-8"><div className="mx-auto max-w-4xl"><Link href="/dashboard" className="text-sm font-semibold text-[#0b63ce]">← Dashboard</Link><div className="mt-5 overflow-hidden rounded-3xl bg-gradient-to-br from-[#0b63ce] to-[#082b61] p-7 text-white shadow-xl"><p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">SAMS Patient Directory</p><h1 className="mt-2 text-3xl font-bold">Patient Quick Search</h1><p className="mt-2 text-sm text-blue-100">Find a patient by name, patient ID or record number.</p><div className="mt-6 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 text-slate-700 shadow-lg"><span className="text-xl text-[#0b63ce]">⌕</span><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search patient name or ID..." className="w-full bg-transparent text-base outline-none placeholder:text-slate-400"/><kbd className="hidden rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-400 sm:block">Search</kbd></div></div><section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-6 py-5"><h2 className="font-bold text-slate-900">{query?`Search results for “${query}”`:"Recent patients"}</h2><p className="mt-1 text-xs text-slate-400">{loading?"Loading patient records…":`${results.length} patient${results.length===1?"":"s"} shown`}</p></div><div className="divide-y divide-slate-100">{!loading&&results.length===0?<div className="px-6 py-12 text-center text-sm text-slate-400">No matching patients found.</div>:results.map(p=><Link key={p.id} href={`/patients/profile/${p.id}`} className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-blue-50/50"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 font-bold text-[#0b63ce]">{(p.firstName?.[0]||"P").toUpperCase()}</div><div><p className="text-sm font-bold text-slate-800">{`${p.firstName||"Patient"} ${p.lastName||""}`.trim()}</p><p className="mt-1 text-xs text-slate-400">{p.patientId||`Record #${p.id}`} {p.gender?`• ${p.gender}`:""}</p></div></div><span className="text-sm font-semibold text-[#0b63ce]">Open →</span></Link>)}</div></section></div></main>;
+}
