@@ -1,0 +1,103 @@
+import Link from "next/link";
+
+export default function AssessmentPage() {
+  return (
+    <main className="min-h-screen bg-slate-50 p-6">
+      <div className="mx-auto max-w-7xl">
+
+        <div className="rounded-3xl bg-[#082b61] p-8 text-white shadow-lg sm:p-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-100">
+                Clinical Assessment
+              </span>
+
+              <h1 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">
+                Assessment & PM&R
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base">
+                Structured clinical assessment for musculoskeletal,
+                neurological, functional and rehabilitation needs.
+              </p>
+            </div>
+
+            <Link
+              href="/clinical"
+              className="w-fit rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold hover:bg-white/20"
+            >
+              ← Clinical
+            </Link>
+          </div>
+        </div>
+
+        <section className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              Core Assessment
+            </p>
+            <h2 className="mt-3 text-xl font-bold text-slate-900">
+              Clinical Assessment
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Review history, examination findings, diagnosis and clinical
+              impression.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              PM&R
+            </p>
+            <h2 className="mt-3 text-xl font-bold text-slate-900">
+              Functional Assessment
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Capture mobility, activities of daily living, function and
+              rehabilitation needs.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              Clinical Decision
+            </p>
+            <h2 className="mt-3 text-xl font-bold text-slate-900">
+              Assessment Summary
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Bring clinical findings together into a clear assessment and
+              management direction.
+            </p>
+          </div>
+
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900">
+            Patient Assessment
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Patient-specific assessment will connect here with the existing
+            patient and encounter workflow.
+          </p>
+
+          <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+            <p className="text-sm font-medium text-slate-600">
+              Select a patient from Patients to begin an assessment.
+            </p>
+
+            <Link
+              href="/patients"
+              className="mt-4 inline-flex rounded-xl bg-[#082b61] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0b397e]"
+            >
+              Open Patients
+            </Link>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  );
+}
