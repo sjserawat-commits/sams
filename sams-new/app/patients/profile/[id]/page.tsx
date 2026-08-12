@@ -13,7 +13,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   if (!Number.isInteger(patientId)) notFound();
   const patient = await prisma.patient.findFirst({ where: { id: patientId } });
   if (!patient) notFound();
-  const encounters = await prisma.clinicalVisit.findMany({ where: { patientId: patient.id }, orderBy: { encounterDate: "desc" }, take: 12 });
+  const encounters = await prisma.clinicalEncounter.findMany({ where: { patientId: patient.id }, orderBy: { encounterDate: "desc" }, take: 12 });
   const dob = patient.dateOfBirth ? patient.dateOfBirth.toLocaleDateString("en-GB") : "-";
   const gender = patient.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : "-";
   const initials = `${patient.firstName?.[0] || ""}${patient.lastName?.[0] || ""}`.toUpperCase();
