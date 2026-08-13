@@ -47,6 +47,7 @@ model OPDVisit {
   investigationOrders InvestigationOrder[]
   prescriptions Prescription[]
   billingRecords BillingRecord[]
+  billingLineItems BillingLineItem[]
   id Int @id @default(autoincrement())
   patientId Int
   tokenNumber Int
@@ -114,4 +115,22 @@ model BillingRecord {
   updatedAt DateTime @updatedAt
   patient Patient @relation(fields: [patientId], references: [id])
   opdVisit OPDVisit? @relation(fields: [opdVisitId], references: [id])
+  lineItems BillingLineItem[]
+}
+
+model BillingLineItem {
+  id Int @id @default(autoincrement())
+  billingRecordId Int?
+  opdVisitId Int
+  serviceType String
+  description String
+  quantity Float @default(1)
+  unitPrice Float @default(0)
+  amount Float @default(0)
+  sourceType String?
+  sourceId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  billingRecord BillingRecord? @relation(fields: [billingRecordId], references: [id], onDelete: Cascade)
+  opdVisit OPDVisit @relation(fields: [opdVisitId], references: [id])
 }
