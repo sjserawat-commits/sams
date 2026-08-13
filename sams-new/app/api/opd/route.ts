@@ -23,12 +23,14 @@ export async function POST(request: Request) {
     });
 
     const tokenNumber = (lastVisit?.tokenNumber ?? 0) + 1;
+    const rawVisitType = String(body.visitType || "NEW").trim().toUpperCase().replace(/[-\s]+/g, "_");
+    const visitType = rawVisitType === "FOLLOW_UP" ? "FOLLOW_UP" : "NEW";
 
     const visit = await prisma.oPDVisit.create({
       data: {
         patientId,
         tokenNumber,
-        visitType: body.visitType === "FOLLOW_UP" ? "FOLLOW_UP" : "NEW",
+        visitType,
         department: body.department || null,
         doctorId: body.doctorId ? Number(body.doctorId) : null,
         status: "WAITING",
