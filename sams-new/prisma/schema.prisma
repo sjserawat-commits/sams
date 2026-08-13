@@ -9,6 +9,7 @@ datasource db {
 model Patient {
   opdVisits OPDVisit[]
   encounters ClinicalEncounter[]
+  billingRecords BillingRecord[]
   id Int @id @default(autoincrement())
   patientId String @unique
   firstName String
@@ -45,6 +46,7 @@ model OPDVisit {
   clinicalEncounter ClinicalEncounter?
   investigationOrders InvestigationOrder[]
   prescriptions Prescription[]
+  billingRecords BillingRecord[]
   id Int @id @default(autoincrement())
   patientId Int
   tokenNumber Int
@@ -92,4 +94,24 @@ model Prescription {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   opdVisit OPDVisit @relation(fields: [opdVisitId], references: [id])
+}
+
+model BillingRecord {
+  id Int @id @default(autoincrement())
+  billNumber String @unique
+  receiptNumber String? @unique
+  patientId Int
+  opdVisitId Int?
+  subtotal Float @default(0)
+  discount Float @default(0)
+  netAmount Float @default(0)
+  paymentStatus String @default("UNPAID")
+  paymentMethod String?
+  paidAmount Float @default(0)
+  balanceAmount Float @default(0)
+  paidAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  patient Patient @relation(fields: [patientId], references: [id])
+  opdVisit OPDVisit? @relation(fields: [opdVisitId], references: [id])
 }
