@@ -27,11 +27,19 @@ export default function OPDSlipPage() {
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [department, setDepartment] = useState("");
+  const [departments, setDepartments] = useState<{ id: number; name: string; code: string }[]>([]);
   const [doctor, setDoctor] = useState("");
   const [visitType, setVisitType] = useState("New");
   const [createdVisit, setCreatedVisit] = useState<OPDVisit | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/departments")
+      .then((res) => res.json())
+      .then((data) => setDepartments(data))
+      .catch((err) => console.error("Department load error:", err));
+  }, []);
 
   useEffect(() => {
     fetch(`/api/patients/${params.id}`)
@@ -135,13 +143,12 @@ export default function OPDSlipPage() {
                 Department / Specialty
                 <select value={department} onChange={(e) => setDepartment(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white">
                   <option value="">Select department</option>
-                  <option>General Medicine</option>
-                  <option>Orthopaedics</option>
-                  <option>Neurology</option>
-                  <option>Paediatrics</option>
-                  <option>General Surgery</option>
-                  <option>Physiotherapy</option>
-                </select>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
               </label>
 
               <label className="text-sm font-black text-[#082b61]">
