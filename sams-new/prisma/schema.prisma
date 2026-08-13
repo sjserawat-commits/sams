@@ -8,92 +8,88 @@ datasource db {
 
 model Patient {
   opdVisits OPDVisit[]
-  encounters       ClinicalEncounter[]
-  id               Int       @id @default(autoincrement())
-  patientId        String    @unique
-  firstName        String
-  lastName         String
-  dateOfBirth      DateTime?
-  gender           String?
-  phone            String?
-  aadhaarNumber    String?
-  address          String?
+  encounters ClinicalEncounter[]
+  id Int @id @default(autoincrement())
+  patientId String @unique
+  firstName String
+  lastName String
+  dateOfBirth DateTime?
+  gender String?
+  phone String?
+  aadhaarNumber String?
+  address String?
   emergencyContact String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ClinicalEncounter {
   opdVisitId Int? @unique
   opdVisit OPDVisit? @relation(fields: [opdVisitId], references: [id])
-  id              Int      @id @default(autoincrement())
-  patientId       Int
-  encounterDate   DateTime @default(now())
-  speciality      String?
-  chiefComplaint  String?
-  diagnosis       String?
-  clinicalNotes   String?
-  treatmentPlan   String?
-  followUpDate    DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  id Int @id @default(autoincrement())
+  patientId Int
+  encounterDate DateTime @default(now())
+  speciality String?
+  chiefComplaint String?
+  diagnosis String?
+  clinicalNotes String?
+  treatmentPlan String?
+  followUpDate DateTime?
+  assessmentData String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 }
 
 model OPDVisit {
   clinicalEncounter ClinicalEncounter?
   investigationOrders InvestigationOrder[]
   prescriptions Prescription[]
-  id          Int      @id @default(autoincrement())
-  patientId   Int
+  id Int @id @default(autoincrement())
+  patientId Int
   tokenNumber Int
-  visitType   String   @default("NEW")
-  status      String   @default("WAITING")
-  department  String?
-  doctorId    Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  patient     Patient  @relation(fields: [patientId], references: [id])
+  visitType String @default("NEW")
+  status String @default("WAITING")
+  department String?
+  doctorId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  patient Patient @relation(fields: [patientId], references: [id])
 }
-
 
 model InvestigationOrder {
-  id             Int      @id @default(autoincrement())
-  opdVisitId     Int
-  investigation  String
-  price          Float
-  discountType   String?
-  discountValue  Float    @default(0)
-  netAmount      Float
-  paymentStatus  String   @default("UNPAID")
-  paymentMethod  String?
-  receiptNumber  String?
-  paidAt         DateTime?
-  status         String   @default("ORDERED")
-  reportText     String?
-  reportedAt     DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  opdVisit       OPDVisit @relation(fields: [opdVisitId], references: [id])
+  id Int @id @default(autoincrement())
+  opdVisitId Int
+  investigation String
+  price Float
+  discountType String?
+  discountValue Float @default(0)
+  netAmount Float
+  paymentStatus String @default("UNPAID")
+  paymentMethod String?
+  receiptNumber String?
+  paidAt DateTime?
+  status String @default("ORDERED")
+  reportText String?
+  reportedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  opdVisit OPDVisit @relation(fields: [opdVisitId], references: [id])
 }
 
-
 model Prescription {
-  id           Int      @id @default(autoincrement())
-  opdVisitId   Int
+  id Int @id @default(autoincrement())
+  opdVisitId Int
   medicineName String
-  dose         String?
-  frequency    String?
-  duration     String?
+  dose String?
+  frequency String?
+  duration String?
   instructions String?
-  quantity     Int      @default(1)
-  unitPrice    Float    @default(0)
-  billingStatus String  @default("UNBILLED")
-  status       String   @default("ACTIVE")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  opdVisit     OPDVisit @relation(fields: [opdVisitId], references: [id])
+  quantity Int @default(1)
+  unitPrice Float @default(0)
+  billingStatus String @default("UNBILLED")
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  opdVisit OPDVisit @relation(fields: [opdVisitId], references: [id])
 }
