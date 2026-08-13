@@ -29,7 +29,7 @@ export default function OPDSlipPage() {
   const [department, setDepartment] = useState("");
   const [doctor, setDoctor] = useState("");
   const [visitType, setVisitType] = useState("New");
-  const [token, setToken] = useState("");
+  const [createdVisit, setCreatedVisit] = useState<OPDVisit | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -68,8 +68,7 @@ export default function OPDSlipPage() {
       const data = (await response.json()) as OPDVisit & { error?: string };
       if (!response.ok) throw new Error(data.error || "Unable to create OPD visit.");
 
-      setToken(String(data.tokenNumber));
-
+      setCreatedVisit(data);
       sessionStorage.setItem(
         `opd-slip-${params.id}`,
         JSON.stringify({
@@ -83,12 +82,16 @@ export default function OPDSlipPage() {
           createdAt: new Date().toISOString(),
         })
       );
-
-      router.push(`/patients/profile/${params.id}/encounters/new?opdVisitId=${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create OPD visit.");
+    } finally {
       setSaving(false);
     }
+  }
+
+  function startConsultation() {
+    if (!createdVisit) return;
+    router.push(`/patients/profile/${params.id}/encounters/new?opdVisitId=${createdVisit.id}`);
   }
 
   if (!patient && !error) {
@@ -109,7 +112,7 @@ export default function OPDSlipPage() {
         <section className="mt-5 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0b63ce] via-[#0a56b4] to-[#082b61] p-7 text-white shadow-xl sm:p-9">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">SAMS · OPD</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight">Create OPD Slip</h1>
-          <p className="mt-2 text-sm text-blue-100">Create today's outpatient visit before starting the clinical consultation.</p>
+          <p className="mt-2 text-sm text-blue-100">Register today's outpatient visit before starting the clinical consultation.</p>
         </section>
 
         {patient && (
@@ -124,49 +127,68 @@ export default function OPDSlipPage() {
           </section>
         )}
 
-        <section className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">Visit Details</p>
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            <label className="text-sm font-black text-[#082b61]">
-              Department / Specialty
-              <select value={department} onChange={(e) => setDepartment(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white">
-                <option value="">Select department</option>
-                <option>General Medicine</option>
-                <option>Orthopaedics</option>
-                <option>Neurology</option>
-                <option>Paediatrics</option>
-                <option>General Surgery</option>
-                <option>Physiotherapy</option>
-              </select>
-            </label>
+        {!createdVisit ? (
+          <section className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">Visit Details</p>
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              <label className="text-sm font-black text-[#082b61]">
+                Department / Specialty
+                <select value={department} onChange={(e) => setDepartment(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white">
+                  <option value="">Select department</option>
+                  <option>General Medicine</option>
+                  <option>Orthopaedics</option>
+                  <option>Neurology</option>
+                  <option>Paediatrics</option>
+                  <option>General Surgery</option>
+                  <option>Physiotherapy</option>
+                </select>
+              </label>
 
-            <label className="text-sm font-black text-[#082b61]">
-              Consultant / Doctor
-              <input value={doctor} onChange={(e) => setDoctor(e.target.value)} placeholder="Doctor name" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white" />
-            </label>
+              <label className="text-sm font-black text-[#082b61]">
+                Consultant / Doctor
+                <input value={doctor} onChange={(e) => setDoctor(e.target.value)} placeholder="Doctor name" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white" />
+              </label>
 
-            <label className="text-sm font-black text-[#082b61]">
-              Visit Type
-              <select value={visitType} onChange={(e) => setVisitType(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white">
-                <option>New</option>
-                <option>Follow-up</option>
-              </select>
-            </label>
-
-            <div className="text-sm font-black text-[#082b61]">
-              Token / Queue Number
-              <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600">{token || "Generated when OPD slip is created"}</div>
+              <label className="text-sm font-black text-[#082b61]">
+                Visit Type
+                <select value={visitType} onChange={(e) => setVisitType(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white">
+                  <option>New</option>
+                  <option>Follow-up</option>
+                </select>
+              </label>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-blue-200 bg-white shadow-sm">
+            <div className="bg-blue-50 px-6 py-5 text-center sm:px-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">OPD Slip Created</p>
+              <p className="mt-2 text-sm font-semibold text-slate-500">Token / Queue Number</p>
+              <p className="mt-1 text-6xl font-black text-[#082b61]">{createdVisit.tokenNumber}</p>
+            </div>
+            <div className="grid gap-4 p-6 sm:grid-cols-3 sm:p-8">
+              <div><p className="text-xs font-bold text-slate-400">Patient</p><p className="mt-1 font-black text-[#082b61]">{patient?.firstName} {patient?.lastName}</p></div>
+              <div><p className="text-xs font-bold text-slate-400">Department</p><p className="mt-1 font-bold text-slate-700">{createdVisit.department || "—"}</p></div>
+              <div><p className="text-xs font-bold text-slate-400">Visit Type</p><p className="mt-1 font-bold text-slate-700">{createdVisit.visitType === "FOLLOW_UP" ? "Follow-up" : "New"}</p></div>
+              <div><p className="text-xs font-bold text-slate-400">Consultant</p><p className="mt-1 font-bold text-slate-700">{doctor || "—"}</p></div>
+              <div><p className="text-xs font-bold text-slate-400">Status</p><p className="mt-1 font-bold text-amber-600">Waiting</p></div>
+              <div><p className="text-xs font-bold text-slate-400">OPD Visit ID</p><p className="mt-1 font-bold text-slate-700">{createdVisit.id}</p></div>
+            </div>
+          </section>
+        )}
 
         {error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">{error}</div>}
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button onClick={() => router.push(`/patients/profile/${params.id}`)} className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-600">Cancel</button>
-          <button onClick={createOPDSlip} disabled={saving} className="rounded-xl bg-[#0b63ce] px-7 py-3 text-sm font-black text-white shadow-lg disabled:opacity-60">
-            {saving ? "Creating…" : "Create OPD Slip →"}
-          </button>
+          <button onClick={() => router.push(`/patients/profile/${params.id}`)} className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-600">Back</button>
+          {!createdVisit ? (
+            <button onClick={createOPDSlip} disabled={saving} className="rounded-xl bg-[#0b63ce] px-7 py-3 text-sm font-black text-white shadow-lg disabled:opacity-60">
+              {saving ? "Creating…" : "Create OPD Slip →"}
+            </button>
+          ) : (
+            <button onClick={startConsultation} className="rounded-xl bg-[#0b63ce] px-7 py-3 text-sm font-black text-white shadow-lg">
+              Start Consultation →
+            </button>
+          )}
         </div>
       </div>
     </main>
