@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Patient {
+  encounters       ClinicalEncounter[]
+  id               Int       @id @default(autoincrement())
+  patientId        String    @unique
+  firstName        String
+  lastName         String
+  dateOfBirth      DateTime?
+  gender           String?
+  phone            String?
+  aadhaarNumber    String?
+  address          String?
+  emergencyContact String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model ClinicalEncounter {
+  id              Int      @id @default(autoincrement())
+  patientId       Int
+  encounterDate   DateTime @default(now())
+  speciality      String?
+  chiefComplaint  String?
+  diagnosis       String?
+  clinicalNotes   String?
+  treatmentPlan   String?
+  followUpDate    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}

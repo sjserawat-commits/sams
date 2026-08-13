@@ -19,8 +19,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Patient not found." }, { status: 404 });
     }
 
+    const opdVisitId = body.opdVisitId ? Number(body.opdVisitId) : null;
+
     const visit = await prisma.clinicalEncounter.create({
-      data: { patientId, speciality },
+      data: {
+        ...(opdVisitId ? { opdVisitId } : {}), patientId, speciality },
       include: { patient: true },
     });
 

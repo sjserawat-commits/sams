@@ -1,9 +1,12 @@
 "use client";
+import { useSearchParams } from "next/navigation";
 
 import { FormEvent, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 export default function NewVisitPage() {
+  const searchParams = useSearchParams();
+  const opdVisitId = searchParams.get("opdVisitId");
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const patientId = params.id;
@@ -32,6 +35,7 @@ export default function NewVisitPage() {
           clinicalNotes,
           treatmentPlan,
           followUpDate: followUpDate || null,
+        opdVisitId: opdVisitId ? Number(opdVisitId) : null,
         }),
       });
 

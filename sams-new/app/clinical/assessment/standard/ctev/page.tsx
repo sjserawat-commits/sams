@@ -41,7 +41,7 @@ export default function CTEVAssessmentPage() {
   const scores = footData[side];
 
   const total = useMemo(
-    () => Object.values(scores).reduce((sum, value) => sum + value, 0),
+    () => Object.values(scores).reduce<number>((sum, value) => sum + value, 0),
     [scores]
   );
 

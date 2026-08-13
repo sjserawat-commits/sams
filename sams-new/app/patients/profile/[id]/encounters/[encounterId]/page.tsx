@@ -11,7 +11,7 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
     return <VisitMissing />;
   }
 
-  const encounter = await prisma.clinicalVisit.findUnique({
+  const encounter = await prisma.clinicalEncounter.findUnique({
     where: { id: encounterIdNumber },
     include: { patient: true },
   });
