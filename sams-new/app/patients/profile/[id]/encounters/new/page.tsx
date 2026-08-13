@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 export default function NewVisitPage() {
@@ -19,6 +19,18 @@ export default function NewVisitPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!opdVisitId) return;
+
+    fetch(`/api/opd/${opdVisitId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "IN_CONSULTATION" }),
+    }).catch(() => {
+      // The clinical form can still be used if the queue status update fails.
+    });
+  }, [opdVisitId]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -35,12 +47,20 @@ export default function NewVisitPage() {
           clinicalNotes,
           treatmentPlan,
           followUpDate: followUpDate || null,
-        opdVisitId: opdVisitId ? Number(opdVisitId) : null,
+          opdVisitId: opdVisitId ? Number(opdVisitId) : null,
         }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to create encounter");
+
+      if (opdVisitId) {
+        await fetch(`/api/opd/${opdVisitId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "COMPLETED" }),
+        });
+      }
 
       router.push(`/patients/profile/${patientId}/encounters/${data.id}`);
       router.refresh();
