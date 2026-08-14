@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Patient={id:number;patientId?:string;firstName?:string;lastName?:string|null};
 type Visit={id:number;patientId:number;encounterDate?:string;chiefComplaint?:string|null;diagnosis?:string|null};
-const nav=[["Dashboard","/dashboard","⌂"],["Patients","/patients","♙"],["Clinical","/clinical","⌁"],["PM&R","/pmr","◈"],["Billing","/billing","₹"],["Reports","/reports","▤"],["Patient Portal","/portal","◉"],["Settings","/settings","⚙"]];
+const nav=[["Dashboard","/dashboard","⌂"],["Patients","/patients","♙"],["Clinical","/clinical","⌁"],["Billing","/billing","₹"],["Reports","/reports","▤"],["Patient Portal","/portal","◉"],["Settings","/settings","⚙"]];
 export default function DashboardPage(){
  const[patients,setPatients]=useState<Patient[]>([]),[visits,setVisits]=useState<Visit[]>([]),[loading,setLoading]=useState(true),[refreshing,setRefreshing]=useState(false),[now,setNow]=useState(new Date());
  const load=async()=>{setRefreshing(true);try{const[p,v]=await Promise.all([fetch('/api/patients',{cache:'no-store'}),fetch('/api/patients/encounters',{cache:'no-store'})]);const pd=p.ok?await p.json():[],vd=v.ok?await v.json():[];setPatients(Array.isArray(pd)?pd:[]);setVisits(Array.isArray(vd)?vd:[])}finally{setLoading(false);setRefreshing(false)}};
