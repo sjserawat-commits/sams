@@ -1,3 +1,4 @@
+import DoctorManagement from "@/components/DoctorManagement";
 import Navigation from "@/components/Navigation";
 
 export default function SettingsPage() {
@@ -13,6 +14,7 @@ export default function SettingsPage() {
         <li>System Preferences</li>
         <li>Security</li>
       </ul>
+          <DoctorManagement />
     </main>
   );
 }

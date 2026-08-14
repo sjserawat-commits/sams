@@ -57,6 +57,8 @@ model Doctor {
   id            Int         @id @default(autoincrement())
   name          String
   qualification String?
+  introduction String?
+  photoUrl      String?
   departmentId  Int?
   active        Boolean     @default(true)
   department    Department? @relation(fields: [departmentId], references: [id])
