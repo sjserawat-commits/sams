@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Patient = { id: number; patientId: string; firstName: string; lastName: string };
 
@@ -17,6 +18,7 @@ const specialities = [
 ];
 
 export default function NewVisitPage() {
+  const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [patientId, setPatientId] = useState("");
   const [speciality, setSpeciality] = useState("");
@@ -45,9 +47,9 @@ export default function NewVisitPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to create visit.");
+
       setMessage(`Visit ${data.id} created successfully.`);
-      setPatientId("");
-      setSpeciality("");
+      router.push(`/patients/profile/${data.patient.id}/encounters/${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to create visit.");
     } finally {
