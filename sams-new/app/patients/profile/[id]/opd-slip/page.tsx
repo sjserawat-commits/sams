@@ -28,6 +28,7 @@ export default function OPDSlipPage() {
   const [patient, setPatient] = useState<Patient | null>(null);
   const [department, setDepartment] = useState("");
   const [departments, setDepartments] = useState<{ id: number; name: string; code: string }[]>([]);
+  const [doctors, setDoctors] = useState<any[]>([]);
   const [doctor, setDoctor] = useState("");
   const [visitType, setVisitType] = useState("New");
   const [createdVisit, setCreatedVisit] = useState<OPDVisit | null>(null);
@@ -50,6 +51,23 @@ export default function OPDSlipPage() {
       .then((data) => setPatient(data))
       .catch(() => setError("Unable to load patient details."));
   }, [params.id]);
+
+
+  useEffect(() => {
+    if (!department) {
+      setDoctors([]);
+      return;
+    }
+
+    fetch(`/api/doctors?departmentId=${department}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setDoctors(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        setDoctors([]);
+      });
+  }, [department]);
 
   async function createOPDSlip() {
     setSaving(true);
@@ -153,7 +171,18 @@ export default function OPDSlipPage() {
 
               <label className="text-sm font-black text-[#082b61]">
                 Consultant / Doctor
-                <input value={doctor} onChange={(e) => setDoctor(e.target.value)} placeholder="Doctor name" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white" />
+                <select
+          value={doctor}
+          onChange={(e) => setDoctor(e.target.value)}
+          className="mt-2 w-full rounded-xl border px-3 py-2"
+        >
+          <option value="">Select consultant</option>
+          {doctors.map((doc) => (
+            <option key={doc.id} value={String(doc.id)}>
+              {doc.name}{doc.qualification ? ` — ${doc.qualification}` : ""}
+            </option>
+          ))}
+        </select>
               </label>
 
               <label className="text-sm font-black text-[#082b61]">

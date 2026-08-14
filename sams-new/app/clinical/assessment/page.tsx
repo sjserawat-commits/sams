@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 const sections = ["History", "Physical Examination", "Functional Assessment", "PM&R Assessment", "Clinical Impression", "Management & Rehabilitation"];
 
@@ -50,7 +50,7 @@ const fieldMap: Record<string, { label: string; key: string; large?: boolean }[]
   ],
 };
 
-export default function AssessmentPage() {
+function AssessmentPageContent() {
   const searchParams = useSearchParams();
   const patientId = searchParams.get("patientId");
   const encounterId = searchParams.get("encounterId");
@@ -89,5 +89,13 @@ export default function AssessmentPage() {
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-200 px-6 py-5 sm:px-8"><p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Current Section</p><h2 className="mt-1 text-2xl font-bold text-slate-900">{activeSection}</h2></div><div className="space-y-6 p-6 sm:p-8"><div className="grid gap-5 md:grid-cols-2">{fieldMap[activeSection].map((field) => <label key={field.key} className="block"><span className="mb-2 block text-sm font-semibold text-slate-800">{field.label}</span><textarea value={data.sections[activeSection]?.[field.key] || ""} onChange={(event) => updateField(field.key, event.target.value)} rows={field.large ? 5 : 3} placeholder={`Document ${field.label.toLowerCase()}...`} className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100" /></label>)}</div><div className="flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between">{patientId && encounterId ? <Link href={`/patients/profile/${patientId}/encounters/${encounterId}`} className="text-sm font-bold text-[#0b63ce]">← Back to Encounter</Link> : <span />}{encounterId && <button type="button" onClick={saveAssessment} disabled={saving} className="rounded-xl bg-[#082b61] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0b397e] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving…" : "Save Assessment"}</button>}</div></div></section></div>
       </div>
     </main>
+  );
+}
+
+export default function AssessmentPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-slate-50 p-6">Loading Assessment...</main>}>
+      <AssessmentPageContent />
+    </Suspense>
   );
 }

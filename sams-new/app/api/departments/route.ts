@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const departments = await prisma.department.findMany({
       where: { active: true },
-      orderBy: { id: "asc" },
+      orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
@@ -15,10 +15,10 @@ export async function GET() {
 
     return NextResponse.json(departments);
   } catch (error) {
-    console.error("Departments API error:", error);
+    console.error("GET /api/departments failed:", error);
 
     return NextResponse.json(
-      { error: "Unable to load departments." },
+      { error: String(error) },
       { status: 500 }
     );
   }

@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         patientId,
         tokenNumber,
         visitType,
-        department: body.department || null,
+        departmentId: body.department ? Number(body.department) : null,
         doctorId: body.doctorId ? Number(body.doctorId) : null,
         status: "WAITING",
       },
@@ -41,7 +41,9 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("OPD creation error:", error);
     return NextResponse.json(
-      { error: "Unable to create OPD visit." },
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
