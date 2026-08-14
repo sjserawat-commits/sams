@@ -7,6 +7,7 @@ type Doctor = {
   name: string;
   qualification?: string | null;
   introduction?: string | null;
+  photoUrl?: string | null;
   active: boolean;
 };
 
@@ -14,22 +15,72 @@ const emptyForm = {
   name: "",
   qualification: "",
   introduction: "",
+  photoUrl: "",
 };
+
+async function imageToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Unable to read image."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("Invalid image file."));
+      image.onload = () => {
+        const maxSize = 600;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("Unable to process image."));
+          return;
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function DoctorManagement() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function loadDoctors() {
     const res = await fetch("/api/doctors");
-    setDoctors(await res.json());
+    const data = await res.json();
+    setDoctors(Array.isArray(data) ? data : []);
   }
 
   useEffect(() => {
     loadDoctors();
   }, []);
+
+  async function handlePhotoChange(file?: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMessage("Please select an image file.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setMessage("Please choose an image smaller than 8 MB.");
+      return;
+    }
+
+    try {
+      const photoUrl = await imageToDataUrl(file);
+      setForm((current) => ({ ...current, photoUrl }));
+      setMessage("Profile photo selected.");
+    } catch {
+      setMessage("Unable to process the selected photo.");
+    }
+  }
 
   async function saveDoctor() {
     if (!form.name.trim()) {
@@ -37,23 +88,28 @@ export default function DoctorManagement() {
       return;
     }
 
-    const res = await fetch("/api/doctors", {
-      method: editingId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        editingId ? { id: editingId, ...form } : form
-      ),
-    });
+    setSaving(true);
+    try {
+      const res = await fetch("/api/doctors", {
+        method: editingId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          editingId ? { id: editingId, ...form } : form
+        ),
+      });
 
-    if (!res.ok) {
-      setMessage("Unable to save doctor.");
-      return;
+      if (!res.ok) {
+        setMessage("Unable to save doctor.");
+        return;
+      }
+
+      setForm(emptyForm);
+      setEditingId(null);
+      setMessage("Doctor profile saved.");
+      await loadDoctors();
+    } finally {
+      setSaving(false);
     }
-
-    setForm(emptyForm);
-    setEditingId(null);
-    setMessage("Doctor profile saved.");
-    loadDoctors();
   }
 
   async function removeDoctor(id: number) {
@@ -74,6 +130,7 @@ export default function DoctorManagement() {
       name: doctor.name,
       qualification: doctor.qualification || "",
       introduction: doctor.introduction || "",
+      photoUrl: doctor.photoUrl || "",
     });
     setMessage("");
   }
@@ -119,13 +176,56 @@ export default function DoctorManagement() {
           className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2"
         />
 
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#082b61] bg-[#082b61] text-2xl font-bold text-white">
+              {form.photoUrl ? (
+                <img
+                  src={form.photoUrl}
+                  alt="Doctor profile preview"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                form.name
+                  ? form.name.split(" ").map((x) => x[0]).slice(0, 2).join("")
+                  : "DR"
+              )}
+            </div>
+            <div>
+              <p className="font-semibold text-[#082b61]">Profile Photo</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Upload a JPG, PNG or other image. It will be resized for the website.
+              </p>
+              <label className="mt-3 inline-flex cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-[#082b61] hover:bg-slate-100">
+                {form.photoUrl ? "Change Photo" : "Upload Photo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handlePhotoChange(e.target.files?.[0])}
+                />
+              </label>
+              {form.photoUrl && (
+                <button
+                  type="button"
+                  onClick={() => setForm((current) => ({ ...current, photoUrl: "" }))}
+                  className="ml-3 text-sm font-semibold text-red-600"
+                >
+                  Remove Photo
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-3">
           <button
             type="button"
             onClick={saveDoctor}
-            className="rounded-lg bg-[#082b61] px-5 py-2 font-semibold text-white"
+            disabled={saving}
+            className="rounded-lg bg-[#082b61] px-5 py-2 font-semibold text-white disabled:opacity-60"
           >
-            {editingId ? "Update Doctor" : "Add Doctor"}
+            {saving ? "Saving..." : editingId ? "Update Doctor" : "Add Doctor"}
           </button>
 
           {editingId && (
@@ -153,11 +253,28 @@ export default function DoctorManagement() {
             key={doctor.id}
             className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between"
           >
-            <div>
-              <p className="font-semibold text-[#082b61]">{doctor.name}</p>
-              <p className="text-sm text-slate-500">
-                {doctor.qualification || "Qualification not added"}
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#082b61] text-sm font-bold text-white">
+                {doctor.photoUrl ? (
+                  <img
+                    src={doctor.photoUrl}
+                    alt={`${doctor.name} profile`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  doctor.name
+                    .split(" ")
+                    .map((x) => x[0])
+                    .slice(0, 2)
+                    .join("")
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-[#082b61]">{doctor.name}</p>
+                <p className="text-sm text-slate-500">
+                  {doctor.qualification || "Qualification not added"}
+                </p>
+              </div>
             </div>
 
             <div className="flex gap-3">

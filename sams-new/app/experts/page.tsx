@@ -7,6 +7,7 @@ type Doctor = {
   name: string;
   qualification?: string | null;
   introduction?: string | null;
+  photoUrl?: string | null;
 };
 
 export default function ExpertsPage() {
@@ -16,7 +17,7 @@ export default function ExpertsPage() {
   useEffect(() => {
     fetch("/api/doctors")
       .then((r) => r.json())
-      .then(setDoctors)
+      .then((data) => setDoctors(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
   }, []);
 
@@ -54,12 +55,20 @@ export default function ExpertsPage() {
                 key={doctor.id}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#082b61] text-xl font-bold text-white">
-                  {doctor.name
-                    .split(" ")
-                    .map((x) => x[0])
-                    .slice(0, 2)
-                    .join("")}
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-[#082b61] text-2xl font-bold text-white ring-4 ring-white shadow-md">
+                  {doctor.photoUrl ? (
+                    <img
+                      src={doctor.photoUrl}
+                      alt={`${doctor.name} profile`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    doctor.name
+                      .split(" ")
+                      .map((x) => x[0])
+                      .slice(0, 2)
+                      .join("")
+                  )}
                 </div>
 
                 <h2 className="mt-5 text-xl font-semibold text-[#082b61]">

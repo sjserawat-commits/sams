@@ -11,6 +11,7 @@ export async function GET() {
         name: true,
         qualification: true,
         introduction: true,
+        photoUrl: true,
         departmentId: true,
         active: true,
       },
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
         name: body.name,
         qualification: body.qualification || null,
         introduction: body.introduction || null,
+        photoUrl: body.photoUrl || null,
         departmentId: body.departmentId
           ? Number(body.departmentId)
           : null,
@@ -53,6 +55,7 @@ export async function PATCH(request: Request) {
         name: body.name,
         qualification: body.qualification || null,
         introduction: body.introduction || null,
+        photoUrl: body.photoUrl || null,
         departmentId: body.departmentId
           ? Number(body.departmentId)
           : null,
