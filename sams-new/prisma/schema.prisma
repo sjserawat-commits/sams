@@ -43,26 +43,26 @@ model ClinicalEncounter {
 }
 
 model Department {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  code      String   @unique
-  active    Boolean  @default(true)
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  code      String     @unique
+  active    Boolean    @default(true)
   doctors   Doctor[]
   opdVisits OPDVisit[] @relation("DepartmentVisits")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Doctor {
-  id           Int        @id @default(autoincrement())
-  name         String
+  id            Int         @id @default(autoincrement())
+  name          String
   qualification String?
-  departmentId Int?
-  active       Boolean    @default(true)
-  department   Department? @relation(fields: [departmentId], references: [id])
-  opdVisits    OPDVisit[] @relation("DoctorVisits")
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  departmentId  Int?
+  active        Boolean     @default(true)
+  department    Department? @relation(fields: [departmentId], references: [id])
+  opdVisits     OPDVisit[]  @relation("DoctorVisits")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model OPDVisit {
@@ -76,10 +76,10 @@ model OPDVisit {
   tokenNumber         Int
   visitType           String               @default("NEW")
   status              String               @default("WAITING")
-  departmentId Int?
-  departmentMaster Department? @relation("DepartmentVisits", fields: [departmentId], references: [id])
+  departmentId        Int?
+  departmentMaster    Department?          @relation("DepartmentVisits", fields: [departmentId], references: [id])
   doctorId            Int?
-  doctor Doctor? @relation("DoctorVisits", fields: [doctorId], references: [id])
+  doctor              Doctor?              @relation("DoctorVisits", fields: [doctorId], references: [id])
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   patient             Patient              @relation(fields: [patientId], references: [id])

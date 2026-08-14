@@ -62,8 +62,7 @@ export default function NewVisitPage() {
         });
       }
 
-      router.push(`/clinical?patientId=${patientId}&encounterId=${data.id}&opdVisitId=${opdVisitId ?? ""}`);
-      router.refresh();
+      router.push(`/patients/profile/${patientId}/opd-slip`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create encounter");
       setSaving(false);

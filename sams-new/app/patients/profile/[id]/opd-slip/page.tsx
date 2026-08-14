@@ -1,232 +1,546 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 
 type Patient = {
-  id: number;
-  patientId: string;
-  firstName: string;
-  lastName: string;
-  gender?: string | null;
-  phone?: string | null;
-  dateOfBirth?: string | null;
+id: number;
+patientId?: string;
+firstName: string;
+lastName?: string;
+gender?: string;
+};
+
+type Department = {
+id: number;
+name: string;
+code?: string;
+};
+
+type Doctor = {
+id: number;
+name?: string;
+firstName?: string;
+lastName?: string;
 };
 
 type OPDVisit = {
-  id: number;
-  tokenNumber: number;
-  visitType: string;
-  department: string | null;
-  status: string;
+id: number;
+tokenNumber: number;
+visitType: string;
+department?: string | null;
+status?: string;
+doctorId?: number | null;
 };
 
 export default function OPDSlipPage() {
-  const params = useParams<{ id: string }>();
-  const router = useRouter();
+const params = useParams();
+const router = useRouter();
 
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [department, setDepartment] = useState("");
-  const [departments, setDepartments] = useState<{ id: number; name: string; code: string }[]>([]);
-  const [doctors, setDoctors] = useState<any[]>([]);
-  const [doctor, setDoctor] = useState("");
-  const [visitType, setVisitType] = useState("New");
-  const [createdVisit, setCreatedVisit] = useState<OPDVisit | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+const patientId = String(params.id);
 
-  useEffect(() => {
-    fetch("/api/departments")
-      .then((res) => res.json())
-      .then((data) => setDepartments(data))
-      .catch((err) => console.error("Department load error:", err));
-  }, []);
+const [patient, setPatient] = useState<Patient | null>(null);
+const [departments, setDepartments] = useState<Department[]>([]);
+const [doctors, setDoctors] = useState<Doctor[]>([]);
 
-  useEffect(() => {
-    fetch(`/api/patients/${params.id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Unable to load patient");
-        return res.json();
-      })
-      .then((data) => setPatient(data))
-      .catch(() => setError("Unable to load patient details."));
-  }, [params.id]);
+const [department, setDepartment] = useState("");
+const [doctor, setDoctor] = useState("");
+const [visitType, setVisitType] = useState("New");
 
+const [createdVisit, setCreatedVisit] = useState<OPDVisit | null>(null);
 
-  useEffect(() => {
-    if (!department) {
-      setDoctors([]);
-      return;
-    }
+const [loading, setLoading] = useState(true);
+const [saving, setSaving] = useState(false);
+const [error, setError] = useState("");
 
-    fetch(`/api/doctors?departmentId=${department}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setDoctors(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        setDoctors([]);
-      });
-  }, [department]);
+useEffect(() => {
+async function loadData() {
+try {
+const patientResponse = await fetch("/api/patients/" + patientId);
 
-  async function createOPDSlip() {
-    setSaving(true);
-    setError("");
+if (!patientResponse.ok) {  
+      throw new Error("Unable to load patient.");  
+    }  
 
-    if (!department.trim()) {
-      setError("Please select a department.");
-      setSaving(false);
-      return;
-    }
+    const patientData = await patientResponse.json();  
+    setPatient(patientData);  
 
-    try {
-      const response = await fetch("/api/opd", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          patientId: Number(params.id),
-          department,
-          doctor,
-          visitType,
-        }),
-      });
+    const departmentResponse = await fetch(  
+      "/api/departments"  
+    );  
 
-      const data = (await response.json()) as OPDVisit & { error?: string };
-      if (!response.ok) throw new Error(data.error || "Unable to create OPD visit.");
+    if (!departmentResponse.ok) {  
+      throw new Error("Unable to load departments.");  
+    }  
 
-      setCreatedVisit(data);
-      sessionStorage.setItem(
-        `opd-slip-${params.id}`,
-        JSON.stringify({
-          opdVisitId: data.id,
-          patientId: params.id,
-          department,
-          doctor,
-          visitType,
-          token: data.tokenNumber,
-          status: data.status,
-          createdAt: new Date().toISOString(),
-        })
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to create OPD visit.");
-    } finally {
-      setSaving(false);
-    }
-  }
+    const departmentData = await departmentResponse.json();  
 
-  function startConsultation() {
-    if (!createdVisit) return;
-    router.push(`/patients/profile/${params.id}/encounters/new?opdVisitId=${createdVisit.id}`);
-  }
+    setDepartments(  
+      Array.isArray(departmentData) ? departmentData : []  
+    );  
+  } catch (err) {  
+    setError(  
+      err instanceof Error  
+        ? err.message  
+        : "Unable to load patient details."  
+    );  
+  } finally {  
+    setLoading(false);  
+  }  
+}  
 
-  if (!patient && !error) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f5f8fc]">
-        <p className="text-sm font-semibold text-slate-500">Loading patient…</p>
-      </main>
-    );
-  }
+if (patientId) {  
+  loadData();  
+} else {  
+  setError("Invalid patient ID.");  
+  setLoading(false);  
+}
 
-  return (
-    <main className="min-h-screen bg-[#f5f8fc] px-5 py-8 text-slate-900 sm:px-8">
-      <div className="mx-auto max-w-5xl">
-        <button onClick={() => router.push(`/patients/profile/${params.id}`)} className="text-sm font-bold text-[#0b63ce]">
-          ← Back to Patient Profile
-        </button>
+}, [patientId]);
 
-        <section className="mt-5 overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0b63ce] via-[#0a56b4] to-[#082b61] p-7 text-white shadow-xl sm:p-9">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-200">SAMS · OPD</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight">Create OPD Slip</h1>
-          <p className="mt-2 text-sm text-blue-100">Register today's outpatient visit before starting the clinical consultation.</p>
-        </section>
+useEffect(() => {
+async function loadDoctors() {
+if (!department) {
+setDoctors([]);
+setDoctor("");
+return;
+}
 
-        {patient && (
-          <section className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">Patient Details</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-4">
-              <div><p className="text-xs font-bold text-slate-400">Patient</p><p className="mt-1 font-black text-[#082b61]">{patient.firstName} {patient.lastName}</p></div>
-              <div><p className="text-xs font-bold text-slate-400">Patient ID</p><p className="mt-1 font-bold text-slate-700">{patient.patientId}</p></div>
-              <div><p className="text-xs font-bold text-slate-400">Gender</p><p className="mt-1 font-bold text-slate-700">{patient.gender || "—"}</p></div>
-              <div><p className="text-xs font-bold text-slate-400">Mobile</p><p className="mt-1 font-bold text-slate-700">{patient.phone || "—"}</p></div>
-            </div>
-          </section>
-        )}
+try {  
+    const response = await fetch(  
+      `/api/doctors?departmentId=${department}`  
+    );  
 
-        {!createdVisit ? (
-          <section className="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">Visit Details</p>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              <label className="text-sm font-black text-[#082b61]">
-                Department / Specialty
-                <select value={department} onChange={(e) => setDepartment(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white">
-                  <option value="">Select department</option>
-              {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
-              </label>
+    if (!response.ok) {  
+      throw new Error("Unable to load doctors.");  
+    }  
 
-              <label className="text-sm font-black text-[#082b61]">
-                Consultant / Doctor
-                <select
-          value={doctor}
-          onChange={(e) => setDoctor(e.target.value)}
-          className="mt-2 w-full rounded-xl border px-3 py-2"
-        >
-          <option value="">Select consultant</option>
-          {doctors.map((doc) => (
-            <option key={doc.id} value={String(doc.id)}>
-              {doc.name}{doc.qualification ? ` — ${doc.qualification}` : ""}
-            </option>
-          ))}
-        </select>
-              </label>
+    const data = await response.json();  
 
-              <label className="text-sm font-black text-[#082b61]">
-                Visit Type
-                <select value={visitType} onChange={(e) => setVisitType(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:bg-white">
-                  <option>New</option>
-                  <option>Follow-up</option>
-                </select>
-              </label>
-            </div>
-          </section>
-        ) : (
-          <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-blue-200 bg-white shadow-sm">
-            <div className="bg-blue-50 px-6 py-5 text-center sm:px-8">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">OPD Slip Created</p>
-              <p className="mt-2 text-sm font-semibold text-slate-500">Token / Queue Number</p>
-              <p className="mt-1 text-6xl font-black text-[#082b61]">{createdVisit.tokenNumber}</p>
-            </div>
-            <div className="grid gap-4 p-6 sm:grid-cols-3 sm:p-8">
-              <div><p className="text-xs font-bold text-slate-400">Patient</p><p className="mt-1 font-black text-[#082b61]">{patient?.firstName} {patient?.lastName}</p></div>
-              <div><p className="text-xs font-bold text-slate-400">Department</p><p className="mt-1 font-bold text-slate-700">{createdVisit.department || "—"}</p></div>
-              <div><p className="text-xs font-bold text-slate-400">Visit Type</p><p className="mt-1 font-bold text-slate-700">{createdVisit.visitType === "FOLLOW_UP" ? "Follow-up" : "New"}</p></div>
-              <div><p className="text-xs font-bold text-slate-400">Consultant</p><p className="mt-1 font-bold text-slate-700">{doctor || "—"}</p></div>
-              <div><p className="text-xs font-bold text-slate-400">Status</p><p className="mt-1 font-bold text-amber-600">Waiting</p></div>
-              <div><p className="text-xs font-bold text-slate-400">OPD Visit ID</p><p className="mt-1 font-bold text-slate-700">{createdVisit.id}</p></div>
-            </div>
-          </section>
-        )}
+    setDoctors(Array.isArray(data) ? data : []);  
+  } catch (err) {  
+    setDoctors([]);  
+    setDoctor("");  
 
-        {error && <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">{error}</div>}
+    setError(  
+      err instanceof Error  
+        ? err.message  
+        : "Unable to load doctors."  
+    );  
+  }  
+}  
 
-        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <button onClick={() => router.push(`/patients/profile/${params.id}`)} className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-600">Back</button>
-          {!createdVisit ? (
-            <button onClick={createOPDSlip} disabled={saving} className="rounded-xl bg-[#0b63ce] px-7 py-3 text-sm font-black text-white shadow-lg disabled:opacity-60">
-              {saving ? "Creating…" : "Create OPD Slip →"}
-            </button>
-          ) : (
-            <button onClick={startConsultation} className="rounded-xl bg-[#0b63ce] px-7 py-3 text-sm font-black text-white shadow-lg">
-              Start Consultation →
-            </button>
-          )}
-        </div>
-      </div>
-    </main>
-  );
+loadDoctors();
+
+}, [department]);
+
+async function createOPDSlip() {
+if (!department) {
+setError("Please select a department.");
+return;
+}
+
+setSaving(true);  
+setError("");  
+
+try {  
+  const response = await fetch("/api/opd", {  
+    method: "POST",  
+    headers: {  
+      "Content-Type": "application/json",  
+    },  
+    body: JSON.stringify({  
+      patientId: Number(patientId),  
+      department: department,  
+      doctorId: doctor ? Number(doctor) : null,  
+      visitType: visitType,  
+    }),  
+  });  
+
+  const data = await response.json();  
+
+  if (!response.ok) {  
+    throw new Error(  
+      data?.error || "Unable to create OPD visit."  
+    );  
+  }  
+
+  setCreatedVisit(data);  
+} catch (err) {  
+  setError(  
+    err instanceof Error  
+      ? err.message  
+      : "Unable to create OPD visit."  
+  );  
+} finally {  
+  setSaving(false);  
+}
+
+}
+
+function getDoctorName() {
+const selectedDoctor = doctors.find(
+(item) => item.id === Number(doctor)
+);
+
+if (!selectedDoctor) {  
+  return "—";  
+}  
+
+if (selectedDoctor.name) {  
+  return selectedDoctor.name;  
+}  
+
+return `${selectedDoctor.firstName || ""} ${  
+  selectedDoctor.lastName || ""  
+}`.trim() || "—";
+
+}
+
+function getDepartmentName() {
+const selectedDepartment = departments.find(
+(item) => String(item.id) === department
+);
+
+return selectedDepartment?.name || "—";
+
+}
+
+function startConsultation() {
+if (!createdVisit) {
+return;
+}
+
+router.push(  
+  `/patients/profile/${patientId}/consultation?opdVisitId=${createdVisit.id}`  
+);
+
+}
+
+if (loading) {
+return (
+<main className="flex min-h-screen items-center justify-center bg-[#f5f8fc]">
+<p className="text-sm font-semibold text-slate-500">
+Loading patient...
+</p>
+</main>
+);
+}
+
+if (!patient) {
+return (
+<main className="min-h-screen bg-[#f5f8fc] px-5 py-8">
+<div className="mx-auto max-w-4xl rounded-2xl bg-white p-8 shadow-sm">
+<p className="font-semibold text-red-600">
+{error || "Patient not found."}
+</p>
+</div>
+</main>
+);
+}
+
+return (
+<main className="min-h-screen bg-[#f5f8fc] px-5 py-8 text-slate-900 sm:px-8">
+<div className="mx-auto max-w-5xl">
+
+<button  
+      type="button"  
+      onClick={() =>  
+        router.push(`/patients/profile/${patientId}`)  
+      }  
+      className="mb-5 text-sm font-bold text-[#0b63ce]"  
+    >  
+      ← Back to Patient Profile  
+    </button>  
+
+    <section className="overflow-hidden rounded-[2rem] bg-white shadow-sm">  
+
+      <header className="bg-gradient-to-br from-[#0b63ce] to-[#082b61] px-7 py-8 text-white sm:px-9">  
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100">  
+          SAMS · OPD  
+        </p>  
+
+        <h1 className="mt-2 text-3xl font-black">  
+          Create OPD Slip  
+        </h1>  
+
+        <p className="mt-2 text-sm text-blue-100">  
+          Register today&apos;s outpatient visit before starting the  
+          clinical consultation.  
+        </p>  
+      </header>  
+
+      <section className="border-b border-slate-100 p-6 sm:p-8">  
+        <p className="mb-5 text-[11px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">  
+          Patient Details  
+        </p>  
+
+        <div className="grid gap-5 sm:grid-cols-3">  
+
+          <div>  
+            <p className="text-xs font-semibold text-slate-400">  
+              Patient  
+            </p>  
+
+            <p className="mt-1 text-lg font-black text-[#082b61]">  
+              {patient.firstName} {patient.lastName || ""}  
+            </p>  
+          </div>  
+
+          <div>  
+            <p className="text-xs font-semibold text-slate-400">  
+              Patient ID  
+            </p>  
+
+            <p className="mt-1 font-bold text-slate-700">  
+              {patient.patientId || patient.id}  
+            </p>  
+          </div>  
+
+          <div>  
+            <p className="text-xs font-semibold text-slate-400">  
+              Gender  
+            </p>  
+
+            <p className="mt-1 font-bold text-slate-700">  
+              {patient.gender || "—"}  
+            </p>  
+          </div>  
+
+        </div>  
+      </section>  
+
+      {!createdVisit && (  
+        <section className="p-6 sm:p-8">  
+
+          <p className="mb-5 text-[11px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">  
+            Visit Details  
+          </p>  
+
+          <div className="grid gap-5 sm:grid-cols-3">  
+
+            <div>  
+              <label className="mb-2 block text-xs font-black text-slate-500">  
+                Department  
+              </label>  
+
+              <select  
+                value={department}  
+                onChange={(event) =>  
+                  setDepartment(event.target.value)  
+                }  
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none"  
+              >  
+                <option value="">  
+                  Select Department  
+                </option>  
+
+                {departments.map((item) => (  
+                  <option key={item.id} value={item.id}>  
+                    {item.name}  
+                  </option>  
+                ))}  
+              </select>  
+            </div>  
+
+            <div>  
+              <label className="mb-2 block text-xs font-black text-slate-500">  
+                Consultant  
+              </label>  
+
+              <select  
+                value={doctor}  
+                onChange={(event) =>  
+                  setDoctor(event.target.value)  
+                }  
+                disabled={!department}  
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none disabled:bg-slate-100"  
+              >  
+                <option value="">  
+                  Select Consultant  
+                </option>  
+
+                {doctors.map((item) => (  
+                  <option key={item.id} value={item.id}>  
+                    {item.name ||  
+                      `${item.firstName || ""} ${  
+                        item.lastName || ""  
+                      }`.trim()}  
+                  </option>  
+                ))}  
+              </select>  
+            </div>  
+
+            <div>  
+              <label className="mb-2 block text-xs font-black text-slate-500">  
+                Visit Type  
+              </label>  
+
+              <select  
+                value={visitType}  
+                onChange={(event) =>  
+                  setVisitType(event.target.value)  
+                }  
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none"  
+              >  
+                <option value="New">  
+                  New  
+                </option>  
+
+                <option value="FOLLOW_UP">  
+                  Follow-up  
+                </option>  
+              </select>  
+            </div>  
+
+          </div>  
+
+          {error && (  
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">  
+              {error}  
+            </div>  
+          )}  
+
+          <div className="mt-7 flex justify-end">  
+
+            <button  
+              type="button"  
+              onClick={createOPDSlip}  
+              disabled={saving}  
+              className="rounded-xl bg-[#0b63ce] px-7 py-3 text-sm font-black text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-60"  
+            >  
+              {saving  
+                ? "Creating..."  
+                : "Create OPD Slip →"}  
+            </button>  
+
+          </div>  
+
+        </section>  
+      )}  
+
+      {createdVisit && (  
+        <section className="p-6 sm:p-8">  
+
+          <div className="rounded-2xl bg-blue-50 p-7 text-center">  
+
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0b63ce]">  
+              OPD Slip Created  
+            </p>  
+
+            <p className="mt-2 text-sm font-semibold text-slate-500">  
+              Token / Queue Number  
+            </p>  
+
+            <p className="mt-1 text-6xl font-black text-[#082b61]">  
+              {createdVisit.tokenNumber}  
+            </p>  
+
+          </div>  
+
+          <div className="mt-6 grid gap-5 sm:grid-cols-3">  
+
+            <div>  
+              <p className="text-xs font-bold text-slate-400">  
+                Patient  
+              </p>  
+
+              <p className="mt-1 font-black text-[#082b61]">  
+                {patient.firstName} {patient.lastName || ""}  
+              </p>  
+            </div>  
+
+            <div>  
+              <p className="text-xs font-bold text-slate-400">  
+                Department  
+              </p>  
+
+              <p className="mt-1 font-bold text-slate-700">  
+                {createdVisit.department ||  
+                  getDepartmentName()}  
+              </p>  
+            </div>  
+
+            <div>  
+              <p className="text-xs font-bold text-slate-400">  
+                Visit Type  
+              </p>  
+
+              <p className="mt-1 font-bold text-slate-700">  
+                {createdVisit.visitType === "FOLLOW_UP"  
+                  ? "Follow-up"  
+                  : "New"}  
+              </p>  
+            </div>  
+
+            <div>  
+              <p className="text-xs font-bold text-slate-400">  
+                Consultant  
+              </p>  
+
+              <p className="mt-1 font-bold text-slate-700">  
+                {getDoctorName()}  
+              </p>  
+            </div>  
+
+            <div>  
+              <p className="text-xs font-bold text-slate-400">  
+                Status  
+              </p>  
+
+              <p className="mt-1 font-bold text-amber-600">  
+                Waiting  
+              </p>  
+            </div>  
+
+            <div>  
+              <p className="text-xs font-bold text-slate-400">  
+                OPD Visit ID  
+              </p>  
+
+              <p className="mt-1 font-bold text-slate-700">  
+                {createdVisit.id}  
+              </p>  
+            </div>  
+
+          </div>  
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">  
+
+            <button  
+              type="button"  
+              onClick={() =>  
+                router.push(`/patients/profile/${patientId}`)  
+              }  
+              className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-600"  
+            >  
+              Back to Patient Profile  
+            </button>  
+
+            <button  
+              type="button"  
+              onClick={() => window.print()}  
+              className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-600"  
+            >  
+              Print OPD Slip  
+            </button>  
+
+            <button  
+              type="button"  
+              onClick={startConsultation}  
+              className="rounded-xl bg-[#0b63ce] px-7 py-3 text-sm font-black text-white shadow-lg"  
+            >  
+              Start Consultation →  
+            </button>  
+
+          </div>  
+
+        </section>  
+      )}  
+
+    </section>  
+  </div>  
+</main>
+
+);
 }
