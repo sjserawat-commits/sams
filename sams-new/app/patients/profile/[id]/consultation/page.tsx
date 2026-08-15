@@ -22,16 +22,7 @@ const investigations = [
   "Aerobic Bacterial Culture & Sensitivity — Blood", "Aerobic Bacterial Culture & Sensitivity — Pus", "Aerobic Bacterial Culture & Sensitivity — Semen", "Aerobic Bacterial Culture & Sensitivity — Sputum", "Aerobic Bacterial Culture & Sensitivity — Stool", "Urine Culture & Sensitivity", "CSF for Culture & Sensitivity", "Anaerobic Bacterial Culture", "Fungus Culture", "KOH Mount and Smear", "Gram Staining", "Albert / Neisser Staining", "Acid Fast Bacilli Stain", "Malarial Parasite", "Malaria Card Test", "Microfilaria", "Leishmania Detection", "Giardia Detection", "Trichomonas Detection", "Mycobacterial Culture & Identification", "BACTEC TB Culture", "TB Drug Sensitivity Testing", "MTBDR Plus", "MTBDRSL", "Xpert MTB", "Xpert Flu", "Xpert HCV", "Xpert HIV Viral Load", "Xpert HIV Qualitative", "Xpert HPV", "Xpert CT/NG", "Xpert C. difficile", "Xpert Norovirus", "GI Panel", "Respiratory Panel", "Sepsis Panel", "Encephalitis Panel",
   "FNAC — Pathology", "Biopsy", "Bone Marrow Aspiration and PBF", "Pap Smear", "Fluid for Cytology", "Urine for Cytology", "Sputum for Malignant Cells", "Ascitic Fluid for Malignant Cells", "Pleural Fluid for Malignant Cells", "Pericardial Fluid Cell Count", "CSF Cell Count", "Urine Examination Complete", "Microalbuminuria", "Semen Examination", "Stool Examination", "Gastric Aspirate",
   "ECG", "Holter Monitoring", "2-D Echocardiography", "TEE", "Treadmill Test", "Coronary Angiography", "Cerebral Angiography", "Venogram", "CT Scan", "CT Guided Biopsy", "MRI", "Ultrasound / Sonography", "Colour Doppler", "USG Guided Procedure", "USG Biophysical Profile", "USG Follicular Study", "USG Small Parts", "X-Ray", "Digital X-Ray", "X-Ray — 2 Views", "X-Ray — 3 Views", "X-Ray — 4 Views", "Dental X-Ray", "OPG", "DXA / DEXA", "Mammography", "Myelogram", "Barium Swallow", "Barium Meal", "Barium Enema", "IVP", "HSG", "Cystogram / Cystourethrogram", "Sinogram / Nephrostogram",
-  "EEG", "Video EEG", "Ambulatory EEG", "EMG", "NCV", "NCV / EMG", "VEP", "BAER", "Evoked Response", "Repetitive Stimulation", "Polysomnography / Sleep Study", "Audiometry", "BERA", "Pulmonary Function Test (PFT)", "PFT Pre and Post", "Spirometry", "Diffusion Test", "Lung Volume", "FeNO", "Bronchoscopy", "Skin Prick Test", "Common Drug Allergy Test",
-  "Polysomnography Test", "Nerve Conduction Study", "Electrodiagnostic Study", "Radiology / Imaging Consultation", "Other Investigation"
-];
-
-const links = [
-  { label: "Dashboard", path: "/dashboard", icon: "⌂" },
-  { label: "Patient Directory", path: "/patients", icon: "P" },
-  { label: "Appointments", path: "/appointments", icon: "A" },
-  { label: "OPD", path: "/opd", icon: "O" },
-  { label: "Billing & Payments", path: "/billing", icon: "₹" },
+  "EEG", "Video EEG", "Ambulatory EEG", "EMG", "NCV", "NCV / EMG", "VEP", "BAER", "Evoked Response", "Repetitive Stimulation", "Polysomnography / Sleep Study", "Audiometry", "BERA", "Pulmonary Function Test (PFT)", "PFT Pre and Post", "Spirometry", "Diffusion Test", "Lung Volume", "FeNO", "Bronchoscopy", "Skin Prick Test", "Common Drug Allergy Test", "Polysomnography Test", "Nerve Conduction Study", "Electrodiagnostic Study", "Radiology / Imaging Consultation", "Other Investigation"
 ];
 
 function displayName(patient: Patient | null) {
@@ -55,8 +46,6 @@ export default function ConsultationPage() {
   const opdVisitId = search.get("opdVisitId");
   const [patient, setPatient] = useState<Patient | null>(null);
   const [visit, setVisit] = useState<Visit | null>(null);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [department, setDepartment] = useState("—");
   const [doctor, setDoctor] = useState("—");
   const [tool, setTool] = useState<Tool>(null);
@@ -80,20 +69,18 @@ export default function ConsultationPage() {
       try {
         const p = await fetch(`/api/patients/${patientId}`);
         if (!p.ok) throw new Error("Unable to load patient.");
-        const patientData = await p.json(); setPatient(patientData);
+        setPatient(await p.json());
         if (!opdVisitId) return;
         const v = await fetch(`/api/opd/${opdVisitId}`);
         if (!v.ok) throw new Error("Unable to load OPD visit.");
         const vd: Visit = await v.json(); setVisit(vd);
         fetch(`/api/opd/${opdVisitId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "IN_CONSULTATION" }) }).catch(() => undefined);
-        const departmentResponse = await fetch("/api/departments");
-        const deps: Department[] = departmentResponse.ok ? await departmentResponse.json() : [];
-        setDepartments(deps);
+        const depsResponse = await fetch("/api/departments");
+        const deps: Department[] = depsResponse.ok ? await depsResponse.json() : [];
         const departmentId = vd.departmentId ?? (vd.department ? Number(vd.department) : null);
-        const doctorResponse = await fetch(departmentId ? `/api/doctors?departmentId=${departmentId}` : "/api/doctors");
-        const docs: Doctor[] = doctorResponse.ok ? await doctorResponse.json() : [];
-        setDoctors(docs);
         setDepartment(deps.find(x => x.id === Number(departmentId))?.name || "—");
+        const docsResponse = await fetch(departmentId ? `/api/doctors?departmentId=${departmentId}` : "/api/doctors");
+        const docs: Doctor[] = docsResponse.ok ? await docsResponse.json() : [];
         const d = docs.find(x => x.id === Number(vd.doctorId));
         setDoctor(d?.name || `${d?.firstName || ""} ${d?.lastName || ""}`.trim() || "—");
       } catch (e) { setError(e instanceof Error ? e.message : "Unable to load consultation."); }
@@ -112,14 +99,15 @@ export default function ConsultationPage() {
   const patientPhone = String(patient?.phone || patient?.mobile || "—");
   const patientAddress = String(patient?.address || patient?.currentAddress || patient?.permanentAddress || "—");
   const patientIdDisplay = String(patient?.patientId || patient?.id || patientId);
-
-  function updateVital(i: number, value: string) { setVitals(v => v.map((x, n) => n === i ? { ...x, value } : x)); }
-  function updateMedicine(id: number, key: keyof Medicine, value: string) { setMedicines(m => m.map(x => x.id === id ? { ...x, [key]: value } : x)); }
-  function addInvestigation(name: string) { setSelectedInvestigations(v => [...v, name]); setInvestigationInput(""); }
   const hasVitals = vitals.some(v => v.value.trim());
   const hasInvestigations = selectedInvestigations.length > 0;
   const hasPhysical = physicalFindings.trim().length > 0;
   const hasAdvice = generalAdvice.trim().length > 0;
+  const filledMedicines = medicines.filter(m => m.name.trim());
+
+  function updateVital(i: number, value: string) { setVitals(v => v.map((x, n) => n === i ? { ...x, value } : x)); }
+  function updateMedicine(id: number, key: keyof Medicine, value: string) { setMedicines(m => m.map(x => x.id === id ? { ...x, [key]: value } : x)); }
+  function addInvestigation(name: string) { setSelectedInvestigations(v => [...v, name]); setInvestigationInput(""); }
 
   async function save() {
     setSaving(true); setSaved(false); setError("");
@@ -139,7 +127,9 @@ export default function ConsultationPage() {
     finally { setSaving(false); }
   }
 
-  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#f5f7fa]"><div className="rounded-2xl bg-white p-8 text-center shadow-xl"><div className="mx-auto h-14 w-14 overflow-hidden rounded-2xl"><Image src="/serawat-logo.png" alt="SAMS" width={76} height={44} className="h-full w-full object-contain" /></div><p className="mt-3 text-sm font-bold text-slate-500">Loading consultation…</p></div></main>;
+  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#f5f7fa]"><div className="rounded-2xl bg-white p-8 text-center shadow-xl"><Image src="/serawat-logo.png" alt="SAMS" width={76} height={44} className="mx-auto object-contain" /><p className="mt-3 text-sm font-bold text-slate-500">Loading consultation…</p></div></main>;
+
+  const toolButton = (key: Exclude<Tool, null>, label: string, icon: string) => <button type="button" onClick={() => setTool(tool === key ? null : key)} className={`no-print flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition ${tool === key ? "bg-[#082b61] text-white shadow-lg" : "bg-white text-slate-600 hover:bg-blue-50 hover:text-[#0b63ce]"}`}><span>{icon}</span>{label}<span className="ml-auto">{tool === key ? "−" : "+"}</span></button>;
 
   return (
     <main className="consultation-screen min-h-screen bg-[#eef2f7] text-slate-900">
@@ -168,9 +158,7 @@ export default function ConsultationPage() {
           <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
             <aside className="no-print border-b border-slate-200 bg-[#f8fafc] p-4 lg:border-b-0 lg:border-r lg:p-5">
               <p className="px-2 text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">Clinical Tools</p>
-              <div className="mt-3 space-y-2">
-                {[{key:"vitals",label:"Vitals",icon:"🩺"},{key:"investigation",label:"Investigation",icon:"🔬"},{key:"physical",label:"Physical / Clinical",icon:"🦴"},{key:"advice",label:"General Advice",icon:"📋"}].map(x => <button key={x.key} type="button" onClick={() => setTool(tool === x.key ? null : x.key as Tool)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition ${tool === x.key ? "bg-[#082b61] text-white shadow-lg" : "bg-white text-slate-600 hover:bg-blue-50 hover:text-[#0b63ce]"}`}><span>{x.icon}</span>{x.label}<span className="ml-auto">{tool === x.key ? "−" : "+"}</span></button>)}
-              </div>
+              <div className="mt-3 space-y-2">{toolButton("vitals","Vitals","🩺")}{toolButton("investigation","Investigation","🔬")}{toolButton("physical","Physical / Clinical","🦴")}{toolButton("advice","General Advice","📋")}</div>
               {tool === "vitals" && <div className="tool-panel">{vitals.map((v,i)=><label key={v.label} className="tool-field"><span>{v.label}</span><div><input value={v.value} onChange={e => updateVital(i,e.target.value)} /><b>{v.unit}</b></div></label>)}</div>}
               {tool === "investigation" && <div className="tool-panel"><div className="relative"><input value={investigationInput} onChange={e => setInvestigationInput(e.target.value)} placeholder="Type initials / name…" className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500" />{suggestions.length > 0 && <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-xl border border-slate-200 bg-white shadow-2xl">{suggestions.map(x => <button type="button" key={x} onClick={() => addInvestigation(x)} className="block w-full border-b border-slate-100 px-3 py-2.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-blue-50">{x}</button>)}</div>}</div><div className="mt-2 flex flex-wrap gap-1.5">{selectedInvestigations.map(x => <button type="button" key={x} onClick={() => setSelectedInvestigations(v => v.filter(i => i !== x))} className="rounded-full bg-blue-50 px-2 py-1 text-[9px] font-bold text-[#0b63ce]">{x} ×</button>)}</div></div>}
               {tool === "physical" && <div className="tool-panel"><textarea value={physicalFindings} onChange={e => setPhysicalFindings(e.target.value)} rows={8} placeholder="Physical / clinical examination findings…" className="w-full rounded-lg border border-slate-200 bg-white p-3 text-xs outline-none focus:border-blue-500" /></div>}
@@ -182,26 +170,57 @@ export default function ConsultationPage() {
                 <section className="clinical-box"><p className="section-label">Chief Complaint</p><textarea value={chiefComplaint} onChange={e => setChiefComplaint(e.target.value)} rows={5} placeholder="Reason for consultation / presenting complaints…" /></section>
                 <section className="clinical-box"><p className="section-label">Clinical Diagnosis</p><textarea value={diagnosis} onChange={e => setDiagnosis(e.target.value)} rows={5} placeholder="Diagnosis / differential diagnosis…" /></section>
               </div>
-
               <section className="clinical-box mt-5"><p className="section-label">Treatment / Plan</p><textarea value={treatmentPlan} onChange={e => setTreatmentPlan(e.target.value)} rows={6} placeholder="Treatment, procedures, rehabilitation plan, investigations to be reviewed, and follow-up instructions…" /></section>
-
               <section className="clinical-box mt-5"><div className="flex items-center justify-between"><p className="section-label">Medicines / Prescription</p><button type="button" onClick={() => setMedicines(v => [...v, { id: Date.now(), name:"", dose:"", frequency:"", food:"", duration:"" }])} className="no-print rounded-lg bg-[#082b61] px-3 py-2 text-[10px] font-black text-white">+ Add Medicine</button></div><div className="mt-3 space-y-2">{medicines.map((m,i) => <div key={m.id} className="grid gap-2 rounded-xl bg-slate-50 p-2.5 sm:grid-cols-5"><input value={m.name} onChange={e => updateMedicine(m.id,"name",e.target.value)} placeholder={`Medicine ${i+1}`} /><input value={m.dose} onChange={e => updateMedicine(m.id,"dose",e.target.value)} placeholder="Dose" /><input value={m.frequency} onChange={e => updateMedicine(m.id,"frequency",e.target.value)} placeholder="Frequency" /><input value={m.food} onChange={e => updateMedicine(m.id,"food",e.target.value)} placeholder="Food" /><input value={m.duration} onChange={e => updateMedicine(m.id,"duration",e.target.value)} placeholder="Duration" /></div>)}</div></section>
-
-              {(hasVitals || hasInvestigations || hasPhysical || hasAdvice) && <section className="print-only mt-4 space-y-2">{hasVitals && <div><p className="print-label">Vitals</p><p>{vitals.filter(v=>v.value.trim()).map(v => `${v.label}: ${v.value} ${v.unit}`).join("   |   ")}</p></div>}{hasPhysical && <div><p className="print-label">Physical / Clinical Findings</p><p className="whitespace-pre-line">{physicalFindings}</p></div>}{hasInvestigations && <div><p className="print-label">Investigations Advised</p><p>{selectedInvestigations.join("   •   ")}</p></div>}{hasAdvice && <div><p className="print-label">General Advice</p><p className="whitespace-pre-line">{generalAdvice}</p></div>}</section>}
-
-              {saved && <div className="no-print mt-5 flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-black text-emerald-800">✓ Consultation saved successfully</p><p className="mt-1 text-xs font-semibold text-emerald-700">The clinical record is saved. You can now print the final A4 consultation slip.</p></div><button type="button" onClick={() => window.print()} className="rounded-xl bg-[#082b61] px-5 py-3 text-xs font-black text-white shadow-lg">Print A4 Consultation</button></div>}
-
               {error && <div className="no-print mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</div>}
-              <div className="mt-6 flex items-end justify-between gap-6 border-t border-slate-200 pt-5"><div><label className="block text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Follow-up Date</label><input type="date" value={followUpDate} onChange={e => setFollowUpDate(e.target.value)} className="no-print mt-2 rounded-lg border border-slate-200 p-2 text-xs" /><p className="print-followup hidden text-sm font-bold text-[#082b61]">{followUpDate ? new Date(followUpDate).toLocaleDateString("en-IN") : "—"}</p></div><div className="w-56 text-center"><div className="h-8 border-b border-slate-400"/><p className="mt-1 text-xs font-black text-[#082b61]">Consultant</p><p className="text-[10px] font-semibold text-slate-500">{doctor}</p><p className="no-print mt-1 text-[9px] text-slate-400">Signature</p></div></div>
-              <div className="no-print mt-5 flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-4"><button type="button" onClick={() => window.print()} className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-black text-slate-600">Print A4</button><button type="button" onClick={save} disabled={saving || saved} className="rounded-xl bg-[#0b63ce] px-6 py-3 text-xs font-black text-white disabled:opacity-60">{saving ? "Saving…" : saved ? "Consultation Saved" : "Save Consultation"}</button></div>
+              {saved && <div className="no-print mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Consultation saved successfully. You can print the final A4 consultation record.</div>}
+              <div className="mt-6 flex items-end justify-between gap-6 border-t border-slate-200 pt-5"><div><label className="block text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Follow-up Date</label><input type="date" value={followUpDate} onChange={e => setFollowUpDate(e.target.value)} className="no-print mt-2 rounded-lg border border-slate-200 p-2 text-xs" /><p className="hidden text-sm font-bold text-[#082b61] print-followup">{followUpDate ? new Date(followUpDate).toLocaleDateString("en-IN") : "—"}</p></div><div className="w-56 text-center"><div className="h-8 border-b border-slate-400"/><p className="mt-1 text-xs font-black text-[#082b61]">Consultant</p><p className="text-[10px] font-semibold text-slate-500">{doctor}</p><p className="no-print mt-1 text-[9px] text-slate-400">Signature</p></div></div>
+              <div className="no-print mt-5 flex justify-end gap-3 border-t border-slate-200 pt-4"><button type="button" onClick={() => window.print()} className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-black text-slate-600">Print A4</button><button type="button" onClick={save} disabled={saving} className="rounded-xl bg-[#0b63ce] px-6 py-3 text-xs font-black text-white disabled:opacity-60">{saving ? "Saving…" : "Save Consultation"}</button></div>
             </section>
           </div>
         </section>
       </div>
 
+      <section className="print-document" aria-hidden="true">
+        <div className="print-header">
+          <div className="print-brand"><Image src="/serawat-logo.png" alt="S" width={42} height={42} className="print-logo" /><div><div className="print-hospital">SERAWAT ADVANCED MUSCULOSKELETAL, JOINT &amp; SPINE CENTRE</div><div className="print-subtitle">Consultation / Clinical Record</div></div></div>
+          <div className="print-opd">OPD · #{visit?.tokenNumber || visit?.id || "—"}</div>
+        </div>
+        <div className="print-patient">
+          <div><span>Patient</span><strong>{patientName}</strong></div><div><span>Patient ID</span><strong>{patientIdDisplay}</strong></div><div><span>Age / Sex</span><strong>{ageFromDob(patientDob)} / {String(patient?.gender || "—")}</strong></div><div><span>Mobile</span><strong>{patientPhone}</strong></div><div><span>DOB</span><strong>{patientDob ? new Date(patientDob).toLocaleDateString("en-IN") : "—"}</strong></div><div><span>Visit No.</span><strong>{visit?.id || "—"}</strong></div><div><span>Department</span><strong>{department}</strong></div><div><span>Consultant</span><strong>{doctor}</strong></div>
+        </div>
+        <div className="print-body">
+          <aside className="print-sidebar">
+            <div className="print-sidebar-title">CLINICAL TOOLS</div>
+            {hasVitals && <div className="print-tool"><b>Vitals</b><p>{vitals.filter(v => v.value.trim()).map(v => `${v.label}: ${v.value} ${v.unit}`).join(" | ")}</p></div>}
+            {hasInvestigations && <div className="print-tool"><b>Investigation</b><p>{selectedInvestigations.join(" • ")}</p></div>}
+            {hasPhysical && <div className="print-tool"><b>Physical / Clinical</b><p>{physicalFindings}</p></div>}
+            {hasAdvice && <div className="print-tool"><b>General Advice</b><p>{generalAdvice}</p></div>}
+            {!hasVitals && !hasInvestigations && !hasPhysical && !hasAdvice && <div className="print-tool muted">No additional clinical tools used.</div>}
+          </aside>
+          <section className="print-main">
+            <div className="print-two-col"><div className="print-section"><h3>Chief Complaint</h3><p>{chiefComplaint || "—"}</p></div><div className="print-section"><h3>Clinical Diagnosis</h3><p>{diagnosis || "—"}</p></div></div>
+            <div className="print-section"><h3>Treatment / Plan</h3><p>{treatmentPlan || "—"}</p></div>
+            {filledMedicines.length > 0 && <div className="print-section"><h3>Medicines / Prescription</h3><table><thead><tr><th>Medicine</th><th>Dose</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead><tbody>{filledMedicines.map(m => <tr key={m.id}><td>{m.name}</td><td>{m.dose}</td><td>{m.frequency}</td><td>{m.food}</td><td>{m.duration}</td></tr>)}</tbody></table></div>}
+            <div className="print-footer"><div><span>Follow-up Date</span><strong>{followUpDate ? new Date(followUpDate).toLocaleDateString("en-IN") : "—"}</strong></div><div className="print-sign"><div className="signature-line"></div><b>Consultant</b><span>{doctor}</span><small>Signature</small></div></div>
+          </section>
+        </div>
+      </section>
+
       <style jsx global>{`
-        .label{display:block;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;margin-bottom:3px}.clinical-box{border:1px solid #dfe4ea;border-radius:18px;background:#fff;padding:16px}.clinical-box textarea{width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:11px;font-size:13px;line-height:1.55;outline:none;resize:vertical}.clinical-box textarea:focus{border-color:#0b63ce}.clinical-box input{border:1px solid #e2e8f0;border-radius:8px;padding:7px;font-size:11px;outline:none;width:100%}.section-label{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:#0b63ce}.tool-panel{margin-top:12px;border-top:1px solid #e2e8f0;padding-top:12px}.tool-field{display:block;margin-bottom:8px}.tool-field>span{display:block;font-size:8px;font-weight:900;color:#64748b;margin-bottom:3px}.tool-field>div{display:flex;align-items:center;gap:5px}.tool-field input{width:100%;min-width:0;border:1px solid #e2e8f0;border-radius:7px;padding:6px;font-size:10px}.tool-field b{font-size:8px;color:#0b63ce;white-space:nowrap}.print-only{display:none}.print-label{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#082b61;margin-bottom:2px}
-        @media print{ @page{size:A4 portrait;margin:7mm} html,body{background:#fff!important;color:#111827!important} body{font-family:Arial,sans-serif!important} .no-print{display:none!important} .print-only{display:block!important} .print-followup{display:block!important} .consultation-screen{background:#fff!important;min-height:auto!important} .consultation-paper{width:196mm!important;max-width:196mm!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important} .consultation-paper>section:first-child{padding:4mm 5mm!important} .consultation-paper .grid.lg\\:grid-cols-\\[220px_minmax\\(0\\,1fr\\)\\]{display:block!important} .consultation-paper .lg\\:grid-cols-\\[220px_minmax\\(0\\,1fr\\)\\]>section{padding:4mm 5mm!important} .clinical-box{border:1px solid #cbd5e1!important;border-radius:4px!important;padding:3mm!important;break-inside:avoid}.clinical-box textarea{border:0!important;padding:0!important;min-height:0!important;height:auto!important;font-size:8.2pt!important;line-height:1.25!important;overflow:visible!important;resize:none!important}.clinical-box input{border:0!important;padding:0!important;font-size:7.5pt!important}.section-label{font-size:7pt!important;margin-bottom:2mm!important}.label{font-size:6.5pt!important}.consultation-paper h2{font-size:17pt!important}.consultation-paper header h1{font-size:16pt!important}.consultation-paper .text-sm{font-size:8pt!important}.consultation-paper .text-xs{font-size:7pt!important}.consultation-paper .mt-5{margin-top:3mm!important}.consultation-paper .p-5,.consultation-paper .sm\\:p-8{padding:0!important}.consultation-paper .gap-5{gap:3mm!important}.consultation-paper .space-y-2>*+*{margin-top:2mm!important}.print-only{font-size:7.5pt!important;line-height:1.25!important}.print-only>div{border-top:1px solid #dbe2ea;padding-top:2mm;margin-top:2mm}.print-label{font-size:6.5pt!important}.consultation-paper .border-t{border-top-color:#cbd5e1!important}.consultation-paper .h-8{height:7mm!important}.consultation-paper .w-56{width:45mm!important} }
+        .label{display:block;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;margin-bottom:3px}.clinical-box{border:1px solid #dfe4ea;border-radius:18px;background:#fff;padding:16px}.clinical-box textarea{width:100%;border:1px solid #e2e8f0;border-radius:12px;padding:11px;font-size:13px;line-height:1.55;outline:none;resize:vertical}.clinical-box textarea:focus{border-color:#0b63ce}.clinical-box input{border:1px solid #e2e8f0;border-radius:8px;padding:7px;font-size:11px;outline:none;width:100%}.section-label{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:#0b63ce}.tool-panel{margin-top:12px;border-top:1px solid #e2e8f0;padding-top:12px}.tool-field{display:block;margin-bottom:8px}.tool-field>span{display:block;font-size:8px;font-weight:900;color:#64748b;margin-bottom:3px}.tool-field>div{display:flex;align-items:center;gap:5px}.tool-field input{width:100%;min-width:0;border:1px solid #e2e8f0;border-radius:7px;padding:6px;font-size:10px}.tool-field b{font-size:8px;color:#0b63ce;white-space:nowrap}.print-document{display:none}
+        @media print{
+          @page{size:A4 portrait;margin:0}
+          html,body{width:210mm;height:297mm;margin:0!important;padding:0!important;background:#fff!important;color:#111827!important;overflow:hidden!important}
+          body{font-family:Arial,sans-serif!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+          .consultation-screen>*:not(.print-document){display:none!important}
+          .print-document{display:block!important;box-sizing:border-box;width:210mm;height:297mm;padding:6mm 6mm 5mm;background:#fff;overflow:hidden}
+          .print-header{height:24mm;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #cbd5e1;padding:0 2mm 3mm}
+          .print-brand{display:flex;align-items:center;gap:3mm;min-width:0}.print-logo{width:14mm!important;height:14mm!important;object-fit:contain}.print-hospital{font-family:'Cormorant Garamond','Baskerville','Times New Roman',serif;font-size:17pt;font-weight:700;line-height:1.05;color:#082b61;letter-spacing:.01em}.print-subtitle{margin-top:1mm;font-size:7.5pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b}.print-opd{font-size:7pt;font-weight:900;color:#8b6a17;border:1px solid #d4af37;border-radius:20px;padding:2mm 3mm;white-space:nowrap}
+          .print-patient{margin-top:3mm;padding:2.5mm 3mm;border:1px solid #cbd5e1;border-radius:2mm;background:#fbfaf7;display:grid;grid-template-columns:1.6fr 1.1fr .9fr 1.2fr;gap:2.2mm 4mm}.print-patient>div{min-width:0}.print-patient span,.print-footer span{display:block;font-size:5.8pt;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:.7mm}.print-patient strong{display:block;font-size:7.6pt;line-height:1.1;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+          .print-body{display:grid;grid-template-columns:37mm minmax(0,1fr);gap:3mm;margin-top:3mm;height:calc(297mm - 6mm - 5mm - 24mm - 30mm - 6mm);min-height:0}.print-sidebar{border:1px solid #cbd5e1;border-radius:2mm;background:#f8fafc;padding:2.5mm;min-height:0;overflow:hidden}.print-sidebar-title{font-size:6.5pt;font-weight:900;letter-spacing:.12em;color:#082b61;padding-bottom:2mm;border-bottom:1px solid #dbe2ea}.print-tool{padding:2mm 0;border-bottom:1px solid #e2e8f0}.print-tool:last-child{border-bottom:0}.print-tool b{display:block;font-size:6.5pt;color:#0b63ce;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1mm}.print-tool p{margin:0;font-size:6.8pt;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;color:#334155}.print-tool.muted{font-size:6.5pt;color:#94a3b8}
+          .print-main{min-width:0;display:flex;flex-direction:column;gap:2.5mm;min-height:0;overflow:hidden}.print-two-col{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm}.print-section{border:1px solid #cbd5e1;border-radius:2mm;padding:2.5mm;break-inside:avoid}.print-section h3{margin:0 0 1.3mm;font-size:6.7pt;font-weight:900;text-transform:uppercase;letter-spacing:.09em;color:#0b63ce}.print-section p{margin:0;font-size:7.4pt;line-height:1.32;white-space:pre-wrap;overflow-wrap:anywhere;color:#111827}.print-section table{width:100%;border-collapse:collapse;font-size:6.5pt}.print-section th{text-align:left;font-weight:900;color:#475569;border-bottom:1px solid #cbd5e1;padding:1mm}.print-section td{padding:1mm;border-bottom:1px solid #e2e8f0;vertical-align:top}.print-footer{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #cbd5e1;padding-top:3mm}.print-footer>div:first-child{min-width:35mm}.print-footer strong{font-size:8pt;color:#082b61}.print-sign{width:45mm;text-align:center}.signature-line{height:8mm;border-bottom:1px solid #64748b;margin-bottom:1mm}.print-sign b{display:block;font-size:7pt;color:#082b61}.print-sign span{display:block;font-size:6.5pt;color:#475569;margin-top:.5mm}.print-sign small{display:block;font-size:5.5pt;color:#94a3b8;margin-top:.5mm}
+        }
       `}</style>
     </main>
   );
