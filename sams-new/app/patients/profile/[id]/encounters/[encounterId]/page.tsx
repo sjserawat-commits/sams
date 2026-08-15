@@ -19,14 +19,6 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
   const date = encounter.encounterDate.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
   const followUp = encounter.followUpDate ? encounter.followUpDate.toLocaleDateString("en-GB") : "Not scheduled";
   const patient = encounter.patient;
-  let assessmentSummary: { standard?: string } = {};
-  if (encounter.assessmentData) {
-    try {
-      assessmentSummary = JSON.parse(encounter.assessmentData) as { standard?: string };
-    } catch {
-      assessmentSummary = {};
-    }
-  }
 
   return (
     <main className="min-h-screen bg-[#f5f8fc] text-slate-900 lg:flex">
@@ -40,7 +32,7 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
               <p className="mt-1 text-sm text-slate-500">{patient.firstName} {patient.lastName} · {patient.patientId}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <a href={`/clinical/assessment?patientId=${patient.id}&encounterId=${encounter.id}`} className="rounded-xl bg-[#0b63ce] px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#0959b8]">Open Clinical Assessment →</a>
+              <a href={`/patients/profile/${patient.id}/encounters/${encounter.id}/print`} target="_blank" rel="noreferrer" className="rounded-xl bg-[#0b63ce] px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#0959b8]">Print Post-Consultation OPD Slip →</a>
               <a href={`/patients/profile/${patient.id}`} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 shadow-sm hover:border-blue-200 hover:text-[#0b63ce]">← Back to Patient</a>
             </div>
           </div>
@@ -58,7 +50,6 @@ export default async function VisitDetailPage({ params }: { params: Promise<{ id
               ["Clinical notes", encounter.clinicalNotes || "Not recorded"],
               ["Treatment plan", encounter.treatmentPlan || "Not recorded"],
               ["Follow-up", followUp],
-              ["Assessment", assessmentSummary.standard || (encounter.assessmentData ? "Completed" : "Not recorded")],
             ].map(([label, value]) => (
               <section key={label} className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(8,43,97,0.06)] sm:p-7">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0b63ce]">{label}</p>
