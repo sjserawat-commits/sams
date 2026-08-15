@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 type InvestigationSeed = {
   code: string;
@@ -26,7 +24,6 @@ const investigations: InvestigationSeed[] = [
   { code: "PTINR", name: "Prothrombin Time / INR", shortName: "PT/INR", category: "Coagulation", specimen: "Citrated plasma" },
   { code: "APTT", name: "Activated Partial Thromboplastin Time", shortName: "aPTT", category: "Coagulation", specimen: "Citrated plasma" },
   { code: "BTCT", name: "Bleeding Time / Clotting Time", shortName: "BT/CT", category: "Coagulation", specimen: "Blood" },
-
   // Biochemistry
   { code: "FBS", name: "Blood Sugar (Fasting)", shortName: "FBS", category: "Biochemistry", specimen: "Fluoride plasma", aliases: ["fasting blood sugar", "fasting glucose"] },
   { code: "PPBS", name: "Blood Sugar (Post Prandial)", shortName: "PPBS", category: "Biochemistry", specimen: "Fluoride plasma", aliases: ["pp blood sugar", "post prandial glucose"] },
@@ -43,7 +40,6 @@ const investigations: InvestigationSeed[] = [
   { code: "RFT", name: "Renal Function Test", shortName: "RFT", category: "Biochemistry", specimen: "Serum" },
   { code: "LIPID", name: "Lipid Profile", shortName: "Lipid Profile", category: "Biochemistry", specimen: "Serum" },
   { code: "HBA1C", name: "Glycated Hemoglobin", shortName: "HbA1c", category: "Biochemistry", specimen: "EDTA blood", aliases: ["glycosylated hemoglobin"] },
-
   // Endocrine / vitamins
   { code: "TSH", name: "Thyroid Stimulating Hormone", shortName: "TSH", category: "Endocrinology", specimen: "Serum" },
   { code: "FT3", name: "Free Triiodothyronine", shortName: "FT3", category: "Endocrinology", specimen: "Serum" },
@@ -55,13 +51,11 @@ const investigations: InvestigationSeed[] = [
   { code: "FOLATE", name: "Folate", shortName: "Folate", category: "Vitamins & Nutrition", specimen: "Serum" },
   { code: "PTH", name: "Parathyroid Hormone", shortName: "PTH", category: "Endocrinology", specimen: "Serum" },
   { code: "CORTISOL", name: "Serum Cortisol", shortName: "Cortisol", category: "Endocrinology", specimen: "Serum" },
-
   // Clinical pathology
   { code: "URINE_RM", name: "Urine Routine Examination & Microscopy", shortName: "Urine R/M", category: "Clinical Pathology", specimen: "Urine", aliases: ["urine routine", "urine microscopy"] },
   { code: "URINE_CULT", name: "Urine Culture & Sensitivity", shortName: "Urine C/S", category: "Microbiology", specimen: "Urine" },
   { code: "STOOL_RM", name: "Stool Routine Examination", shortName: "Stool R/M", category: "Clinical Pathology", specimen: "Stool" },
   { code: "SEMEN", name: "Semen Analysis", shortName: "Semen Analysis", category: "Clinical Pathology", specimen: "Semen" },
-
   // Microbiology / serology / molecular
   { code: "BLOOD_CULT", name: "Blood Culture & Sensitivity", shortName: "Blood C/S", category: "Bacteriology", specimen: "Blood" },
   { code: "GRAM", name: "Gram Staining", shortName: "Gram Stain", category: "Bacteriology", specimen: "Clinical specimen" },
@@ -76,12 +70,10 @@ const investigations: InvestigationSeed[] = [
   { code: "HBV_DNA", name: "HBV DNA Quantitative", shortName: "HBV DNA", category: "Molecular Diagnostics", specimen: "Plasma/serum" },
   { code: "HCV_RNA", name: "HCV RNA Quantitative", shortName: "HCV RNA", category: "Molecular Diagnostics", specimen: "Plasma/serum" },
   { code: "HIV_RNA", name: "HIV RNA Quantitative", shortName: "HIV RNA", category: "Molecular Diagnostics", specimen: "Plasma" },
-
   // Histopathology / cytology
   { code: "BIOPSY", name: "Biopsy / Histopathology Examination", shortName: "Biopsy", category: "Histopathology", specimen: "Tissue", aliases: ["histopathology", "histology"] },
   { code: "FNAC", name: "Fine Needle Aspiration Cytology", shortName: "FNAC", category: "Cytology", specimen: "Aspirate", aliases: ["fine needle aspiration"] },
   { code: "CYTOLOGY", name: "Cytology Examination", shortName: "Cytology", category: "Cytology", specimen: "Cell/fluid specimen" },
-
   // Radiology / imaging
   { code: "XRAY", name: "X-Ray Examination", shortName: "X-Ray", category: "Radiology", specimen: "Imaging" },
   { code: "USG", name: "Ultrasonography", shortName: "USG", category: "Ultrasound", specimen: "Imaging" },
@@ -89,13 +81,11 @@ const investigations: InvestigationSeed[] = [
   { code: "CT", name: "Computed Tomography", shortName: "CT", category: "CT", specimen: "Imaging" },
   { code: "MRI", name: "Magnetic Resonance Imaging", shortName: "MRI", category: "MRI", specimen: "Imaging" },
   { code: "DEXA", name: "Bone Mineral Density / DXA", shortName: "DXA", category: "Bone & Metabolic", specimen: "Imaging", aliases: ["DEXA", "BMD"] },
-
   // Cardio / functional
   { code: "ECG", name: "Electrocardiogram", shortName: "ECG", category: "Cardiology", specimen: "Functional test" },
   { code: "ECHO", name: "Echocardiography", shortName: "ECHO", category: "Cardiology", specimen: "Imaging" },
   { code: "PFT", name: "Pulmonary Function Test", shortName: "PFT", category: "Pulmonary", specimen: "Functional test" },
   { code: "PSG", name: "Polysomnography", shortName: "PSG", category: "Sleep Medicine", specimen: "Functional test" },
-
   // Electrodiagnosis: F-wave and H-reflex remain components of NCV/NCS, not standalone investigations.
   { code: "NCV_NCS", name: "Nerve Conduction Study", shortName: "NCV/NCS", category: "Electrodiagnosis", department: "PM&R", specimen: "Functional test", aliases: ["NCV", "NCS", "nerve conduction velocity", "F-wave", "H-reflex"] },
   { code: "EMG", name: "Needle Electromyography", shortName: "EMG", category: "Electrodiagnosis", department: "PM&R", specimen: "Functional test", aliases: ["needle EMG", "electromyography"] },
