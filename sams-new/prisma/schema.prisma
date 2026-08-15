@@ -88,21 +88,30 @@ model OPDVisit {
 }
 
 model InvestigationMaster {
-  id               Int      @id @default(autoincrement())
-  code             String   @unique
-  name             String
-  shortName        String?
-  category         String
-  department       String?
-  specimen         String?
-  unit             String?
-  referenceRange   String?
-  aliases          String?
-  rate             Float    @default(0)
-  active           Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  orders           InvestigationOrder[]
+  id                     Int      @id @default(autoincrement())
+  code                   String   @unique
+  name                   String
+  shortName              String?
+  category               String
+  department             String?
+  specimen               String?
+  method                 String?
+  unit                   String?
+  referenceRange         String?
+  maleReferenceRange     String?
+  femaleReferenceRange   String?
+  ageSpecificRange       String?
+  criticalValue          String?
+  smsLabDepartment       String?
+  aliases                String?
+  rate                   Float    @default(0)
+  smsBenchmarkRate       Float?
+  corporateBenchmarkRate Float?
+  pricingLastVerifiedAt  DateTime?
+  active                 Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  orders                 InvestigationOrder[]
 }
 
 model InvestigationOrder {
@@ -153,7 +162,7 @@ model BillingRecord {
   subtotal      Float             @default(0)
   discount      Float             @default(0)
   netAmount     Float             @default(0)
-  paymentStatus String            @default("UNPAID")
+  paymentStatus String             @default("UNPAID")
   paymentMethod String?
   paidAmount    Float             @default(0)
   balanceAmount Float             @default(0)
