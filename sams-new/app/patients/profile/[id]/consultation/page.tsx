@@ -189,7 +189,7 @@ export default function ConsultationPage() {
 
       <section className="print-document" aria-hidden="true">
         <div className="print-header">
-          <div className="print-brand"><Image src="/serawat-logo.png" alt="S" width={42} height={42} className="print-logo" /><div><div className="print-hospital">SERAWAT ADVANCED MUSCULOSKELETAL, JOINT &amp; SPINE CENTRE</div></div></div>
+          <div className="print-brand"><img src="/serawat-logo.png" alt="S" className="print-logo" /><div><div className="print-hospital">SERAWAT ADVANCED MUSCULOSKELETAL, JOINT &amp; SPINE CENTRE</div></div></div>
           <div className="print-opd"><strong>OPD · #{visit?.tokenNumber || visit?.id || "—"}</strong><span>{formatDateTime(visit?.createdAt)}</span></div>
         </div>
 
