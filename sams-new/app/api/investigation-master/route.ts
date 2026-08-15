@@ -6,11 +6,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q")?.trim() ?? "";
     const category = searchParams.get("category")?.trim() ?? "";
+    const department = searchParams.get("department")?.trim() ?? "";
 
     const rows = await prisma.investigationMaster.findMany({
       where: {
         active: true,
         ...(category ? { category } : {}),
+        ...(department ? { department: { contains: department } } : {}),
         ...(q
           ? {
               OR: [
@@ -60,10 +62,19 @@ export async function POST(request: Request) {
         category,
         department: body.department ? String(body.department).trim() : null,
         specimen: body.specimen ? String(body.specimen).trim() : null,
+        method: body.method ? String(body.method).trim() : null,
         unit: body.unit ? String(body.unit).trim() : null,
         referenceRange: body.referenceRange ? String(body.referenceRange).trim() : null,
+        maleReferenceRange: body.maleReferenceRange ? String(body.maleReferenceRange).trim() : null,
+        femaleReferenceRange: body.femaleReferenceRange ? String(body.femaleReferenceRange).trim() : null,
+        ageSpecificRange: body.ageSpecificRange ? String(body.ageSpecificRange).trim() : null,
+        criticalValue: body.criticalValue ? String(body.criticalValue).trim() : null,
+        smsLabDepartment: body.smsLabDepartment ? String(body.smsLabDepartment).trim() : null,
         aliases: body.aliases ? String(body.aliases).trim() : null,
         rate: Number.isFinite(Number(body.rate)) ? Number(body.rate) : 0,
+        smsBenchmarkRate: body.smsBenchmarkRate != null && Number.isFinite(Number(body.smsBenchmarkRate)) ? Number(body.smsBenchmarkRate) : null,
+        corporateBenchmarkRate: body.corporateBenchmarkRate != null && Number.isFinite(Number(body.corporateBenchmarkRate)) ? Number(body.corporateBenchmarkRate) : null,
+        pricingLastVerifiedAt: body.pricingLastVerifiedAt ? new Date(body.pricingLastVerifiedAt) : null,
         active: body.active !== false,
       },
     });
