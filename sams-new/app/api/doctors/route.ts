@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const departmentIdParam = searchParams.get("departmentId");
+
+    const departmentId = departmentIdParam
+      ? Number(departmentIdParam)
+      : null;
+
     const doctors = await prisma.doctor.findMany({
-      where: { active: true },
+      where: {
+        active: true,
+        ...(departmentId !== null && Number.isInteger(departmentId)
+          ? { departmentId }
+          : {}),
+      },
       orderBy: { name: "asc" },
       select: {
         id: true,

@@ -355,8 +355,17 @@ export default function OPDSlipPage() {
                 </div>
 
                 <div className="mt-7 flex flex-col gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:justify-end">
-                  <button type="button" onClick={() => router.push(`/patients/profile/${patientId}`)} className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50">Back to Patient Profile</button>
-                  <button type="button" onClick={() => window.print()} className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50">Print OPD Slip</button>
+<button
+  type="button"
+    onClick={() =>
+        router.push(
+              `/patients/profile/${patientId}/opd-slip/print?visitId=${createdVisit.id}`
+                  )
+                    }
+                      className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                      >
+                        Print OPD Slip
+                        </button>
                   <button type="button" onClick={startConsultation} className="rounded-xl bg-gradient-to-r from-[#0b63ce] to-[#082b61] px-7 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/15 transition hover:-translate-y-0.5">Start Consultation →</button>
                 </div>
               </section>
