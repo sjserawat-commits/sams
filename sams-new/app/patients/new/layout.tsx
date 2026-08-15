@@ -9,9 +9,7 @@ export default function NewPatientLayout({ children }: { children: React.ReactNo
         <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_6px_25px_rgba(8,43,97,0.06)] backdrop-blur-xl">
           <div className="flex min-h-[76px] items-center justify-between gap-4 px-4 py-3 sm:px-7 lg:px-9">
             <div className="flex min-w-0 items-center gap-3">
-              <Link href="/patients" className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-[#082b61] shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0b63ce]" aria-label="Back to Patient Directory" title="Back to Patient Directory">
-                ←
-              </Link>
+              <Link href="/patients" className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-[#082b61] shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-[#0b63ce]" aria-label="Back to Patient Directory" title="Back to Patient Directory">←</Link>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="truncate text-[10px] font-black uppercase tracking-[0.22em] text-[#0b63ce]">SAMS · Patient Management</p>
@@ -31,6 +29,7 @@ export default function NewPatientLayout({ children }: { children: React.ReactNo
         @media (min-width: 1024px) {
           .new-patient-shell .new-patient-content > div > main { min-height: calc(100vh - 76px); }
         }
+        .new-patient-shell .new-patient-content > div > main > div > div:first-child:has(> button) { display: none; }
         .new-patient-shell .new-patient-content > div > main > div > div:last-child:has(> button:nth-child(3)) { display: none; }
       ` }} />
     </div>
