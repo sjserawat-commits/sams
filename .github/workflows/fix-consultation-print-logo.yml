@@ -1,0 +1,47 @@
+name: Fix consultation print logo
+
+on:
+  push:
+    branches:
+      - tmp/fix-print-logo-2
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Replace print logo with native image
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('sams-new/app/patients/profile/[id]/consultation/page.tsx')
+          text = path.read_text(encoding='utf-8')
+          old = '<div className="print-brand"><Image src="/serawat-logo.png" alt="S" width={42} height={42} className="print-logo" /><div>'
+          new = '<div className="print-brand"><img src="/serawat-logo.png" alt="S" className="print-logo" /><div>'
+          if old not in text:
+              raise SystemExit('Expected print-logo JSX was not found; no change made.')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Rebase fix onto latest sams-home-v2
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'sams-new/app/patients/profile/[id]/consultation/page.tsx'
+          git commit -m "fix consultation print logo"
+          git fetch origin sams-home-v2
+          git rebase origin/sams-home-v2
+
+      - name: Push fix to sams-home-v2
+        run: git push origin HEAD:sams-home-v2
+
+      - name: Remove temporary branch
+        if: always()
+        run: git push origin --delete tmp/fix-print-logo-2 || true
