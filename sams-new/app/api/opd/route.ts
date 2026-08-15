@@ -33,7 +33,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const patientId = Number(body.patientId);
-    const departmentId = body.department ? Number(body.department) : null;
+    // Keep departmentId as a number throughout the validated request path.
+    // Prisma expects an optional number, not number | null, for this field.
+    const departmentId = Number(body.department);
 
     if (!Number.isInteger(patientId)) {
       return NextResponse.json({ error: "Invalid patient ID" }, { status: 400 });
@@ -103,7 +105,7 @@ export async function POST(request: Request) {
         tokenNumber,
         visitType,
         departmentId,
-        doctorId: body.doctorId ? Number(body.doctorId) : null,
+        doctorId: body.doctorId ? Number(body.doctorId) : undefined,
         status: "WAITING",
       },
     });
