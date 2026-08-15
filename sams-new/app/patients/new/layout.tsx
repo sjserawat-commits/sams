@@ -3,7 +3,7 @@ import Sidebar from "../../../components/Sidebar";
 
 export default function NewPatientLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="new-patient-shell min-h-screen bg-[#f4f7fb] lg:flex">
+    <div className="new-patient-shell min-h-screen bg-[#f4f7fb] md:flex">
       <Sidebar />
       <div className="new-patient-content min-w-0 flex-1">
         <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_6px_25px_rgba(8,43,97,0.06)] backdrop-blur-xl">
@@ -26,7 +26,7 @@ export default function NewPatientLayout({ children }: { children: React.ReactNo
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        @media (min-width: 1024px) {
+        @media (min-width: 768px) {
           .new-patient-shell .new-patient-content > div > main { min-height: calc(100vh - 76px); }
         }
         .new-patient-shell .new-patient-content > div > main > div > div:first-child:has(> button) { display: none; }
