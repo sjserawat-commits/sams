@@ -76,35 +76,55 @@ model OPDVisit {
   id                  Int                  @id @default(autoincrement())
   patientId           Int
   tokenNumber         Int
-  visitType           String               @default("NEW")
-  status              String               @default("WAITING")
+  visitType            String               @default("NEW")
+  status               String               @default("WAITING")
   departmentId        Int?
   departmentMaster    Department?          @relation("DepartmentVisits", fields: [departmentId], references: [id])
-  doctorId            Int?
-  doctor              Doctor?              @relation("DoctorVisits", fields: [doctorId], references: [id])
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  patient             Patient              @relation(fields: [patientId], references: [id])
+  doctorId             Int?
+  doctor               Doctor?              @relation("DoctorVisits", fields: [doctorId], references: [id])
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  patient              Patient              @relation(fields: [patientId], references: [id])
+}
+
+model InvestigationMaster {
+  id               Int      @id @default(autoincrement())
+  code             String   @unique
+  name             String
+  shortName        String?
+  category         String
+  department       String?
+  specimen         String?
+  unit             String?
+  referenceRange   String?
+  aliases          String?
+  rate             Float    @default(0)
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  orders           InvestigationOrder[]
 }
 
 model InvestigationOrder {
-  id            Int       @id @default(autoincrement())
-  opdVisitId    Int
-  investigation String
-  price         Float
-  discountType  String?
-  discountValue Float     @default(0)
-  netAmount     Float
-  paymentStatus String    @default("UNPAID")
-  paymentMethod String?
-  receiptNumber String?
-  paidAt        DateTime?
-  status        String    @default("ORDERED")
-  reportText    String?
-  reportedAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  opdVisit      OPDVisit  @relation(fields: [opdVisitId], references: [id])
+  id              Int       @id @default(autoincrement())
+  opdVisitId      Int
+  investigationId Int?
+  investigation   String
+  price           Float
+  discountType    String?
+  discountValue   Float     @default(0)
+  netAmount       Float
+  paymentStatus   String    @default("UNPAID")
+  paymentMethod   String?
+  receiptNumber   String?
+  paidAt          DateTime?
+  status          String    @default("ORDERED")
+  reportText      String?
+  reportedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  opdVisit        OPDVisit  @relation(fields: [opdVisitId], references: [id])
+  master          InvestigationMaster? @relation(fields: [investigationId], references: [id])
 }
 
 model Prescription {
