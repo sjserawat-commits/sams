@@ -12,6 +12,26 @@ const ALLOWED_STATUSES = [
   "CANCELLED",
 ] as const;
 
+export async function GET(_request: Request, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const visitId = Number(id);
+    if (!Number.isInteger(visitId)) {
+      return NextResponse.json({ error: "Invalid OPD visit ID" }, { status: 400 });
+    }
+
+    const visit = await prisma.oPDVisit.findUnique({ where: { id: visitId } });
+    if (!visit) {
+      return NextResponse.json({ error: "OPD visit not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(visit);
+  } catch (error) {
+    console.error("OPD visit fetch error:", error);
+    return NextResponse.json({ error: "Unable to load OPD visit." }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
