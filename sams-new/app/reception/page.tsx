@@ -20,17 +20,21 @@ export default function ReceptionPage() {
         <div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-7 lg:px-10 lg:py-7">
           <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white px-6 py-8 text-center shadow-[0_14px_40px_rgba(8,43,97,0.08)] sm:px-10 sm:py-9">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#082b61] via-[#0b63ce] to-[#d6a443]" />
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#b4872c]">SAMS · Serawat Advanced Multispecialty Joint & Spine Center</p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-[#082b61] sm:text-4xl">Reception</h1>
-            <p className="mx-auto mt-3 max-w-3xl text-sm font-medium leading-6 text-slate-500 sm:text-base">Welcome to the SAMS Reception Desk — where every patient journey begins with a warm welcome, smooth registration and coordinated care.</p>
-            <div className="mx-auto mt-6 h-px w-20 bg-[#d6a443]" />
-            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.24em] text-[#0b63ce]">Welcome → Register → Verify → OPD → Consultation → Care → Billing → Follow-up</p>
+            <div className="mx-auto max-w-5xl">
+              <p className="text-lg font-black uppercase leading-tight tracking-[0.08em] text-[#082b61] sm:text-2xl lg:text-3xl">
+                Serawat Advanced Multispeciality Joint &amp; Spine Centre
+              </p>
+              <div className="mx-auto mt-3 h-px w-24 bg-[#d6a443]" />
+              <h1 className="mt-4 text-3xl font-black tracking-tight text-[#082b61] sm:text-4xl">Reception</h1>
+              <p className="mx-auto mt-3 max-w-3xl text-sm font-medium leading-6 text-slate-500 sm:text-base">Welcome to the SAMS Reception Desk — where every patient journey begins with a warm welcome, smooth registration and coordinated care.</p>
+              <p className="mt-5 text-[10px] font-black uppercase tracking-[0.24em] text-[#0b63ce]">Welcome → Register → Verify → OPD → Consultation → Care → Billing → Follow-up</p>
+            </div>
           </section>
 
           <div className="mt-8 flex items-end justify-between gap-4 px-1">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0b63ce]">Reception Desk</p>
-              <h2 className="mt-1 text-xl font-black tracking-tight text-[#082b61]">Patient Flow & Services</h2>
+              <h2 className="mt-1 text-xl font-black tracking-tight text-[#082b61]">Patient Flow &amp; Services</h2>
             </div>
             <p className="hidden text-right text-xs font-semibold text-slate-400 sm:block">Six essential front-desk actions</p>
           </div>
