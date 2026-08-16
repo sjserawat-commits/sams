@@ -21,54 +21,26 @@ async function syncVisitCharges(visitId: number) {
   if (!visit) return null;
 
   for (const order of visit.investigationOrders) {
-    const existing = visit.billingLineItems.find(
-      (line) => line.sourceType === "INVESTIGATION_ORDER" && line.sourceId === order.id
-    );
+    const existing = visit.billingLineItems.find((line) => line.sourceType === "INVESTIGATION_ORDER" && line.sourceId === order.id);
     if (!existing) {
       await prisma.billingLineItem.create({
-        data: {
-          opdVisitId: visit.id,
-          serviceType: "INVESTIGATION",
-          description: order.investigation,
-          quantity: 1,
-          unitPrice: round(order.netAmount),
-          amount: round(order.netAmount),
-          sourceType: "INVESTIGATION_ORDER",
-          sourceId: order.id,
-        },
+        data: { opdVisitId: visit.id, serviceType: "INVESTIGATION", description: order.investigation, quantity: 1, unitPrice: round(order.netAmount), amount: round(order.netAmount), sourceType: "INVESTIGATION_ORDER", sourceId: order.id },
       });
     }
   }
 
   for (const prescription of visit.prescriptions) {
-    const existing = visit.billingLineItems.find(
-      (line) => line.sourceType === "PRESCRIPTION" && line.sourceId === prescription.id
-    );
+    const existing = visit.billingLineItems.find((line) => line.sourceType === "PRESCRIPTION" && line.sourceId === prescription.id);
     if (!existing) {
       await prisma.billingLineItem.create({
-        data: {
-          opdVisitId: visit.id,
-          serviceType: "PHARMACY",
-          description: prescription.medicineName,
-          quantity: prescription.quantity,
-          unitPrice: round(prescription.unitPrice),
-          amount: round(prescription.quantity * prescription.unitPrice),
-          sourceType: "PRESCRIPTION",
-          sourceId: prescription.id,
-        },
+        data: { opdVisitId: visit.id, serviceType: "PHARMACY", description: prescription.medicineName, quantity: prescription.quantity, unitPrice: round(prescription.unitPrice), amount: round(prescription.quantity * prescription.unitPrice), sourceType: "PRESCRIPTION", sourceId: prescription.id },
       });
     }
   }
 
   return prisma.oPDVisit.findUnique({
     where: { id: visitId },
-    include: {
-      patient: true,
-      departmentMaster: true,
-      clinicalEncounter: true,
-      billingLineItems: { orderBy: { createdAt: "asc" } },
-      billingRecords: { orderBy: { createdAt: "desc" } },
-    },
+    include: { patient: true, departmentMaster: true, clinicalEncounter: true, billingLineItems: { orderBy: { createdAt: "asc" } }, billingRecords: { orderBy: { createdAt: "desc" } } },
   });
 }
 
@@ -81,45 +53,19 @@ export async function GET(request: Request) {
     if (patientId && !Number.isInteger(visitId)) {
       const patient = await prisma.patient.findUnique({ where: { patientId } });
       if (!patient) return NextResponse.json({ error: "Patient not found." }, { status: 404 });
-      const visits = await prisma.oPDVisit.findMany({
-        where: { patientId: patient.id },
-        include: { departmentMaster: true },
-        orderBy: { createdAt: "desc" },
-      });
-      return NextResponse.json({
-        patient: { id: patient.id, patientId: patient.patientId, name: `${patient.firstName} ${patient.lastName}`.trim(), phone: patient.phone },
-        visits: visits.map((visit) => ({ id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt })),
-      });
+      const visits = await prisma.oPDVisit.findMany({ where: { patientId: patient.id }, include: { departmentMaster: true }, orderBy: { createdAt: "desc" } });
+      return NextResponse.json({ patient: { id: patient.id, patientId: patient.patientId, name: `${patient.firstName} ${patient.lastName}`.trim(), phone: patient.phone }, visits: visits.map((visit) => ({ id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt })) });
     }
 
-    if (!Number.isInteger(visitId) || visitId <= 0) {
-      return NextResponse.json({ error: "A valid OPD visit ID or patient ID is required." }, { status: 400 });
-    }
-
+    if (!Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID or patient ID is required." }, { status: 400 });
     const visit = await syncVisitCharges(visitId);
     if (!visit) return NextResponse.json({ error: "OPD visit not found." }, { status: 404 });
 
-    const lineItems = visit.billingLineItems.map((line) => ({
-      id: line.id,
-      serviceType: line.serviceType,
-      description: line.description,
-      quantity: line.quantity,
-      unitPrice: round(line.unitPrice),
-      amount: round(line.amount),
-      sourceType: line.sourceType,
-      sourceId: line.sourceId,
-    }));
+    const lineItems = visit.billingLineItems.map((line) => ({ id: line.id, serviceType: line.serviceType, description: line.description, quantity: line.quantity, unitPrice: round(line.unitPrice), amount: round(line.amount), sourceType: line.sourceType, sourceId: line.sourceId }));
     const subtotal = round(lineItems.reduce((sum, line) => sum + line.amount, 0));
     const bill = visit.billingRecords[0] ?? null;
 
-    return NextResponse.json({
-      visit: { id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt },
-      patient: { id: visit.patient.id, patientId: visit.patient.patientId, name: `${visit.patient.firstName} ${visit.patient.lastName}`.trim(), phone: visit.patient.phone },
-      encounter: visit.clinicalEncounter ? { id: visit.clinicalEncounter.id, treatmentPlan: visit.clinicalEncounter.treatmentPlan, followUpDate: visit.clinicalEncounter.followUpDate } : null,
-      lineItems,
-      totals: { subtotal },
-      bill,
-    });
+    return NextResponse.json({ visit: { id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt }, patient: { id: visit.patient.id, patientId: visit.patient.patientId, name: `${visit.patient.firstName} ${visit.patient.lastName}`.trim(), phone: visit.patient.phone }, encounter: visit.clinicalEncounter ? { id: visit.clinicalEncounter.id, treatmentPlan: visit.clinicalEncounter.treatmentPlan, followUpDate: visit.clinicalEncounter.followUpDate } : null, lineItems, totals: { subtotal }, bill });
   } catch (error) {
     console.error("Billing lookup error:", error);
     return NextResponse.json({ error: "Unable to load billing information." }, { status: 500 });
@@ -131,7 +77,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const visitId = Number(body?.visitId);
     if (!Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID is required." }, { status: 400 });
-
     const visit = await syncVisitCharges(visitId);
     if (!visit) return NextResponse.json({ error: "OPD visit not found." }, { status: 404 });
 
@@ -140,21 +85,15 @@ export async function POST(request: Request) {
       const description = String(body.description ?? "").trim();
       const quantity = Number(body.quantity);
       const unitPrice = Number(body.unitPrice);
-      if (!description || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) {
-        return NextResponse.json({ error: "Enter service, quantity and valid rate." }, { status: 400 });
-      }
+      if (!description || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) return NextResponse.json({ error: "Enter service, quantity and valid rate." }, { status: 400 });
       if (visit.billingRecords[0]?.paidAmount) return NextResponse.json({ error: "Paid bills cannot be modified." }, { status: 400 });
-      const line = await prisma.billingLineItem.create({
-        data: { opdVisitId: visitId, serviceType, description, quantity, unitPrice: round(unitPrice), amount: round(quantity * unitPrice) },
-      });
+      const line = await prisma.billingLineItem.create({ data: { opdVisitId: visitId, serviceType, description, quantity, unitPrice: round(unitPrice), amount: round(quantity * unitPrice) } });
       return NextResponse.json({ line }, { status: 201 });
     }
 
     const subtotal = round(visit.billingLineItems.reduce((sum, line) => sum + line.amount, 0));
     if (visit.billingRecords[0]) return NextResponse.json({ bill: visit.billingRecords[0], existing: true });
-    const bill = await prisma.billingRecord.create({
-      data: { billNumber: billNumber(), patientId: visit.patientId, opdVisitId: visit.id, subtotal, netAmount: subtotal, balanceAmount: subtotal },
-    });
+    const bill = await prisma.billingRecord.create({ data: { billNumber: billNumber(), patientId: visit.patientId, opdVisitId: visit.id, subtotal, netAmount: subtotal, balanceAmount: subtotal } });
     await prisma.billingLineItem.updateMany({ where: { opdVisitId: visitId, billingRecordId: null }, data: { billingRecordId: bill.id } });
     const updated = await prisma.billingRecord.findUnique({ where: { id: bill.id }, include: { lineItems: true } });
     return NextResponse.json({ bill: updated, existing: false }, { status: 201 });
@@ -187,10 +126,12 @@ export async function PATCH(request: Request) {
     if (paidAmount > bill.balanceAmount) return NextResponse.json({ error: "Payment exceeds outstanding balance." }, { status: 400 });
     const newPaid = round(bill.paidAmount + paidAmount);
     const balance = round(Math.max(0, bill.netAmount - newPaid));
-    const updated = await prisma.billingRecord.update({
-      where: { id },
-      data: { paidAmount: newPaid, balanceAmount: balance, paymentMethod, paymentStatus: balance === 0 ? "PAID" : "PARTIAL", paidAt: new Date(), receiptNumber: bill.receiptNumber ?? receiptNumber() },
-    });
+    const updated = await prisma.billingRecord.update({ where: { id }, data: { paidAmount: newPaid, balanceAmount: balance, paymentMethod, paymentStatus: balance === 0 ? "PAID" : "PARTIAL", paidAt: new Date(), receiptNumber: bill.receiptNumber ?? receiptNumber() } });
+
+    if (bill.opdVisitId) {
+      await prisma.investigationOrder.updateMany({ where: { opdVisitId: bill.opdVisitId }, data: { paymentStatus: balance === 0 ? "PAID" : "PARTIAL" } });
+    }
+
     return NextResponse.json({ bill: updated });
   } catch (error) {
     console.error("Billing patch error:", error);
