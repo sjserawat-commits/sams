@@ -10,7 +10,8 @@ export async function GET(request: NextRequest) {
     const visitId = Number(new URL(request.url).searchParams.get("opdVisitId"));
     if (!Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID is required." }, { status: 400 });
     const encounter = await prisma.clinicalEncounter.findUnique({ where: { opdVisitId: visitId } });
-    return NextResponse.json(encounter);
+    const prescriptions = await prisma.prescription.findMany({ where: { opdVisitId: visitId, status: "ACTIVE" }, orderBy: { createdAt: "asc" } });
+    return NextResponse.json(encounter ? { ...encounter, prescriptions } : null);
   } catch (error) {
     console.error("Consultation reopen GET failed:", error);
     return NextResponse.json({ error: "Unable to load saved consultation." }, { status: 500 });
@@ -40,7 +41,27 @@ export async function POST(request: NextRequest) {
     const encounter = opdVisitId
       ? await prisma.clinicalEncounter.upsert({ where: { opdVisitId }, create: data, update: data })
       : await prisma.clinicalEncounter.create({ data });
-    if (opdVisitId) await prisma.oPDVisit.update({ where: { id: opdVisitId }, data: { status: "IN_CONSULTATION" } });
+
+    if (opdVisitId) {
+      await prisma.prescription.updateMany({ where: { opdVisitId }, data: { status: "DISCONTINUED" } });
+      const prescriptions = Array.isArray(body.prescriptions) ? body.prescriptions : [];
+      for (const item of prescriptions) {
+        const name = String(item?.medicineName || "").trim();
+        if (!name) continue;
+        await prisma.prescription.create({
+          data: {
+            opdVisitId,
+            medicineName: name,
+            dose: item?.dose ? String(item.dose) : null,
+            frequency: item?.frequency ? String(item.frequency) : null,
+            duration: item?.duration ? String(item.duration) : null,
+            instructions: item?.instructions ? String(item.instructions) : null,
+            quantity: Number(item?.quantity || 1),
+          },
+        });
+      }
+      await prisma.oPDVisit.update({ where: { id: opdVisitId }, data: { status: "IN_CONSULTATION" } });
+    }
     return NextResponse.json(encounter, { status: 200 });
   } catch (error) {
     console.error("Clinical encounter error:", error);
