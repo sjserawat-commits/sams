@@ -47,7 +47,7 @@ export default async function PostConsultationPrint({ params }: { params: Promis
       <PrintOnLoad />
       <main className="sheet">
         <header className="header">
-          <div className="brand"><img src="/serawat-logo.png" alt="S" /><div className="hospital">SERAWAT ADVANCED MUSCULOSKELETAL, JOINT &amp; SPINE CENTRE</div></div>
+          <div className="brand"><img src="/serawat-logo.png" alt="S" /><div className="hospital">SAMS SERAWAT ADVANCED MULTISPECIALTY JOINT &amp; SPINE CENTER</div></div>
           <div className="opd"><b>OPD · #{visit?.tokenNumber ?? encounter.id}</b><span>Visit Registration</span><strong>{dt(visit?.createdAt || encounter.createdAt)}</strong></div>
         </header>
         <section className="patient">
