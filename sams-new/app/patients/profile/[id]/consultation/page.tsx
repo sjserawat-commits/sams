@@ -183,7 +183,7 @@ export default function ConsultationPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Unable to finalize consultation.");
       setFinalized(true); setVisit(data); setMessage("Consultation finalized successfully.");
-      if (print) window.setTimeout(() => window.print(), 250);
+      if (print) window.setTimeout(() => router.push(`/patients/profile/${pid}/opd-slip/print?visitId=${visitId}`), 250);
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to finalize consultation."); }
     finally { setFinalizing(false); }
   };
