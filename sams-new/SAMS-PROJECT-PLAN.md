@@ -1,9 +1,9 @@
-# SAMS — Smart Advanced Medical System
+# SAMS — Serawat Advanced Multispecialty Joint & Spine Center
 ## Project Plan and Development Baseline
 
 ## 1. Purpose
 
-SAMS is a modular hospital management and clinical information system designed to support hospital administration, patient management, clinical documentation, PM&R workflows, patient access, billing, analytics, and future expansion.
+SAMS — Serawat Advanced Multispecialty Joint & Spine Center — is a modular hospital management and clinical information system designed to support hospital administration, patient management, clinical documentation, PM&R workflows, patient access, billing, analytics, and future expansion.
 
 The system must prioritize:
 - Patient safety
