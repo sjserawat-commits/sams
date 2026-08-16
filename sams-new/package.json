@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:investigations": "npx tsx prisma/seed-investigation-master.ts"
+    "seed:investigations": "npx tsx prisma/seed-investigation-master.ts && npx tsx prisma/seed-investigation-expansion.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.9.1",
@@ -19,7 +19,6 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
