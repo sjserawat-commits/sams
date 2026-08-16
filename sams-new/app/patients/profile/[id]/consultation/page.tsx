@@ -4,227 +4,50 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 
-type Patient = Record<string, unknown> & { id?: number | string; patientId?: string; firstName?: string; lastName?: string; name?: string; gender?: string; phone?: string; mobile?: string; dateOfBirth?: string };
-type Department = { id: number; name: string };
-type Doctor = { id: number; name?: string; firstName?: string; lastName?: string };
-type Visit = { id: number; departmentId?: number | null; department?: string | null; doctorId?: number | null; tokenNumber?: number; visitType?: string; status?: string; createdAt?: string; updatedAt?: string };
+type Patient = { id?: number; patientId?: string; firstName?: string; lastName?: string; name?: string; gender?: string; phone?: string; dateOfBirth?: string };
+type Visit = { id: number; departmentId?: number | null; doctorId?: number | null; tokenNumber?: number; status?: string; createdAt?: string; updatedAt?: string };
+type Investigation = { id: number; code?: string | null; name: string; category?: string | null; department?: string | null };
 type Medicine = { id: number; name: string; dose: string; frequency: string; food: string; duration: string };
-type Vital = { label: string; value: string; unit: string };
-type Investigation = { id: number | string; code?: string | null; name: string; shortName?: string | null; category?: string | null; department?: string | null; specimen?: string | null; method?: string | null; unit?: string | null; referenceRange?: string | null; rate?: number | null; smsBenchmarkRate?: number | null; corporateBenchmarkRate?: number | null; active?: boolean };
 type Tool = "vitals" | "investigation" | "physical" | "advice" | null;
 
-const units: Record<string, string> = { "Blood Pressure": "mmHg", Pulse: "bpm", "Respiratory Rate": "/min", Temperature: "°F", "SpO₂": "%", Weight: "kg", Height: "cm", BMI: "kg/m²" };
+const units: Record<string,string> = { "Blood Pressure":"mmHg", Pulse:"bpm", "Respiratory Rate":"/min", Temperature:"°F", "SpO₂":"%", Weight:"kg", Height:"cm", BMI:"kg/m²" };
+const nameOf=(p:Patient|null)=>String(p?.name||[p?.firstName,p?.lastName].filter(Boolean).join(" ")||"Patient");
+const ageOf=(dob?:string)=>{if(!dob)return"—";const d=new Date(dob),n=new Date();if(Number.isNaN(d.getTime()))return"—";let a=n.getFullYear()-d.getFullYear();if(n.getMonth()<d.getMonth()||(n.getMonth()===d.getMonth()&&n.getDate()<d.getDate()))a--;return a>=0?String(a):"—"};
+const dateTime=(v?:string|null)=>{if(!v)return"—";const d=new Date(v);return Number.isNaN(d.getTime())?"—":`${d.toLocaleDateString("en-IN")} · ${d.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}`};
 
-function displayName(patient: Patient | null) {
-  if (!patient) return "Patient";
-  return String(patient.name || [patient.firstName, patient.lastName].filter(Boolean).join(" ") || "Patient");
-}
+export default function ConsultationPage(){
+ const params=useParams<{id:string}>(), search=useSearchParams(), router=useRouter();
+ const patientRouteId=String(params.id), opdVisitId=search.get("opdVisitId");
+ const [patient,setPatient]=useState<Patient|null>(null),[visit,setVisit]=useState<Visit|null>(null),[department,setDepartment]=useState("—"),[doctor,setDoctor]=useState("—"),[startedAt,setStartedAt]=useState<string|null>(null);
+ const [tool,setTool]=useState<Tool>("investigation"),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[ordering,setOrdering]=useState(false),[saved,setSaved]=useState(false),[error,setError]=useState(""),[orderMessage,setOrderMessage]=useState("");
+ const [chiefComplaint,setChiefComplaint]=useState(""),[diagnosis,setDiagnosis]=useState(""),[physical,setPhysical]=useState(""),[advice,setAdvice]=useState(""),[followUp,setFollowUp]=useState("");
+ const [investigationInput,setInvestigationInput]=useState(""),[suggestions,setSuggestions]=useState<Investigation[]>([]),[selected,setSelected]=useState<Investigation[]>([]),[orderedIds,setOrderedIds]=useState<Set<number>>(new Set());
+ const [vitals,setVitals]=useState(Object.keys(units).map(label=>({label,value:"",unit:units[label]}))),[medicines,setMedicines]=useState<Medicine[]>([{id:1,name:"",dose:"",frequency:"",food:"",duration:""}]);
 
-function ageFromDob(dob?: string) {
-  if (!dob) return "—";
-  const birth = new Date(dob);
-  if (Number.isNaN(birth.getTime())) return "—";
-  const now = new Date();
-  let age = now.getFullYear() - birth.getFullYear();
-  const m = now.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
-  return age >= 0 ? String(age) : "—";
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return `${date.toLocaleDateString("en-IN")} · ${date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`;
-}
-
-export default function ConsultationPage() {
-  const params = useParams<{ id: string }>();
-  const search = useSearchParams();
-  const router = useRouter();
-  const patientId = String(params.id);
-  const opdVisitId = search.get("opdVisitId");
-
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [visit, setVisit] = useState<Visit | null>(null);
-  const [consultationStartedAt, setConsultationStartedAt] = useState<string | null>(null);
-  const [department, setDepartment] = useState("—");
-  const [doctor, setDoctor] = useState("—");
-  const [tool, setTool] = useState<Tool>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
-  const [chiefComplaint, setChiefComplaint] = useState("");
-  const [diagnosis, setDiagnosis] = useState("");
-  const [physicalFindings, setPhysicalFindings] = useState("");
-  const [generalAdvice, setGeneralAdvice] = useState("");
-  const [followUpDate, setFollowUpDate] = useState("");
-  const [investigationInput, setInvestigationInput] = useState("");
-  const [investigationSuggestions, setInvestigationSuggestions] = useState<Investigation[]>([]);
-  const [selectedInvestigations, setSelectedInvestigations] = useState<Investigation[]>([]);
-  const [investigationLoading, setInvestigationLoading] = useState(false);
-  const [vitals, setVitals] = useState<Vital[]>(Object.keys(units).map(label => ({ label, value: "", unit: units[label] })));
-  const [medicines, setMedicines] = useState<Medicine[]>([{ id: 1, name: "", dose: "", frequency: "", food: "", duration: "" }]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const p = await fetch(`/api/patients/${patientId}`);
-        if (!p.ok) throw new Error("Unable to load patient.");
-        setPatient(await p.json());
-        if (!opdVisitId) return;
-        const v = await fetch(`/api/opd/${opdVisitId}`);
-        if (!v.ok) throw new Error("Unable to load OPD visit.");
-        const vd: Visit = await v.json();
-        setVisit(vd);
-        const statusResponse = await fetch(`/api/opd/${opdVisitId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "IN_CONSULTATION" }) });
-        if (statusResponse.ok) {
-          const consultationVisit: Visit = await statusResponse.json();
-          setConsultationStartedAt(consultationVisit.updatedAt || new Date().toISOString());
-        } else {
-          setConsultationStartedAt(new Date().toISOString());
-        }
-        const depsResponse = await fetch("/api/departments");
-        const deps: Department[] = depsResponse.ok ? await depsResponse.json() : [];
-        const departmentId = vd.departmentId ?? (vd.department ? Number(vd.department) : null);
-        setDepartment(deps.find(x => x.id === Number(departmentId))?.name || "—");
-        const docsResponse = await fetch(departmentId ? `/api/doctors?departmentId=${departmentId}` : "/api/doctors");
-        const docs: Doctor[] = docsResponse.ok ? await docsResponse.json() : [];
-        const d = docs.find(x => x.id === Number(vd.doctorId));
-        setDoctor(d?.name || `${d?.firstName || ""} ${d?.lastName || ""}`.trim() || "—");
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Unable to load consultation.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [patientId, opdVisitId]);
-
-  useEffect(() => {
-    const q = investigationInput.trim();
-    if (!q) {
-      setInvestigationSuggestions([]);
-      setInvestigationLoading(false);
-      return;
-    }
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      setInvestigationLoading(true);
-      try {
-        const response = await fetch(`/api/investigation-master?q=${encodeURIComponent(q)}`, { signal: controller.signal, cache: "no-store" });
-        if (!response.ok) throw new Error("Unable to search Investigation Master.");
-        const rows: Investigation[] = await response.json();
-        const selectedIds = new Set(selectedInvestigations.map(x => String(x.id)));
-        setInvestigationSuggestions(rows.filter(x => !selectedIds.has(String(x.id))).slice(0, 10));
-      } catch (e) {
-        if ((e as Error).name !== "AbortError") setError(e instanceof Error ? e.message : "Unable to search investigations.");
-      } finally {
-        setInvestigationLoading(false);
-      }
-    }, 220);
-    return () => { window.clearTimeout(timer); controller.abort(); };
-  }, [investigationInput, selectedInvestigations]);
-
-  const patientName = displayName(patient);
-  const patientDob = patient?.dateOfBirth;
-  const patientPhone = String(patient?.phone || patient?.mobile || "—");
-  const patientIdDisplay = String(patient?.patientId || patient?.id || patientId);
-  const hasVitals = vitals.some(v => v.value.trim());
-  const hasInvestigations = selectedInvestigations.length > 0;
-  const hasPhysical = physicalFindings.trim().length > 0;
-  const hasAdvice = generalAdvice.trim().length > 0;
-  const filledMedicines = medicines.filter(m => m.name.trim());
-
-  function updateVital(i: number, value: string) { setVitals(v => v.map((x, n) => n === i ? { ...x, value } : x)); }
-  function updateMedicine(id: number, key: keyof Medicine, value: string) { setMedicines(m => m.map(x => x.id === id ? { ...x, [key]: value } : x)); }
-  function addInvestigation(item: Investigation) { setSelectedInvestigations(v => [...v, item]); setInvestigationInput(""); setInvestigationSuggestions([]); }
-  function removeInvestigation(id: number | string) { setSelectedInvestigations(v => v.filter(x => String(x.id) !== String(id))); }
-
-  async function save() {
-    setSaving(true); setSaved(false); setError("");
-    try {
-      const clinicalNotes = [
-        physicalFindings ? `Physical / Clinical Findings:\n${physicalFindings}` : "",
-        hasVitals ? `Vitals:\n${vitals.filter(x => x.value.trim()).map(x => `${x.label}: ${x.value} ${x.unit}`).join(" | ")}` : "",
-        hasInvestigations ? `Investigations:\n${selectedInvestigations.map(x => `${x.name}${x.rate != null ? ` (₹${x.rate})` : ""}`).join(", ")}` : "",
-        generalAdvice ? `General Advice:\n${generalAdvice}` : "",
-        filledMedicines.length ? `Medicines / Prescription:\n${filledMedicines.map(m => [m.name, m.dose, m.frequency, m.food, m.duration].filter(Boolean).join(" · ")).join("\n")}` : ""
-      ].filter(Boolean).join("\n\n");
-      const response = await fetch("/api/patients/encounters", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patientId, chiefComplaint, diagnosis, clinicalNotes, treatmentPlan: "", followUpDate: followUpDate || null, opdVisitId: opdVisitId ? Number(opdVisitId) : null })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || "Unable to save consultation.");
-      if (opdVisitId) await fetch(`/api/opd/${opdVisitId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "COMPLETED" }) });
-      setSaved(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to save consultation.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#f5f7fa]"><div className="rounded-2xl bg-white p-8 text-center shadow-xl"><Image src="/serawat-logo.png" alt="S" width={76} height={44} className="mx-auto object-contain" /><p className="mt-3 text-sm font-bold text-slate-500">Loading consultation…</p></div></main>;
-
-  const toolButton = (key: Exclude<Tool, null>, label: string, icon: string) => <button type="button" onClick={() => setTool(tool === key ? null : key)} className={`no-print flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black transition ${tool === key ? "bg-[#082b61] text-white shadow-lg" : "bg-white text-slate-600 hover:bg-blue-50 hover:text-[#0b63ce]"}`}><span>{icon}</span>{label}<span className="ml-auto">{tool === key ? "−" : "+"}</span></button>;
-
-  return (
-    <>
-      <main className="consultation-screen min-h-screen bg-[#eef2f7] text-slate-900">
-        <header className="no-print sticky top-0 z-40 border-b border-[#d7c08a]/30 bg-[#071f46] text-white shadow-lg">
-          <div className="mx-auto flex min-h-[92px] max-w-[1600px] items-center justify-between gap-5 px-5 py-4 sm:px-8">
-            <div className="flex min-w-0 items-center gap-4">
-              <button type="button" onClick={() => router.back()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-xl font-black">←</button>
-              <div className="h-14 w-20 shrink-0"><Image src="/serawat-logo.png" alt="S" width={76} height={44} className="h-full w-full object-contain" priority /></div>
-              <div className="min-w-0 border-l border-white/15 pl-4"><p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#f1d27a]">SAMS · Clinical Record</p><h1 className="mt-1 truncate text-xl font-semibold tracking-tight sm:text-2xl" style={{ fontFamily: "'Cormorant Garamond','Baskerville','Times New Roman',serif" }}>Serawat Advanced Musculoskeletal, Joint &amp; Spine Centre</h1></div>
-            </div>
-            <div className="hidden text-right sm:block"><p className="text-[9px] uppercase tracking-[0.18em] text-blue-200">Patient</p><p className="text-sm font-black">{patientName} · {patientIdDisplay}</p></div>
-          </div>
-        </header>
-
-        <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-7 lg:px-9">
-          <section className="consultation-paper overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl">
-            <section className="border-b border-slate-200 bg-[#fbfaf7] px-5 py-5 sm:px-8">
-              <div className="flex items-center justify-between gap-4"><div><p className="text-[9px] font-black uppercase tracking-[0.24em] text-[#0b63ce]">Patient Details</p><h2 className="mt-1 text-2xl font-semibold text-[#082b61]" style={{ fontFamily: "'Cormorant Garamond','Baskerville','Times New Roman',serif" }}>{patientName}</h2></div><span className="rounded-full border border-[#d4af37]/40 bg-[#fffaf0] px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-[#8b6a17]">OPD · #{visit?.tokenNumber || visit?.id || "—"}</span></div>
-              <div className="mt-4 grid gap-x-6 gap-y-3 text-xs sm:grid-cols-2 lg:grid-cols-4"><div><span className="label">Patient ID</span><strong>{patientIdDisplay}</strong></div><div><span className="label">Age / Sex</span><strong>{ageFromDob(patientDob)} / {String(patient?.gender || "—")}</strong></div><div><span className="label">Mobile</span><strong>{patientPhone}</strong></div><div><span className="label">DOB</span><strong>{patientDob ? new Date(patientDob).toLocaleDateString("en-IN") : "—"}</strong></div><div><span className="label">Department</span><strong>{department}</strong></div><div><span className="label">Consultant</span><strong>{doctor}</strong></div><div><span className="label">Visit No.</span><strong>{visit?.id || "—"}</strong></div><div><span className="label">Date &amp; Time</span><strong>{formatDateTime(consultationStartedAt)}</strong></div></div>
-            </section>
-
-            <div className="grid lg:grid-cols-[220px_minmax(0,1fr)]">
-              <aside className="no-print border-b border-slate-200 bg-[#f8fafc] p-4 lg:border-b-0 lg:border-r lg:p-5">
-                <div className="space-y-2">{toolButton("vitals","Vitals","🩺")}{toolButton("investigation","Investigations","🔬")}{toolButton("physical","Physical / Clinical","🦴")}{toolButton("advice","General Advice","📋")}</div>
-                {tool === "vitals" && <div className="tool-panel">{vitals.map((v,i)=><label key={v.label} className="tool-field"><span>{v.label}</span><div><input value={v.value} onChange={e => updateVital(i,e.target.value)} /><b>{v.unit}</b></div></label>)}</div>}
-                {tool === "investigation" && <div className="tool-panel"><p className="mb-2 text-[9px] font-black uppercase tracking-[0.14em] text-[#082b61]">Investigation Master Search</p><div className="relative"><input value={investigationInput} onChange={e => setInvestigationInput(e.target.value)} placeholder="Type name, code, alias…" className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-xs outline-none focus:border-blue-500" />{investigationLoading && <span className="absolute right-2 top-2.5 text-[9px] font-bold text-slate-400">Searching…</span>}{investigationSuggestions.length > 0 && <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-slate-200 bg-white shadow-2xl">{investigationSuggestions.map(x => <button type="button" key={String(x.id)} onClick={() => addInvestigation(x)} className="block w-full border-b border-slate-100 px-3 py-2.5 text-left hover:bg-blue-50"><span className="block text-[11px] font-bold text-slate-700">{x.name}</span><span className="mt-0.5 block text-[9px] text-slate-400">{[x.code, x.category, x.department, x.rate != null ? `₹${x.rate}` : ""].filter(Boolean).join(" · ")}</span></button>)}</div>}</div><div className="mt-2 flex flex-wrap gap-1.5">{selectedInvestigations.map(x => <button type="button" key={String(x.id)} onClick={() => removeInvestigation(x.id)} className="rounded-full bg-blue-50 px-2 py-1 text-left text-[9px] font-bold text-[#0b63ce]">{x.name}{x.rate != null ? ` · ₹${x.rate}` : ""} ×</button>)}</div>{selectedInvestigations.length > 0 && <p className="mt-2 text-[9px] font-semibold text-slate-400">{selectedInvestigations.length} investigation{selectedInvestigations.length === 1 ? "" : "s"} selected from master</p>}</div>}
-                {tool === "physical" && <div className="tool-panel"><textarea value={physicalFindings} onChange={e => setPhysicalFindings(e.target.value)} rows={8} placeholder="Physical / clinical examination findings…" className="w-full rounded-lg border border-slate-200 bg-white p-3 text-xs outline-none focus:border-blue-500" /></div>}
-                {tool === "advice" && <div className="tool-panel"><textarea value={generalAdvice} onChange={e => setGeneralAdvice(e.target.value)} rows={7} placeholder="General advice / precautions…" className="w-full rounded-lg border border-slate-200 bg-white p-3 text-xs outline-none focus:border-blue-500" /></div>}
-              </aside>
-
-              <section className="min-w-0 p-5 sm:p-8">
-                <div className="grid gap-5 lg:grid-cols-2"><section className="clinical-box"><p className="section-label">Chief Complaint</p><textarea value={chiefComplaint} onChange={e => setChiefComplaint(e.target.value)} rows={5} placeholder="Reason for consultation / presenting complaints…" /></section><section className="clinical-box"><p className="section-label">Clinical Diagnosis</p><textarea value={diagnosis} onChange={e => setDiagnosis(e.target.value)} rows={5} placeholder="Diagnosis / differential diagnosis…" /></section></div>
-                <section className="clinical-box mt-5"><div className="flex items-center justify-between"><p className="section-label">Medicines / Prescription</p><button type="button" onClick={() => setMedicines(v => [...v, { id: Date.now(), name:"", dose:"", frequency:"", food:"", duration:"" }])} className="no-print rounded-lg bg-[#082b61] px-3 py-2 text-[10px] font-black text-white">+ Add Medicine</button></div><div className="mt-3 space-y-2">{medicines.map((m,i) => <div key={m.id} className="grid gap-2 rounded-xl bg-slate-50 p-2.5 sm:grid-cols-5"><input value={m.name} onChange={e => updateMedicine(m.id,"name",e.target.value)} placeholder={`Medicine ${i+1}`} /><input value={m.dose} onChange={e => updateMedicine(m.id,"dose",e.target.value)} placeholder="Dose" /><input value={m.frequency} onChange={e => updateMedicine(m.id,"frequency",e.target.value)} placeholder="Frequency" /><input value={m.food} onChange={e => updateMedicine(m.id,"food",e.target.value)} placeholder="Food" /><input value={m.duration} onChange={e => updateMedicine(m.id,"duration",e.target.value)} placeholder="Duration" /></div>)}</div></section>
-                {error && <div className="no-print mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</div>}
-                {saved && <div className="no-print mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">Consultation saved successfully.</div>}
-                <div className="mt-6 flex items-end justify-between gap-6 border-t border-slate-200 pt-5"><div><label className="block text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Follow-up Date</label><input type="date" value={followUpDate} onChange={e => setFollowUpDate(e.target.value)} className="no-print mt-2 rounded-lg border border-slate-200 p-2 text-xs" /><p className="hidden text-sm font-bold text-[#082b61] print-followup">{followUpDate ? new Date(followUpDate).toLocaleDateString("en-IN") : "—"}</p></div><div className="w-56 text-center"><div className="h-8 border-b border-slate-400"/><p className="mt-1 text-xs font-black text-[#082b61]">Consultant</p><p className="text-[10px] font-semibold text-slate-500">{doctor}</p><p className="no-print mt-1 text-[9px] text-slate-400">Signature</p></div></div>
-                <div className="no-print mt-5 flex justify-end gap-3 border-t border-slate-200 pt-4"><button type="button" onClick={() => window.print()} className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs font-black text-slate-600">Print A4</button><button type="button" onClick={save} disabled={saving} className="rounded-xl bg-[#0b63ce] px-6 py-3 text-xs font-black text-white disabled:opacity-60">{saving ? "Saving…" : "Save Consultation"}</button></div>
-              </section>
-            </div>
-          </section>
-        </div>
-      </main>
-
-      <section className="print-document" aria-hidden="true">
-        <div className="print-header"><div className="print-brand"><img src="/serawat-logo.png" alt="S" className="print-logo" /><div className="print-hospital">SERAWAT ADVANCED MUSCULOSKELETAL, JOINT &amp; SPINE CENTRE</div></div><div className="print-opd"><strong>OPD · #{visit?.tokenNumber || visit?.id || "—"}</strong><span>{formatDateTime(visit?.createdAt)}</span></div></div>
-        <div className="print-patient"><div><span>Patient</span><strong>{patientName}</strong></div><div><span>Patient ID</span><strong>{patientIdDisplay}</strong></div><div><span>Age / Sex</span><strong>{ageFromDob(patientDob)} / {String(patient?.gender || "—")}</strong></div><div><span>Mobile</span><strong>{patientPhone}</strong></div><div><span>DOB</span><strong>{patientDob ? new Date(patientDob).toLocaleDateString("en-IN") : "—"}</strong></div><div><span>Visit No.</span><strong>{visit?.id || "—"}</strong></div><div><span>Department</span><strong>{department}</strong></div><div><span>Consultant</span><strong>{doctor}</strong></div><div><span>Consultation Start</span><strong>{formatDateTime(consultationStartedAt)}</strong></div></div>
-        <div className="print-complaints"><div><h3>Chief Complaint</h3><p>{chiefComplaint || "—"}</p></div><div><h3>Clinical Diagnosis</h3><p>{diagnosis || "—"}</p></div></div>
-        <div className="print-body"><aside className="print-sidebar">{hasVitals && <div className="print-tool"><b>Vitals</b><p>{vitals.filter(v => v.value.trim()).map(v => `${v.label}: ${v.value} ${v.unit}`).join("  ·  ")}</p></div>}{hasPhysical && <div className="print-tool"><b>Physical / Clinical</b><p>{physicalFindings}</p></div>}{hasInvestigations && <div className="print-tool"><b>Investigations</b><p>{selectedInvestigations.map(x => `${x.name}${x.rate != null ? ` · ₹${x.rate}` : ""}`).join("  ·  ")}</p></div>}{hasAdvice && <div className="print-tool"><b>General Advice</b><p>{generalAdvice}</p></div>}</aside><section className="print-main">{filledMedicines.length > 0 ? <div className="print-section"><h3>Medicines / Prescription</h3><table><thead><tr><th>Medicine</th><th>Dose</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead><tbody>{filledMedicines.map(m => <tr key={m.id}><td>{m.name}</td><td>{m.dose}</td><td>{m.frequency}</td><td>{m.food}</td><td>{m.duration}</td></tr>)}</tbody></table></div> : <div className="print-empty">Prescription / clinical management details</div>}<div className="print-footer"><div><span>Follow-up Date</span><strong>{followUpDate ? new Date(followUpDate).toLocaleDateString("en-IN") : "—"}</strong></div><div className="print-sign"><span>Consultant</span><strong>{doctor}</strong><em>Signature</em></div></div></section></div>
-      </section>
-
-      <style jsx global>{`
-        .label{display:block;font-size:9px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#94a3b8;margin-bottom:3px}.clinical-box{border:1px solid #dbe3ec;border-radius:16px;background:#fff;padding:16px}.section-label{font-size:10px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#082b61;margin-bottom:8px}.clinical-box textarea,.clinical-box input{width:100%;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:12px;outline:none;background:#fff}.clinical-box textarea:focus,.clinical-box input:focus{border-color:#0b63ce}.tool-panel{margin-top:10px;border:1px solid #dbe3ec;border-radius:12px;background:#fff;padding:10px}.tool-field{display:block;margin-bottom:8px}.tool-field>span{display:block;font-size:9px;font-weight:800;color:#64748b;margin-bottom:3px}.tool-field>div{display:flex;align-items:center;gap:4px}.tool-field input{min-width:0;width:100%;border:1px solid #dbe3ec;border-radius:7px;padding:6px;font-size:11px}.tool-field b{font-size:9px;color:#64748b;white-space:nowrap}.print-document{display:none}
-        @media print{ @page{size:A4 portrait;margin:0} html,body{width:210mm!important;height:297mm!important;margin:0!important;padding:0!important;background:#fff!important} body{overflow:hidden!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.consultation-screen{display:none!important}.print-document{display:block!important;box-sizing:border-box;width:210mm;height:297mm;max-height:297mm;overflow:hidden;background:#fff;color:#172033;font-family:Arial,Helvetica,sans-serif;padding:8mm 9mm 7mm}.print-header{height:24mm;border-bottom:1px solid #183d70;display:flex;align-items:center;justify-content:space-between}.print-brand{display:flex;align-items:center;gap:4mm}.print-logo{width:14mm;height:14mm;object-fit:contain}.print-hospital{font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:700;letter-spacing:.045em;color:#082b61;line-height:1.15}.print-opd{display:flex;flex-direction:column;align-items:flex-end;gap:1mm;font-size:9px;font-weight:800;color:#082b61;border:1px solid #d7c08a;padding:2mm 3mm;border-radius:2mm;white-space:nowrap}.print-opd span{font-size:7px;font-weight:700;color:#64748b}.print-patient{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #cbd5e1;padding:4mm 0;gap:3mm 5mm}.print-patient span,.print-footer span{display:block;font-size:7px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#64748b}.print-patient strong{display:block;font-size:9px;line-height:1.2;margin-top:1mm;color:#172033;overflow-wrap:anywhere}.print-complaints{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #cbd5e1}.print-complaints>div{min-height:25mm;padding:3.5mm 4mm}.print-complaints>div+div{border-left:1px solid #cbd5e1}.print-complaints h3,.print-section h3{margin:0 0 2mm;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#082b61;font-weight:900}.print-complaints p,.print-section p{margin:0;font-size:8.5px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}.print-body{display:grid;grid-template-columns:39mm 1fr;min-height:166mm;border-bottom:1px solid #cbd5e1}.print-sidebar{border-right:1px solid #cbd5e1;padding:4mm 3.5mm}.print-tool{padding:3mm 0;border-bottom:1px solid #e2e8f0}.print-tool:last-child{border-bottom:0}.print-tool b{display:block;font-size:8px;color:#082b61;font-weight:900;margin-bottom:1mm}.print-tool p{margin:0;font-size:7.5px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}.print-main{padding:4mm 4.5mm;display:flex;flex-direction:column;min-width:0}.print-section{border-bottom:1px solid #e2e8f0;padding-bottom:3mm;margin-bottom:3mm}.print-section table{width:100%;border-collapse:collapse;table-layout:fixed}.print-section th,.print-section td{border-bottom:1px solid #e2e8f0;padding:1.5mm;text-align:left;font-size:7.5px;vertical-align:top;overflow-wrap:anywhere}.print-section th{font-size:7px;color:#64748b;text-transform:uppercase;letter-spacing:.06em}.print-empty{font-size:8px;color:#94a3b8;padding:3mm 0}.print-footer{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;padding-top:4mm}.print-footer strong{display:block;font-size:9px;margin-top:1.2mm;color:#082b61}.print-sign{text-align:center;min-width:45mm}.print-sign em{display:block;font-style:normal;font-size:7px;color:#64748b;margin-top:7mm;border-top:1px solid #64748b;padding-top:1mm}.print-followup{display:block} }
-      `}</style>
-    </>
-  );
+ async function loadSaved(vId:string){
+  try{
+   const r=await fetch(`/api/patients/encounters?opdVisitId=${vId}`,{cache:"no-store"});
+   if(r.ok){const c=await r.json();if(c){setSaved(true);setChiefComplaint(c.chiefComplaint||"");setDiagnosis(c.diagnosis||"");setFollowUp(c.followUpDate?String(c.followUpDate).slice(0,10):"");const n=String(c.clinicalNotes||"");const p=n.match(/Physical \/ Clinical Findings:\n([\s\S]*?)(?=\n\n|$)/i);if(p)setPhysical(p[1]);const a=n.match(/General Advice:\n([\s\S]*?)(?=\n\n|$)/i);if(a)setAdvice(a[1]);const inv=n.match(/Investigations:\n([^\n]+)/i);if(inv){const names=inv[1].split(",").map(x=>x.trim()).filter(Boolean);const rows=await Promise.all(names.map(x=>fetch(`/api/investigation-master?q=${encodeURIComponent(x)}`,{cache:"no-store"}).then(z=>z.ok?z.json():[])));const flat=rows.flat();setSelected(names.map(n=>flat.find((x:any)=>String(x.name).toLowerCase()===n.toLowerCase())).filter(Boolean));}}}
+   const o=await fetch(`/api/investigation-orders?opdVisitId=${vId}`,{cache:"no-store"});if(o.ok){const rows=await o.json();setOrderedIds(new Set(rows.map((x:any)=>Number(x.investigationId)).filter(Boolean)));}
+  }catch{}
+ }
+ useEffect(()=>{(async()=>{try{const p=await fetch(`/api/patients/${patientRouteId}`);if(!p.ok)throw new Error("Unable to load patient.");setPatient(await p.json());if(!opdVisitId)return;const v=await fetch(`/api/opd/${opdVisitId}`);if(!v.ok)throw new Error("Unable to load OPD visit.");const vd:Visit=await v.json();setVisit(vd);const s=await fetch(`/api/opd/${opdVisitId}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"IN_CONSULTATION"})});setStartedAt(s.ok?((await s.json()).updatedAt||new Date().toISOString()):new Date().toISOString());const deps=await fetch("/api/departments"),ds=deps.ok?await deps.json():[];setDepartment(ds.find((x:any)=>x.id===vd.departmentId)?.name||"—");const docs=await fetch(vd.departmentId?`/api/doctors?departmentId=${vd.departmentId}`:"/api/doctors"),dd=docs.ok?await docs.json():[];const d=dd.find((x:any)=>x.id===vd.doctorId);setDoctor(d?.name||"—");await loadSaved(opdVisitId);}catch(e){setError(e instanceof Error?e.message:"Unable to load consultation.")}finally{setLoading(false)}})()},[patientRouteId,opdVisitId]);
+ useEffect(()=>{const q=investigationInput.trim();if(!q){setSuggestions([]);return}const t=window.setTimeout(async()=>{try{const r=await fetch(`/api/investigation-master?q=${encodeURIComponent(q)}`,{cache:"no-store"});if(r.ok){const rows:Investigation[]=await r.json(),ids=new Set(selected.map(x=>x.id));setSuggestions(rows.filter(x=>!ids.has(x.id)).slice(0,10))}}catch{}},220);return()=>window.clearTimeout(t)},[investigationInput,selected]);
+ const patientName=nameOf(patient),patientIdDisplay=String(patient?.patientId||patient?.id||patientRouteId),hasVitals=vitals.some(x=>x.value.trim()),filledMedicines=medicines.filter(x=>x.name.trim());
+ function addInv(x:Investigation){setSelected(v=>[...v,x]);setInvestigationInput("");setSuggestions([])} function removeInv(id:number){setSelected(v=>v.filter(x=>x.id!==id))} function updateMed(id:number,key:keyof Medicine,value:string){setMedicines(v=>v.map(x=>x.id===id?{...x,[key]:value}:x))}
+ async function save(){setSaving(true);setError("");try{const notes=[physical?`Physical / Clinical Findings:\n${physical}`:"",hasVitals?`Vitals:\n${vitals.filter(x=>x.value.trim()).map(x=>`${x.label}: ${x.value} ${x.unit}`).join(" | ")}`:"",selected.length?`Investigations:\n${selected.map(x=>x.name).join(", ")}`:"",advice?`General Advice:\n${advice}`:"",filledMedicines.length?`Medicines / Prescription:\n${filledMedicines.map(x=>[x.name,x.dose,x.frequency,x.food,x.duration].filter(Boolean).join(" · ")).join("\n")}:".slice(0,-1):""].filter(Boolean).join("\n\n");const r=await fetch("/api/patients/encounters",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({patientId:patientRouteId,opdVisitId:opdVisitId?Number(opdVisitId):null,chiefComplaint,diagnosis,clinicalNotes:notes,treatmentPlan:"",followUpDate:followUp||null})});const d=await r.json();if(!r.ok)throw new Error(d?.error||"Unable to save consultation.");setSaved(true)}catch(e){setError(e instanceof Error?e.message:"Unable to save consultation.")}finally{setSaving(false)}}
+ async function orderInvestigations(){if(!opdVisitId||!selected.length){setError("Select at least one investigation before placing the order.");return}const pending=selected.filter(x=>!orderedIds.has(x.id));if(!pending.length){setOrderMessage("All selected investigations are already ordered for this visit.");return}setOrdering(true);setError("");setOrderMessage("");try{const r=await fetch("/api/investigation-orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({opdVisitId:Number(opdVisitId),investigations:pending.map(x=>({id:x.id}))})});const d=await r.json();if(!r.ok)throw new Error(d?.error||"Unable to place investigation order.");setOrderedIds(v=>new Set([...v,...pending.map(x=>x.id)]));setOrderMessage("Investigation order placed → diagnostic queue + billing.")}catch(e){setError(e instanceof Error?e.message:"Unable to place investigation order.")}finally{setOrdering(false)}}
+ if(loading)return <main className="flex min-h-screen items-center justify-center bg-[#eef2f7]"><div className="rounded-2xl bg-white p-8 font-bold text-slate-500 shadow-xl">Loading consultation…</div></main>;
+ const tool=(k:Exclude<Tool,null>,l:string,i:string)=><button type="button" onClick={()=>setTool(tool===k?null:k)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-black ${tool===k?"bg-[#082b61] text-white":"bg-white text-slate-600"}`}><span>{i}</span>{l}<span className="ml-auto">{tool===k?"−":"+"}</span></button>;
+ return <main className="min-h-screen bg-[#eef2f7] text-slate-900"><header className="sticky top-0 z-40 border-b border-[#d7c08a]/30 bg-[#071f46] text-white shadow-lg"><div className="mx-auto flex min-h-[88px] max-w-[1600px] items-center justify-between px-5 sm:px-8"><div className="flex items-center gap-4"><button type="button" onClick={()=>router.back()} className="h-10 w-10 rounded-xl bg-white/10 text-xl">←</button><Image src="/serawat-logo.png" alt="S" width={70} height={44}/><div className="border-l border-white/15 pl-4"><p className="text-[9px] font-black uppercase tracking-[.25em] text-[#f1d27a]">SAMS · Clinical Record</p><h1 className="text-xl font-semibold sm:text-2xl">Serawat Advanced Musculoskeletal, Joint &amp; Spine Centre</h1></div></div><div className="hidden text-right sm:block"><p className="text-[9px] uppercase text-blue-200">Patient</p><p className="text-sm font-black">{patientName} · {patientIdDisplay}</p></div></div></header>
+ <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-7 lg:px-9"><section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl"><section className="border-b border-slate-200 bg-[#fbfaf7] px-5 py-5 sm:px-8"><div className="flex items-center justify-between gap-4"><div><p className="text-[9px] font-black uppercase tracking-[.24em] text-[#0b63ce]">Patient Details</p><h2 className="mt-1 text-2xl font-semibold text-[#082b61]">{patientName}</h2></div><div className="flex gap-2"><span className="rounded-full border border-[#d4af37]/40 bg-[#fffaf0] px-3 py-1.5 text-[9px] font-black uppercase text-[#8b6a17]">OPD · #{visit?.tokenNumber||visit?.id||"—"}</span>{saved&&<span className="rounded-full bg-emerald-50 px-3 py-1.5 text-[9px] font-black uppercase text-emerald-700">Saved · Reopenable</span>}</div></div><div className="mt-4 grid gap-x-6 gap-y-3 text-xs sm:grid-cols-2 lg:grid-cols-4">{[["Patient ID",patientIdDisplay],["Age / Sex",`${ageOf(patient?.dateOfBirth)} / ${patient?.gender||"—"}`],["Mobile",patient?.phone||"—"],["DOB",patient?.dateOfBirth?new Date(patient.dateOfBirth).toLocaleDateString("en-IN"):"—"],["Department",department],["Consultant",doctor],["Visit No.",visit?.id||"—"],["Date & Time",dateTime(startedAt)]].map(([l,v])=><div key={String(l)}><span className="label">{l}</span><strong>{v}</strong></div>)}</div></section>
+ <div className="grid lg:grid-cols-[230px_minmax(0,1fr)]"><aside className="border-b border-slate-200 bg-[#f8fafc] p-4 lg:border-b-0 lg:border-r lg:p-5"><div className="space-y-2">{tool("vitals","Vitals","🩺")}{tool("investigation","Investigations","🔬")}{tool("physical","Physical / Clinical","🦴")}{tool("advice","General Advice","📋")}</div>
+ {tool==="vitals"&&<div className="tool-panel">{vitals.map((v,i)=><label key={v.label} className="tool-field"><span>{v.label}</span><div><input value={v.value} onChange={e=>setVitals(old=>old.map((x,n)=>n===i?{...x,value:e.target.value}:x))}/><b>{v.unit}</b></div></label>)}</div>}
+ {tool==="investigation"&&<div className="tool-panel"><p className="mb-2 text-[9px] font-black uppercase tracking-[.14em] text-[#082b61]">Investigation Advice</p><input value={investigationInput} onChange={e=>setInvestigationInput(e.target.value)} placeholder="Search name, code, alias…"/><div className="relative">{suggestions.length>0&&<div className="absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-auto rounded-xl border bg-white shadow-2xl">{suggestions.map(x=><button type="button" key={x.id} onClick={()=>addInv(x)} className="block w-full border-b px-3 py-2.5 text-left hover:bg-blue-50"><span className="block text-[11px] font-bold">{x.name}</span><span className="text-[9px] text-slate-400">{[x.code,x.category,x.department].filter(Boolean).join(" · ")}</span></button>)}</div>}</div><div className="mt-3 space-y-1.5">{selected.map(x=><div key={x.id} className="flex items-center justify-between rounded-xl bg-blue-50 px-3 py-2 text-[9px] font-bold text-[#0b63ce]"><span>{x.name}{orderedIds.has(x.id)?" · ORDERED":""}</span><button type="button" onClick={()=>removeInv(x.id)} className="font-black text-red-500">Remove</button></div>)}</div><p className="mt-3 text-[9px] text-slate-400">Investigation rates are not displayed on the consultation slip.</p>{selected.length>0&&<button type="button" onClick={orderInvestigations} disabled={ordering||!opdVisitId} className="mt-3 w-full rounded-xl bg-[#0b63ce] px-3 py-3 text-[10px] font-black text-white disabled:opacity-50">{ordering?"Sending…":"Send Investigation Order → Lab & Billing"}</button>}{orderMessage&&<p className="mt-2 rounded-lg bg-emerald-50 p-2 text-[9px] font-bold text-emerald-700">{orderMessage}</p>}</div>}
+ {tool==="physical"&&<div className="tool-panel"><textarea value={physical} onChange={e=>setPhysical(e.target.value)} rows={8} placeholder="Physical / clinical examination findings…"/></div>}{tool==="advice"&&<div className="tool-panel"><textarea value={advice} onChange={e=>setAdvice(e.target.value)} rows={7} placeholder="General advice / precautions…"/></div>}</aside>
+ <section className="p-5 sm:p-8"><div className="grid gap-5 lg:grid-cols-2"><section className="clinical-box"><p className="section-label">Chief Complaint</p><textarea value={chiefComplaint} onChange={e=>setChiefComplaint(e.target.value)} rows={5} placeholder="Reason for consultation / presenting complaints…"/></section><section className="clinical-box"><p className="section-label">Clinical Diagnosis</p><textarea value={diagnosis} onChange={e=>setDiagnosis(e.target.value)} rows={5} placeholder="Diagnosis / differential diagnosis…"/></section></div>
+ <section className="clinical-box mt-5"><div className="flex items-center justify-between"><p className="section-label">Medicines / Prescription</p><button type="button" onClick={()=>setMedicines(v=>[...v,{id:Date.now(),name:"",dose:"",frequency:"",food:"",duration:""}])} className="rounded-lg bg-[#082b61] px-3 py-2 text-[10px] font-black text-white">+ Add Medicine</button></div><div className="mt-3 space-y-2">{medicines.map((m,i)=><div key={m.id} className="grid gap-2 rounded-xl bg-slate-50 p-2.5 sm:grid-cols-5"><input value={m.name} onChange={e=>updateMed(m.id,"name",e.target.value)} placeholder={`Medicine ${i+1}`}/><input value={m.dose} onChange={e=>updateMed(m.id,"dose",e.target.value)} placeholder="Dose"/><input value={m.frequency} onChange={e=>updateMed(m.id,"frequency",e.target.value)} placeholder="Frequency"/><input value={m.food} onChange={e=>updateMed(m.id,"food",e.target.value)} placeholder="Food"/><input value={m.duration} onChange={e=>updateMed(m.id,"duration",e.target.value)} placeholder="Duration"/></div>)}</div></section>
+ {error&&<div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</div>}
+ <div className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-end sm:justify-between"><div><label className="label">Follow-up Date</label><input type="date" value={followUp} onChange={e=>setFollowUp(e.target.value)} className="mt-2 rounded-lg border p-2 text-xs"/></div><div className="flex flex-wrap justify-end gap-2"><button type="button" onClick={()=>loadSaved(String(opdVisitId))} disabled={!opdVisitId} className="rounded-xl border border-[#0b63ce] bg-white px-4 py-3 text-xs font-black text-[#0b63ce] disabled:opacity-50">↻ Reopen Saved Consultation</button><button type="button" onClick={save} disabled={saving} className="rounded-xl bg-[#0b63ce] px-6 py-3 text-xs font-black text-white disabled:opacity-60">{saving?"Saving…":"Save Consultation · Keep Visit Open"}</button></div></div></section></div></section></div></section></div>
+ <style jsx global>{`.label{display:block;font-size:9px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#94a3b8;margin-bottom:3px}.clinical-box{border:1px solid #dbe3ec;border-radius:16px;background:#fff;padding:16px}.section-label{font-size:10px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#082b61;margin-bottom:8px}.clinical-box textarea,.clinical-box input,.tool-panel input,.tool-panel textarea{width:100%;border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:12px;outline:none;background:#fff}.tool-panel{margin-top:10px;border:1px solid #dbe3ec;border-radius:12px;background:#fff;padding:10px}.tool-field{display:block;margin-bottom:8px}.tool-field>span{display:block;font-size:9px;font-weight:800;color:#64748b;margin-bottom:3px}.tool-field>div{display:flex;align-items:center;gap:4px}.tool-field input{min-width:0;width:100%;border:1px solid #dbe3ec;border-radius:7px;padding:6px;font-size:11px}.tool-field b{font-size:9px;color:#64748b;white-space:nowrap}`}</style></main>;
 }
