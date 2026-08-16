@@ -4,29 +4,12 @@ import { prisma } from "@/lib/prisma";
 function clinicalOnlyNotes(value: unknown) {
   return String(value || "").replace(/\s*\(₹\s*[\d,]+(?:\.\d+)?\)/g, "").replace(/\n{3,}/g, "\n\n").trim() || null;
 }
-function investigationNames(value: unknown) {
-  const match = String(value || "").match(/Investigations:\s*([^\n]+)/i);
-  return match ? match[1].split(",").map(x => x.replace(/\s*\(₹[^)]*\)/g, "").trim()).filter(Boolean) : [];
-}
-async function dispatchInvestigationOrders(opdVisitId: number, names: string[]) {
-  let created = 0;
-  for (const name of names) {
-    const master = await prisma.investigationMaster.findFirst({ where: { active: true, OR: [{ name }, { shortName: name }, { code: name }] } });
-    if (!master) continue;
-    const existing = await prisma.investigationOrder.findFirst({ where: { opdVisitId, investigationId: master.id } });
-    if (existing) continue;
-    await prisma.investigationOrder.create({ data: { opdVisitId, investigationId: master.id, investigation: master.name, price: master.rate, netAmount: master.rate, paymentStatus: "UNPAID", status: "ORDERED" } });
-    created += 1;
-  }
-  return created;
-}
 
 export async function GET(request: NextRequest) {
   try {
     const visitId = Number(new URL(request.url).searchParams.get("opdVisitId"));
     if (!Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID is required." }, { status: 400 });
     const encounter = await prisma.clinicalEncounter.findUnique({ where: { opdVisitId: visitId } });
-    if (!encounter) return NextResponse.json(null, { status: 200 });
     return NextResponse.json(encounter);
   } catch (error) {
     console.error("Consultation reopen GET failed:", error);
@@ -45,11 +28,20 @@ export async function POST(request: NextRequest) {
       const opdVisit = await prisma.oPDVisit.findUnique({ where: { id: opdVisitId } });
       if (!opdVisit || opdVisit.patientId !== patientId) return NextResponse.json({ error: "OPD visit not found for this patient" }, { status: 404 });
     }
-    const data = { patientId, opdVisitId, chiefComplaint: body.chiefComplaint || null, diagnosis: body.diagnosis || null, clinicalNotes: clinicalOnlyNotes(body.clinicalNotes), treatmentPlan: body.treatmentPlan || null, followUpDate: body.followUpDate ? new Date(body.followUpDate) : null };
-    const encounter = opdVisitId ? await prisma.clinicalEncounter.upsert({ where: { opdVisitId }, create: data, update: data }) : await prisma.clinicalEncounter.create({ data });
-    const investigationsSentToLab = opdVisitId ? await dispatchInvestigationOrders(opdVisitId, investigationNames(body.clinicalNotes)) : 0;
+    const data = {
+      patientId,
+      opdVisitId,
+      chiefComplaint: body.chiefComplaint || null,
+      diagnosis: body.diagnosis || null,
+      clinicalNotes: clinicalOnlyNotes(body.clinicalNotes),
+      treatmentPlan: body.treatmentPlan || null,
+      followUpDate: body.followUpDate ? new Date(body.followUpDate) : null,
+    };
+    const encounter = opdVisitId
+      ? await prisma.clinicalEncounter.upsert({ where: { opdVisitId }, create: data, update: data })
+      : await prisma.clinicalEncounter.create({ data });
     if (opdVisitId) await prisma.oPDVisit.update({ where: { id: opdVisitId }, data: { status: "IN_CONSULTATION" } });
-    return NextResponse.json({ ...encounter, investigationsSentToLab }, { status: 200 });
+    return NextResponse.json(encounter, { status: 200 });
   } catch (error) {
     console.error("Clinical encounter error:", error);
     return NextResponse.json({ error: "Failed to save clinical encounter" }, { status: 500 });
