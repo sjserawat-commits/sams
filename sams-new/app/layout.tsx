@@ -6,8 +6,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SAMS | Serawat Advanced Musculoskeletal, Joint & Spine Centre",
-  description: "Serawat Advanced Musculoskeletal, Joint & Spine Centre — SAMS clinical operations workspace.",
+  title: "SAMS | Serawat Advanced Multispecialty Joint & Spine Center",
+  description: "SAMS — Serawat Advanced Multispecialty Joint & Spine Center clinical operations workspace.",
   icons: { icon: "/serawat-logo.png" },
 };
 
