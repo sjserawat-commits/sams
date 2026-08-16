@@ -37,7 +37,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     const { id } = await context.params;
     const visitId = Number(id);
     const body = await request.json();
-    const status = String(body.status || "");
+    let status = String(body.status || "");
 
     if (!Number.isInteger(visitId)) {
       return NextResponse.json({ error: "Invalid OPD visit ID" }, { status: 400 });
@@ -50,6 +50,12 @@ export async function PATCH(request: Request, context: RouteContext) {
     const visit = await prisma.oPDVisit.findUnique({ where: { id: visitId } });
     if (!visit) {
       return NextResponse.json({ error: "OPD visit not found" }, { status: 404 });
+    }
+
+    // A consultation page currently sends COMPLETED when its form is saved.
+    // Treat that as a save/continue action unless an explicit finalization is requested.
+    if (status === "COMPLETED" && body.finalize !== true) {
+      status = "IN_CONSULTATION";
     }
 
     const updatedVisit = await prisma.oPDVisit.update({
