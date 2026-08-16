@@ -19,6 +19,7 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
