@@ -227,12 +227,12 @@ export default function OPDQueuePage() {
                       type="button"
                       onClick={() =>
                         router.push(
-                          `/patients/profile/${visit.patient.id}/encounters/new?opdVisitId=${visit.id}`
+                          `/patients/profile/${visit.patient.id}/opd-slip/print?visitId=${visit.id}`
                         )
                       }
                       className="rounded-xl bg-[#0b63ce] px-5 py-3 text-sm font-black text-white"
                     >
-                      Open Patient
+                      Open OPD Visit Slip
                     </button>
                   </div>
                 ))}
