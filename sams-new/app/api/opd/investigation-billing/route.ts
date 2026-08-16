@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const opdVisitId = Number(body.opdVisitId);
-    const requested = Array.isArray(body.investigations) ? body.investigations : [];
+    const requested: Array<{ investigationId?: unknown }> = Array.isArray(body.investigations) ? body.investigations : [];
     const discountType = String(body.discountType || "PERCENT").toUpperCase();
     const requestedDiscount = Number(body.discountValue || 0);
 
@@ -49,11 +49,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This OPD Visit already has an invoice. Add further charges only before invoice generation." }, { status: 400 });
     }
 
-    const investigationIds = Array.from(
-      new Set(
+    const investigationIds: number[] = Array.from(
+      new Set<number>(
         requested
-          .map((item: { investigationId?: unknown }) => Number(item?.investigationId))
-          .filter((id: number) => Number.isInteger(id) && id > 0)
+          .map((item): number => Number(item?.investigationId))
+          .filter((id): id is number => Number.isInteger(id) && id > 0)
       )
     );
     if (!investigationIds.length) {
