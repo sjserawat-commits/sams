@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Investigation = {
@@ -29,7 +29,7 @@ type Order = {
   status: string;
 };
 
-export default function InvestigationOrderPage() {
+function InvestigationOrderPageContent() {
   const searchParams = useSearchParams();
   const opdVisitId = Number(searchParams.get("opdVisitId") || 0);
 
@@ -300,5 +300,21 @@ export default function InvestigationOrderPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function InvestigationOrderPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#f5f8fc] px-5 py-8 text-slate-900">
+          <div className="mx-auto max-w-6xl rounded-[2rem] bg-white p-8 shadow-sm">
+            <p className="text-sm font-semibold text-slate-500">Loading Investigation Orders…</p>
+          </div>
+        </main>
+      }
+    >
+      <InvestigationOrderPageContent />
+    </Suspense>
   );
 }
