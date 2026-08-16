@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 const receptionItems = [
-  { href: "/reception", label: "Reception", icon: "⌂" },
   { href: "/patients/new", label: "Patient Registration", icon: "＋" },
   { href: "/patients/list", label: "Patient Registry", icon: "♙" },
   { href: "/appointments", label: "Appointments", icon: "▣" },
