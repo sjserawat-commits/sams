@@ -3,7 +3,7 @@ import Link from "next/link";
 const modules = [
   { title: "Investigation Orders", href: "/opd/investigations", number: "01", text: "Order investigations for a specific OPD Visit from the central Investigation Master." },
   { title: "Investigation Room", href: "/investigation-room", number: "02", text: "Receive orders, collect samples, process investigations and enter results." },
-  { title: "Reports & Results", href: "/investigation-room", number: "03", text: "Review completed reports linked to the original patient and OPD Visit." },
+  { title: "Reports & Results", href: "/investigation-reports", number: "03", text: "Review finalized, patient-wise reports linked to the original OPD Visit and print them." },
 ];
 
 export default function InvestigationsPage() {
@@ -15,7 +15,7 @@ export default function InvestigationsPage() {
             <Link href="/dashboard" className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-[#082b61] shadow-sm">←</Link>
             <div><p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#0b63ce]">SAMS · Clinical Workspace</p><h1 className="mt-1 text-xl font-black tracking-tight text-[#082b61]">Investigation</h1></div>
           </div>
-          <div className="flex flex-wrap items-center gap-2"><Link href="/investigation-master" className="rounded-xl bg-[#082b61] px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">Investigation Master →</Link><Link href="/investigation-room" className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-[#0b63ce]">Investigation Room →</Link></div>
+          <div className="flex flex-wrap items-center gap-2"><Link href="/investigation-master" className="rounded-xl bg-[#082b61] px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">Investigation Master →</Link><Link href="/investigation-room" className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-[#0b63ce]">Investigation Room →</Link><Link href="/investigation-reports" className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">Reports →</Link></div>
         </header>
 
         <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#082b61] via-[#075dcc] to-[#0b63ce] p-7 text-white shadow-[0_25px_70px_rgba(8,43,97,0.18)] sm:p-10">
