@@ -5,6 +5,8 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// This must match prisma.config.ts so the CLI (db push) and the
+// Next.js runtime always use the same SQLite database in Codespaces.
 const adapter = new PrismaBetterSqlite3({
   url: "file:./dev.db",
 });
