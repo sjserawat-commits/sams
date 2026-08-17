@@ -10,6 +10,7 @@ type Investigation = { id: number; code?: string | null; name: string; category?
 type Result = { id: number; investigationId?: number | null; investigation: string; status: string; reportText?: string | null; reportedAt?: string | null; master?: { unit?: string | null; referenceRange?: string | null } | null };
 type Medicine = { id: number; name: string; dose: string; frequency: string; food: string; duration: string };
 type Tool = "vitals" | "investigation" | "reports" | "physical" | "advice" | null;
+type Vital = { label: string; value: string; unit: string };
 
 const units: Record<string, string> = { "Blood Pressure": "mmHg", Pulse: "bpm", "Respiratory Rate": "/min", Temperature: "°F", "SpO₂": "%", Weight: "kg", Height: "cm", BMI: "kg/m²" };
 const frequencyOptions = ["OD", "BD", "TDS", "QDS", "Once a week", "Twice a week", "SOS", "HS", "STAT", "Alternate days"];
@@ -18,6 +19,7 @@ const durationOptions = Array.from({ length: 30 }, (_, i) => String(i + 1));
 const patientName = (p: Patient | null) => String(p?.name || [p?.firstName, p?.lastName].filter(Boolean).join(" ") || "Patient");
 const age = (dob?: string) => { if (!dob) return "—"; const d = new Date(dob); const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--; return a >= 0 ? String(a) : "—"; };
 const dateTime = (value?: string | null) => { if (!value) return "—"; const d = new Date(value); return Number.isNaN(d.getTime()) ? "—" : `${d.toLocaleDateString("en-IN")} · ${d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`; };
+const blankVitals = (): Vital[] => Object.keys(units).map(label => ({ label, value: "", unit: units[label] }));
 
 export default function ConsultationPage() {
   const params = useParams<{ id: string }>();
@@ -50,7 +52,7 @@ export default function ConsultationPage() {
   const [selected, setSelected] = useState<Investigation[]>([]);
   const [ordered, setOrdered] = useState<Set<number>>(new Set());
   const [results, setResults] = useState<Result[]>([]);
-  const [vitals, setVitals] = useState(Object.keys(units).map(label => ({ label, value: "", unit: units[label] })));
+  const [vitals, setVitals] = useState<Vital[]>(blankVitals());
   const [medicines, setMedicines] = useState<Medicine[]>([{ id: 1, name: "", dose: "", frequency: "", food: "", duration: "" }]);
 
   async function reload() {
@@ -72,6 +74,15 @@ export default function ConsultationPage() {
             } catch { /* ignore malformed legacy medicine data */ }
           }
           const note = String(c.clinicalNotes || "");
+          const vitalMarker = "Vitals:\n";
+          const vitalIndex = note.indexOf(vitalMarker);
+          if (vitalIndex >= 0) {
+            const vitalLine = note.slice(vitalIndex + vitalMarker.length).split("\n\n")[0];
+            try {
+              const parsed = JSON.parse(vitalLine);
+              if (Array.isArray(parsed)) setVitals(parsed);
+            } catch { /* ignore malformed legacy vital data */ }
+          }
           const marker = "Investigations:";
           const markerIndex = note.indexOf(marker);
           if (markerIndex >= 0) {
@@ -81,6 +92,12 @@ export default function ConsultationPage() {
             const all = rows.flat();
             setSelected(names.map((x: string) => all.find((y: any) => String(y.name).toLowerCase() === x.toLowerCase())).filter(Boolean));
           }
+          const physicalMarker = "Physical / Clinical Findings:";
+          const physicalIndex = note.indexOf(physicalMarker);
+          if (physicalIndex >= 0) setPhysical(note.slice(physicalIndex + physicalMarker.length).split("\n\n")[0].trim());
+          const adviceMarker = "General Advice:";
+          const adviceIndex = note.indexOf(adviceMarker);
+          if (adviceIndex >= 0) setAdvice(note.slice(adviceIndex + adviceMarker.length).split("\n\n")[0].trim());
         }
       }
       const ordersResponse = await fetch(`/api/investigation-orders?opdVisitId=${visitId}`, { cache: "no-store" });
@@ -150,7 +167,8 @@ export default function ConsultationPage() {
   const save = async () => {
     setSaving(true); setError(""); setMessage("");
     try {
-      const notes = [physical ? `Physical / Clinical Findings:\n${physical}` : "", advice ? `General Advice:\n${advice}` : "", selected.length ? `Investigations:\n${selected.map(x => x.name).join(", ")}` : ""].filter(Boolean).join("\n\n");
+      const cleanVitals = vitals.filter(v => String(v.value || "").trim());
+      const notes = [cleanVitals.length ? `Vitals:\n${JSON.stringify(cleanVitals)}` : "", physical ? `Physical / Clinical Findings:\n${physical}` : "", advice ? `General Advice:\n${advice}` : "", selected.length ? `Investigations:\n${selected.map(x => x.name).join(", ")}` : ""].filter(Boolean).join("\n\n");
       const cleanMedicines = medicines.filter(m => m.name.trim()).map(m => ({ ...m, name: m.name.trim() }));
       const treatmentPlan = cleanMedicines.length ? `Medicines:\n${JSON.stringify(cleanMedicines)}` : "";
       const response = await fetch("/api/patients/encounters", {
