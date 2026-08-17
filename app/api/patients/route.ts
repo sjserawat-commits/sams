@@ -10,8 +10,29 @@ function maskAadhaar(value: string | null | undefined) {
   return `XXXX XXXX ${value.slice(-4)}`;
 }
 
+async function ensurePatientTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Patient" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "patientId" TEXT NOT NULL,
+      "firstName" TEXT NOT NULL,
+      "lastName" TEXT NOT NULL,
+      "dateOfBirth" DATETIME,
+      "gender" TEXT,
+      "phone" TEXT,
+      "aadhaarNumber" TEXT,
+      "address" TEXT,
+      "emergencyContact" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Patient_patientId_key" ON "Patient"("patientId");`);
+}
+
 export async function GET() {
   try {
+    await ensurePatientTable();
     const patients = await prisma.patient.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, patientId: true, firstName: true, lastName: true, gender: true, phone: true, dateOfBirth: true, aadhaarNumber: true } });
     return NextResponse.json(patients.map((patient) => ({ ...patient, aadhaarNumber: maskAadhaar(patient.aadhaarNumber) })));
   } catch (error) {
@@ -22,6 +43,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    await ensurePatientTable();
     const body = await request.json();
     const firstName = String(body.firstName || "").trim();
     const lastName = String(body.lastName || "").trim();
@@ -45,6 +67,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...patient, aadhaarNumber: maskAadhaar(patient.aadhaarNumber) }, { status: 201 });
   } catch (error) {
     console.error("Patient registration error:", error);
-    return NextResponse.json({ error: "Unable to register patient." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unable to register patient.";
+    return NextResponse.json({ error: process.env.NODE_ENV === "development" ? message : "Unable to register patient." }, { status: 500 });
   }
 }
