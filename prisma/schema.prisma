@@ -25,27 +25,28 @@ model Patient {
 }
 
 model Appointment {
-  id             Int      @id @default(autoincrement())
-  appointmentNo  String   @unique
-  patientId      Int?
-  patientType    String   @default("NEW")
-  patientName    String
-  mobile         String
-  dob            DateTime?
-  gender         String?
-  email          String?
-  reason         String?
-  departmentId   Int?
-  departmentName String?
-  doctorId       Int?
-  doctorName     String
+  id              Int       @id @default(autoincrement())
+  appointmentNo   String    @unique
+  patientId       Int?
+  patientType     String    @default("NEW")
+  patientName     String
+  mobile          String
+  dob             DateTime?
+  gender          String?
+  email           String?
+  reason          String?
+  departmentId    Int?
+  departmentName  String?
+  doctorId        Int?
+  doctorName      String
   appointmentDate String
   appointmentTime String
-  source         String   @default("ONLINE")
-  status         String   @default("SCHEDULED")
-  opdVisitId     Int?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  source          String    @default("ONLINE")
+  status          String    @default("SCHEDULED")
+  opdVisitId      Int?      @unique
+  opdVisit        OPDVisit? @relation(fields: [opdVisitId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model ClinicalEncounter {
@@ -93,6 +94,7 @@ model Doctor {
 
 model OPDVisit {
   clinicalEncounter   ClinicalEncounter?
+  appointment         Appointment?
   investigationOrders InvestigationOrder[]
   prescriptions       Prescription[]
   billingRecords      BillingRecord[]
@@ -100,7 +102,7 @@ model OPDVisit {
   id                  Int                  @id @default(autoincrement())
   patientId           Int
   tokenNumber         Int
-  visitType            String               @default("NEW")
+  visitType           String               @default("NEW")
   status              String               @default("WAITING")
   departmentId        Int?
   departmentMaster    Department?          @relation("DepartmentVisits", fields: [departmentId], references: [id])
