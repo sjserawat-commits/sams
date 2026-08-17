@@ -61,6 +61,13 @@ export default function ConsultationPage() {
           setComplaint(c.chiefComplaint || "");
           setDiagnosis(c.diagnosis || "");
           setFollowUp(c.followUpDate ? String(c.followUpDate).slice(0, 10) : "");
+          const treatment = String(c.treatmentPlan || "");
+          if (treatment.startsWith("Medicines:\n")) {
+            try {
+              const parsed = JSON.parse(treatment.slice("Medicines:\n".length));
+              if (Array.isArray(parsed)) setMedicines(parsed);
+            } catch { /* ignore malformed legacy medicine data */ }
+          }
           const note = String(c.clinicalNotes || "");
           const marker = "Investigations:";
           const markerIndex = note.indexOf(marker);
@@ -141,15 +148,17 @@ export default function ConsultationPage() {
     setSaving(true); setError(""); setMessage("");
     try {
       const notes = [physical ? `Physical / Clinical Findings:\n${physical}` : "", advice ? `General Advice:\n${advice}` : "", selected.length ? `Investigations:\n${selected.map(x => x.name).join(", ")}` : ""].filter(Boolean).join("\n\n");
+      const cleanMedicines = medicines.filter(m => m.name.trim()).map(m => ({ ...m, name: m.name.trim() }));
+      const treatmentPlan = cleanMedicines.length ? `Medicines:\n${JSON.stringify(cleanMedicines)}` : "";
       const response = await fetch("/api/patients/encounters", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patientId: Number(pid), opdVisitId: visitId ? Number(visitId) : null, chiefComplaint: complaint, diagnosis, clinicalNotes: notes, treatmentPlan: "", followUpDate: followUp || null })
+        body: JSON.stringify({ patientId: Number(pid), opdVisitId: visitId ? Number(visitId) : null, chiefComplaint: complaint, diagnosis, clinicalNotes: notes, treatmentPlan, followUpDate: followUp || null })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Unable to save consultation.");
       setSaved(true);
-      setMessage("Consultation saved. Visit remains open; you can continue later.");
+      setMessage("Consultation and prescription saved. Visit remains open; you can continue later.");
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to save consultation.");
