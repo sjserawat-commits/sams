@@ -28,7 +28,18 @@ export default function ReceptionPage() {
             <div className="absolute -left-32 -top-32 h-72 w-72 rounded-full bg-[#0b63ce]/15 blur-3xl" />
             <div className="absolute -right-28 -bottom-32 h-80 w-80 rounded-full bg-[#d6a443]/12 blur-3xl" />
 
-            <div className="relative mx-auto flex max-w-6xl flex-col items-center">
+            <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden">
+              <Image
+                src="/serawat-logo.png"
+                alt=""
+                aria-hidden="true"
+                width={620}
+                height={620}
+                className="h-[420px] w-[420px] object-contain opacity-[0.075] blur-[0.2px] sm:h-[520px] sm:w-[520px] lg:h-[620px] lg:w-[620px]"
+              />
+            </div>
+
+            <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#d6a443]/45 bg-[#071525]/80 p-2 shadow-[0_8px_30px_rgba(214,164,67,0.14)] sm:h-16 sm:w-16">
                 <Image src="/serawat-logo.png" alt="SAMS" width={70} height={70} className="h-full w-full object-contain" priority />
               </div>
