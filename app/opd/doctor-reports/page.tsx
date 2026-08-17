@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
-type Report = { id:number; investigation:string; reportText?:string|null; reportedAt?:string|null; opdVisit?:{id:number;tokenNumber:number;patientId:number;patient?:{id:number;patientId:string;firstName:string;lastName:string}} };
-const nameOf=(p?:Report["opdVisit"]["patient"])=>p?`${p.firstName} ${p.lastName}`.trim():"Patient";
+type Patient = { id:number; patientId:string; firstName:string; lastName:string };
+type Report = { id:number; investigation:string; reportText?:string|null; reportedAt?:string|null; opdVisit?:{id:number;tokenNumber:number;patientId:number;patient?:Patient} };
+const nameOf=(p?:Patient)=>p?`${p.firstName} ${p.lastName}`.trim():"Patient";
 
 export default function DoctorReportsPage(){
  const [reports,setReports]=useState<Report[]>([]); const [hid,setHid]=useState(""); const [loading,setLoading]=useState(true); const [error,setError]=useState(""); const [direct,setDirect]=useState(false);
  async function load(url:string){setLoading(true);setError("");try{const r=await fetch(url,{cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d?.error||"Unable to load reports.");setReports(Array.isArray(d?.reports)?d.reports:[]);}catch(e){setReports([]);setError(e instanceof Error?e.message:"Unable to load reports.");}finally{setLoading(false);}}
  useEffect(()=>{const id=new URLSearchParams(window.location.search).get("opdVisitId");if(id&&Number.isInteger(Number(id))){setDirect(true);load(`/api/opd/reports?opdVisitId=${encodeURIComponent(id)}`);}else setLoading(false);},[]);
- function search(e:React.FormEvent){e.preventDefault();if(!hid.trim())return;setDirect(false);load(`/api/opd/reports?hid=${encodeURIComponent(hid.trim())}`);}
+ function search(e:FormEvent){e.preventDefault();if(!hid.trim())return;setDirect(false);load(`/api/opd/reports?hid=${encodeURIComponent(hid.trim())}`);}
  const patient=reports[0]?.opdVisit?.patient; const visitId=reports[0]?.opdVisit?.id;
  return <main className="min-h-screen bg-[#050c16] text-slate-100"><header className="sticky top-0 z-50 border-b border-[#d6a443]/30 bg-[#061525]/95 px-4 py-3"><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4"><Link href="/doctor-desk" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-slate-200">← Back</Link><div className="text-right"><p className="text-lg font-black text-[#d6a443]">SAMS</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-300 sm:text-xs">SERAWAT ADVANCED MULTISPECIALITY JOINT &amp; SPINE CENTRE</p></div></div></header>
  <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6 lg:py-10"><section className="rounded-[2rem] border border-[#d6a443]/30 bg-[linear-gradient(135deg,#061525,#0c263d)] p-6"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#d6a443]">Doctor Desk · Reports</p><h1 className="mt-2 text-3xl font-black">Review Reports</h1>{patient&&direct&&<p className="mt-2 text-sm text-slate-300">{nameOf(patient)} · HID {patient.patientId} · Token #{reports[0]?.opdVisit?.tokenNumber}</p>}</section>
