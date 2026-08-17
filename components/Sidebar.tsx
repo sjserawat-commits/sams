@@ -4,9 +4,10 @@ import Link from "next/link";
 const receptionItems = [
   { href: "/patients/new", label: "Patient Registration", icon: "＋" },
   { href: "/patients/list", label: "Patient Registry", icon: "♙" },
-  { href: "/appointments", label: "Appointments", icon: "▣" },
   { href: "/opd", label: "OPD Registration", icon: "⌁" },
-  { href: "/patient-search", label: "Slip Printing", icon: "▤" },
+  { href: "/appointments", label: "Appointments", icon: "▣" },
+  { href: "/opd", label: "OPD Queue", icon: "☷" },
+  { href: "/patient-search", label: "Slip Registration", icon: "▤" },
 ];
 
 const clinicalItems = [
@@ -17,8 +18,13 @@ const clinicalItems = [
 
 function NavItem({ href, label, icon }: { href: string; label: string; icon: string }) {
   return (
-    <Link href={href} className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-bold text-slate-300 transition-all hover:border-[#d6a443]/30 hover:bg-white/5 hover:text-[#f2d38b]">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-[#071525] text-sm font-black text-[#d6a443] transition group-hover:border-[#d6a443]/40 group-hover:bg-[#102943] group-hover:text-[#f2d38b]">{icon}</span>
+    <Link
+      href={href}
+      className="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-bold text-slate-300 transition-all hover:border-[#d6a443]/30 hover:bg-white/5 hover:text-[#f2d38b]"
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-[#071525] text-sm font-black text-[#d6a443] transition group-hover:border-[#d6a443]/40 group-hover:bg-[#102943] group-hover:text-[#f2d38b]">
+        {icon}
+      </span>
       <span>{label}</span>
     </Link>
   );
@@ -51,7 +57,7 @@ export default function Sidebar() {
         {receptionItems.map((item) => <NavItem key={item.href + item.label} {...item} />)}
       </nav>
 
-      <div className="mb-2 mt-6 px-2 text-[9px] font-black uppercase tracking-[0.22em] text-[#d6a443]">Clinical workspace</div>
+      <div className="mb-2 mt-6 px-2 text-[9px] font-black uppercase tracking-[0.22em] text-[#d6a443]">Clinical Workspace</div>
       <nav className="space-y-1">
         {clinicalItems.map((item) => <NavItem key={item.href} {...item} />)}
       </nav>
