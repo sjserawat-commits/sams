@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "prisma db push && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "db:push": "prisma db push",
     "seed:investigations": "npx tsx prisma/seed-investigation-master.ts && npx tsx prisma/seed-investigation-expansion.ts && npx tsx prisma/seed-investigation-tertiary.ts"
   },
   "dependencies": {
