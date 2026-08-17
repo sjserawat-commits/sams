@@ -13,6 +13,7 @@ type Visit = { id: number; tokenNumber: number; patientId: number; doctorId?: nu
 
 const doctorName = (d?: Doctor) => d?.name || [d?.firstName, d?.lastName].filter(Boolean).join(" ") || "Consultant";
 const patientName = (p: Patient) => [p.firstName, p.lastName].filter(Boolean).join(" ") || "Patient";
+const DOCTOR_DESK_SELECTION_KEY = "sams.doctorDesk.selection";
 
 export default function DoctorDeskPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -24,6 +25,7 @@ export default function DoctorDeskPage() {
   const [queueLoading, setQueueLoading] = useState(false);
   const [actionId, setActionId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [selectionReady, setSelectionReady] = useState(false);
 
   async function loadDepartments() {
     setLoading(true);
@@ -49,11 +51,22 @@ export default function DoctorDeskPage() {
     finally { setQueueLoading(false); }
   }
 
-  useEffect(() => { loadDepartments(); }, []);
+  useEffect(() => {
+    let stored: { departmentId?: string; doctorId?: string } = {};
+    try { stored = JSON.parse(localStorage.getItem(DOCTOR_DESK_SELECTION_KEY) || "{}"); } catch { /* ignore malformed stored selection */ }
+    if (stored.departmentId) setDepartmentId(String(stored.departmentId));
+    if (stored.doctorId) setDoctorId(String(stored.doctorId));
+    setSelectionReady(true);
+    loadDepartments();
+  }, []);
+
+  useEffect(() => {
+    if (!selectionReady) return;
+    localStorage.setItem(DOCTOR_DESK_SELECTION_KEY, JSON.stringify({ departmentId, doctorId }));
+  }, [selectionReady, departmentId, doctorId]);
 
   useEffect(() => {
     async function loadDoctors() {
-      setDoctorId("");
       if (!departmentId) { setDoctors([]); setVisits([]); return; }
       try {
         const r = await fetch(`/api/doctors?departmentId=${departmentId}`, { cache: "no-store" });
@@ -103,7 +116,7 @@ export default function DoctorDeskPage() {
 
           <section className="mx-auto mt-6 max-w-[1500px] rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,27,45,.94),rgba(4,14,25,.97))] p-5 shadow-[0_22px_70px_rgba(0,0,0,.32)] sm:p-7">
             <div className="grid gap-4 lg:grid-cols-2">
-              <label className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"><span className="text-[9px] font-black uppercase tracking-[0.18em] text-[#d6a443]">Select Your Department</span><select value={departmentId} onChange={e => setDepartmentId(e.target.value)} disabled={loading} className="mt-2 w-full rounded-xl border border-white/10 bg-[#071525] px-4 py-3 text-sm font-bold text-white outline-none focus:border-[#d6a443]"><option value="">Choose department</option>{departments.map(d => <option key={d.id} value={d.id}>{d.name}{d.code ? ` · ${d.code}` : ""}</option>)}</select></label>
+              <label className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"><span className="text-[9px] font-black uppercase tracking-[0.18em] text-[#d6a443]">Select Your Department</span><select value={departmentId} onChange={e => { setDepartmentId(e.target.value); setDoctorId(""); }} disabled={loading} className="mt-2 w-full rounded-xl border border-white/10 bg-[#071525] px-4 py-3 text-sm font-bold text-white outline-none focus:border-[#d6a443]"><option value="">Choose department</option>{departments.map(d => <option key={d.id} value={d.id}>{d.name}{d.code ? ` · ${d.code}` : ""}</option>)}</select></label>
               <label className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"><span className="text-[9px] font-black uppercase tracking-[0.18em] text-[#d6a443]">Doctor</span><select value={doctorId} onChange={e => setDoctorId(e.target.value)} disabled={!departmentId || !doctors.length} className="mt-2 w-full rounded-xl border border-white/10 bg-[#071525] px-4 py-3 text-sm font-bold text-white outline-none focus:border-[#d6a443] disabled:opacity-50"><option value="">All consultants</option>{doctors.map(d => <option key={d.id} value={d.id}>{doctorName(d)}</option>)}</select></label>
             </div>
 
