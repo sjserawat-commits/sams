@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Investigation = { id: number; code: string; name: string; category: string; department?: string | null; rate: number; specimen?: string | null };
 type Mode = "REGISTERED" | "WALKIN" | "EXTERNAL_REFERRAL";
 
-export default function InvestigationOrdersPage() {
+function InvestigationOrdersContent() {
   const search = useSearchParams();
   const [mode, setMode] = useState<Mode>("REGISTERED");
   const [patientId, setPatientId] = useState(search.get("patientId") || "");
@@ -98,5 +98,20 @@ export default function InvestigationOrdersPage() {
         <p className="text-[10px] font-medium text-slate-400">Clinical advice does not persist pricing. Rates are applied when the central order is converted into billing.</p>
       </div>
     </main>
+  );
+}
+
+
+export default function InvestigationOrdersPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#eef2f7] p-8 text-slate-600">
+          Loading Investigation Orders…
+        </main>
+      }
+    >
+      <InvestigationOrdersContent />
+    </Suspense>
   );
 }

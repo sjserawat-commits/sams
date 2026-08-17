@@ -10,10 +10,20 @@ type Seed = {
   corp: number;
 };
 
+type Row = [
+  string,
+  string,
+  string,
+  string,
+  string,
+  number,
+  number
+];
+
 // Quaternary expansion: additional subspecialty investigations not intended
 // to replace the earlier master/expansion batches. SAMS rate = 65% from the
 // SMS benchmark toward the corporate benchmark, rounded to nearest rupee.
-const rows: Seed[] = [
+const rows: Row[] = [
   // Pulmonology / respiratory
   ["Q4_PFT_SIMPLE_SPIROMETRY","Spirometry with Flow Volume Loop","Pulmonary","Pulmonology","Breath",500,800],
   ["Q4_PFT_LUNG_VOLUMES","Pulmonary Function Test with Lung Volumes","Pulmonary","Pulmonology","Breath",900,1440],
