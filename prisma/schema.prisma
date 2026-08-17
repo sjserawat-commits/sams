@@ -10,8 +10,8 @@ model Patient {
   opdVisits        OPDVisit[]
   encounters       ClinicalEncounter[]
   billingRecords   BillingRecord[]
-  id               Int                 @id @default(autoincrement())
-  patientId        String              @unique
+  id               Int      @id @default(autoincrement())
+  patientId        String   @unique
   firstName        String
   lastName         String
   dateOfBirth      DateTime?
@@ -20,8 +20,32 @@ model Patient {
   aadhaarNumber    String?
   address          String?
   emergencyContact String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Appointment {
+  id             Int      @id @default(autoincrement())
+  appointmentNo  String   @unique
+  patientId      Int?
+  patientType    String   @default("NEW")
+  patientName    String
+  mobile         String
+  dob            DateTime?
+  gender         String?
+  email          String?
+  reason         String?
+  departmentId   Int?
+  departmentName String?
+  doctorId       Int?
+  doctorName     String
+  appointmentDate String
+  appointmentTime String
+  source         String   @default("ONLINE")
+  status         String   @default("SCHEDULED")
+  opdVisitId     Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model ClinicalEncounter {
@@ -77,13 +101,13 @@ model OPDVisit {
   patientId           Int
   tokenNumber         Int
   visitType            String               @default("NEW")
-  status               String               @default("WAITING")
+  status              String               @default("WAITING")
   departmentId        Int?
   departmentMaster    Department?          @relation("DepartmentVisits", fields: [departmentId], references: [id])
-  doctorId             Int?
-  doctor               Doctor?              @relation("DoctorVisits", fields: [doctorId], references: [id])
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  doctorId            Int?
+  doctor              Doctor?              @relation("DoctorVisits", fields: [doctorId], references: [id])
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   patient              Patient              @relation(fields: [patientId], references: [id])
 }
 
@@ -150,7 +174,7 @@ model Prescription {
   status        String   @default("ACTIVE")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  opdVisit      OPDVisit @relation(fields: [opdVisitId], references: [id])
+  opdVisit       OPDVisit @relation(fields: [opdVisitId], references: [id])
 }
 
 model BillingRecord {
