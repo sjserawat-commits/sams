@@ -20,15 +20,17 @@ export default function Navigation({ variant = "default" }: NavigationProps) {
       </Link>
 
       <div className="ml-auto flex flex-wrap items-center gap-1">
-        <Link href="/" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Home</Link>
-        <Link href="/dashboard" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Dashboard</Link>
+        {variant !== "reception" && <>
+          <Link href="/" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Home</Link>
+          <Link href="/dashboard" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Dashboard</Link>
+        </>}
         {variant !== "reception" && <>
           <Link href="/patients" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Patients</Link>
           <Link href="/clinical" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Clinical</Link>
+          <Link href="/billing" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Billing</Link>
+          <Link href="/reports" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Reports</Link>
+          <Link href="/portal" className="rounded-xl border border-[#d6a443]/25 bg-[#d6a443]/10 px-3 py-2 text-xs font-black uppercase tracking-wide text-[#f2d38b] transition hover:bg-[#d6a443]/20">Patient Portal</Link>
         </>}
-        <Link href="/billing" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Billing</Link>
-        {variant !== "reception" && <Link href="/reports" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Reports</Link>}
-        <Link href="/portal" className="rounded-xl border border-[#d6a443]/25 bg-[#d6a443]/10 px-3 py-2 text-xs font-black uppercase tracking-wide text-[#f2d38b] transition hover:bg-[#d6a443]/20">Patient Portal</Link>
       </div>
     </nav>
   );
