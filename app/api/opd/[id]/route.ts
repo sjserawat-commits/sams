@@ -1,30 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type RouteContext = {
-  params: Promise<{ id: string }>;
-};
-
-const ALLOWED_STATUSES = [
-  "WAITING",
-  "IN_CONSULTATION",
-  "COMPLETED",
-  "CANCELLED",
-] as const;
+type RouteContext = { params: Promise<{ id: string }> };
+const ALLOWED_STATUSES = ["WAITING","IN_CONSULTATION","COMPLETED","CANCELLED"] as const;
 
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     const visitId = Number(id);
-    if (!Number.isInteger(visitId)) {
-      return NextResponse.json({ error: "Invalid OPD visit ID" }, { status: 400 });
-    }
-
-    const visit = await prisma.oPDVisit.findUnique({ where: { id: visitId } });
-    if (!visit) {
-      return NextResponse.json({ error: "OPD visit not found" }, { status: 404 });
-    }
-
+    if (!Number.isInteger(visitId)) return NextResponse.json({ error: "Invalid OPD visit ID" }, { status: 400 });
+    const visit = await prisma.oPDVisit.findUnique({ where: { id: visitId }, include: { appointment: true } });
+    if (!visit) return NextResponse.json({ error: "OPD visit not found" }, { status: 404 });
     return NextResponse.json(visit);
   } catch (error) {
     console.error("OPD visit fetch error:", error);
@@ -38,37 +24,22 @@ export async function PATCH(request: Request, context: RouteContext) {
     const visitId = Number(id);
     const body = await request.json();
     let status = String(body.status || "");
+    if (!Number.isInteger(visitId)) return NextResponse.json({ error: "Invalid OPD visit ID" }, { status: 400 });
+    if (!ALLOWED_STATUSES.includes(status as (typeof ALLOWED_STATUSES)[number])) return NextResponse.json({ error: "Invalid OPD status" }, { status: 400 });
+    const visit = await prisma.oPDVisit.findUnique({ where: { id: visitId }, select: { id: true, appointment: { select: { id: true } } } });
+    if (!visit) return NextResponse.json({ error: "OPD visit not found" }, { status: 404 });
+    if (status === "COMPLETED" && body.finalize !== true) status = "IN_CONSULTATION";
 
-    if (!Number.isInteger(visitId)) {
-      return NextResponse.json({ error: "Invalid OPD visit ID" }, { status: 400 });
-    }
-
-    if (!ALLOWED_STATUSES.includes(status as (typeof ALLOWED_STATUSES)[number])) {
-      return NextResponse.json({ error: "Invalid OPD status" }, { status: 400 });
-    }
-
-    const visit = await prisma.oPDVisit.findUnique({ where: { id: visitId } });
-    if (!visit) {
-      return NextResponse.json({ error: "OPD visit not found" }, { status: 404 });
-    }
-
-    // A consultation page currently sends COMPLETED when its form is saved.
-    // Treat that as a save/continue action unless an explicit finalization is requested.
-    if (status === "COMPLETED" && body.finalize !== true) {
-      status = "IN_CONSULTATION";
-    }
-
-    const updatedVisit = await prisma.oPDVisit.update({
-      where: { id: visitId },
-      data: { status },
+    const updatedVisit = await prisma.$transaction(async (tx) => {
+      const updated = await tx.oPDVisit.update({ where: { id: visitId }, data: { status } });
+      if (visit.appointment?.id && status === "COMPLETED") {
+        await tx.appointment.update({ where: { id: visit.appointment.id }, data: { status: "COMPLETED" } });
+      }
+      return updated;
     });
-
     return NextResponse.json(updatedVisit);
   } catch (error) {
     console.error("OPD status update error:", error);
-    return NextResponse.json(
-      { error: "Unable to update OPD visit status." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Unable to update OPD visit status." }, { status: 500 });
   }
 }
