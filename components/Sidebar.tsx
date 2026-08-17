@@ -11,7 +11,7 @@ const defaultReceptionItems = [
   { href: "/doctor-desk", label: "Doctor Desk", icon: "🩺" },
 ];
 const receptionItems = [
-  { href: "/appointments", label: "Appointments", icon: "▣" },
+  { href: "/reception/appointments", label: "Appointments", icon: "▣" },
   { href: "/opd", label: "OPD Queue", icon: "☷" },
   { href: "/slip-print?from=reception", label: "Consultation Slip Print", icon: "▤" },
   { href: "/doctor-desk", label: "Doctor Desk", icon: "🩺" },
