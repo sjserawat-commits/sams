@@ -3,33 +3,37 @@ name: Fix consultation reopen
 on:
   push:
     branches: [main]
+    paths:
+      - .github/workflows/fix-consultation-reopen.yml
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Patch reopen behavior
+      - name: Patch consultation reopen
+        shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          path = Path('app/patients/profile/[id]/consultation/page.tsx')
-          text = path.read_text()
+          path = Path("app/patients/profile/[id]/consultation/page.tsx")
+          text = path.read_text(encoding="utf-8")
 
-          old_sig = '  async function reload() {'
-          new_sig = '  async function reload(reopen = false) {'
+          old_sig = "  async function reload() {"
+          new_sig = "  async function reload(reopen = false) {"
           if old_sig not in text:
-              raise SystemExit('reload signature not found')
+              raise SystemExit("reload signature not found")
           text = text.replace(old_sig, new_sig, 1)
 
-          old_guard = '    if (!visitId) return;\n    try {'
+          old_guard = "    if (!visitId) return;\n    try {"
           new_guard = '''    if (!visitId) return;
     try {
       if (reopen) {
@@ -45,24 +49,26 @@ jobs:
         setMessage("Saved consultation reopened. You can continue editing.");
       }'''
           if old_guard not in text:
-              raise SystemExit('reload guard not found')
+              raise SystemExit("reload guard not found")
           text = text.replace(old_guard, new_guard, 1)
 
           old_button = '<button type="button" onClick={reload} disabled={!visitId} className="rounded-xl border border-[#0b63ce] bg-white px-4 py-3 text-xs font-black text-[#0b63ce]">↻ Reopen Saved Consultation</button>'
           new_button = '<button type="button" onClick={() => reload(true)} disabled={!visitId || saving || finalizing} className="rounded-xl border border-[#0b63ce] bg-white px-4 py-3 text-xs font-black text-[#0b63ce]">↻ Reopen Saved Consultation</button>'
           if old_button not in text:
-              raise SystemExit('reopen button not found')
+              raise SystemExit("reopen button not found")
           text = text.replace(old_button, new_button, 1)
 
-          path.write_text(text)
+          path.write_text(text, encoding="utf-8")
           PY
 
-      - name: Commit patch and remove one-time workflow
+          git diff --check
+          git diff -- app/patients/profile/'[id]'/consultation/page.tsx
+
+      - name: Commit consultation fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          rm -f .github/workflows/fix-consultation-reopen.yml
-          git add app/patients/profile/'[id]'/consultation/page.tsx .github/workflows/fix-consultation-reopen.yml
+          git add -A
           git diff --cached --quiet && exit 0
           git commit -m "fix consultation reopen saved workflow"
-          git push
+          git push origin HEAD:main
