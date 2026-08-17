@@ -1,58 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
-export default function DoctorReportsPage() {
-  const [visitId, setVisitId] = useState("");
-  const [reports, setReports] = useState<any[]>([]);
+type Report = { id:number; investigation:string; reportText?:string|null; reportedAt?:string|null; opdVisit?:{id:number;tokenNumber:number;patientId:number;patient?:{id:number;patientId:string;firstName:string;lastName:string}} };
+const nameOf=(p?:Report["opdVisit"]["patient"])=>p?`${p.firstName} ${p.lastName}`.trim():"Patient";
 
-  async function loadReports() {
-    if (!visitId) return;
-
-    const res = await fetch(
-      `/api/opd/reports?opdVisitId=${encodeURIComponent(visitId)}`
-    );
-
-    const data = await res.json();
-    setReports(Array.isArray(data) ? data : []);
-  }
-
-  return (
-    <main className="min-h-screen bg-[#f5f8fc] p-6">
-      <div className="mx-auto max-w-5xl">
-        <h1 className="text-3xl font-black text-[#082b61]">
-          Investigation Reports
-        </h1>
-
-        <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
-          <input
-            value={visitId}
-            onChange={(e) => setVisitId(e.target.value)}
-            placeholder="OPD Visit ID"
-            className="rounded-xl border p-3"
-          />
-
-          <button
-            onClick={loadReports}
-            className="ml-3 rounded-xl bg-[#0b63ce] px-5 py-3 font-black text-white"
-          >
-            View Reports
-          </button>
-
-          <div className="mt-6 space-y-4">
-            {reports.map((report) => (
-              <div key={report.id} className="rounded-xl border p-4">
-                <div className="font-black text-[#082b61]">
-                  {report.investigation}
-                </div>
-                <div className="mt-2 whitespace-pre-wrap text-sm">
-                  {report.reportText}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
-  );
+export default function DoctorReportsPage(){
+ const [reports,setReports]=useState<Report[]>([]); const [hid,setHid]=useState(""); const [loading,setLoading]=useState(true); const [error,setError]=useState(""); const [direct,setDirect]=useState(false);
+ async function load(url:string){setLoading(true);setError("");try{const r=await fetch(url,{cache:"no-store"});const d=await r.json();if(!r.ok)throw new Error(d?.error||"Unable to load reports.");setReports(Array.isArray(d?.reports)?d.reports:[]);}catch(e){setReports([]);setError(e instanceof Error?e.message:"Unable to load reports.");}finally{setLoading(false);}}
+ useEffect(()=>{const id=new URLSearchParams(window.location.search).get("opdVisitId");if(id&&Number.isInteger(Number(id))){setDirect(true);load(`/api/opd/reports?opdVisitId=${encodeURIComponent(id)}`);}else setLoading(false);},[]);
+ function search(e:React.FormEvent){e.preventDefault();if(!hid.trim())return;setDirect(false);load(`/api/opd/reports?hid=${encodeURIComponent(hid.trim())}`);}
+ const patient=reports[0]?.opdVisit?.patient; const visitId=reports[0]?.opdVisit?.id;
+ return <main className="min-h-screen bg-[#050c16] text-slate-100"><header className="sticky top-0 z-50 border-b border-[#d6a443]/30 bg-[#061525]/95 px-4 py-3"><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4"><Link href="/doctor-desk" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-slate-200">← Back</Link><div className="text-right"><p className="text-lg font-black text-[#d6a443]">SAMS</p><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-300 sm:text-xs">SERAWAT ADVANCED MULTISPECIALITY JOINT &amp; SPINE CENTRE</p></div></div></header>
+ <div className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6 lg:py-10"><section className="rounded-[2rem] border border-[#d6a443]/30 bg-[linear-gradient(135deg,#061525,#0c263d)] p-6"><p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#d6a443]">Doctor Desk · Reports</p><h1 className="mt-2 text-3xl font-black">Review Reports</h1>{patient&&direct&&<p className="mt-2 text-sm text-slate-300">{nameOf(patient)} · HID {patient.patientId} · Token #{reports[0]?.opdVisit?.tokenNumber}</p>}</section>
+ {error&&<div className="mt-5 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
+ {loading?<div className="mt-6 rounded-2xl bg-white/5 p-10 text-center text-slate-400">Loading reports…</div>:<><section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5"><p className="text-[9px] font-black uppercase tracking-[0.18em] text-[#d6a443]">Completed Reports</p>{reports.length===0?<p className="mt-4 text-sm text-slate-400">No completed reports found.</p>:<div className="mt-4 space-y-3">{reports.map(r=><article key={r.id} className="rounded-xl border border-white/10 bg-[#071525] p-4"><div className="flex flex-wrap justify-between gap-2"><div><p className="font-black">{r.investigation}</p>{r.opdVisit?.patient&&<p className="text-xs text-slate-400">{nameOf(r.opdVisit.patient)} · HID {r.opdVisit.patient.patientId} · Token #{r.opdVisit.tokenNumber}</p>}</div>{r.reportedAt&&<p className="text-[10px] text-slate-500">{new Date(r.reportedAt).toLocaleString()}</p>}</div><div className="mt-3 whitespace-pre-wrap rounded-lg bg-white/5 p-3 text-sm text-slate-200">{r.reportText||"Report text not entered."}</div></article>)}</div>}</section>
+ <section className="mt-5 grid gap-3 sm:grid-cols-2">{patient&&visitId?<Link href={`/patients/profile/${patient.id}/consultation?opdVisitId=${visitId}`} className="rounded-2xl bg-[#d6a443] p-4 text-center text-sm font-black text-[#071525]">Review Consultation — Same Patient →</Link>:<button disabled className="rounded-2xl bg-white/5 p-4 text-sm font-black text-slate-500">Review Consultation — Same Patient</button>}<form onSubmit={search} className="flex gap-2 rounded-2xl border border-white/10 bg-white/5 p-2"><input value={hid} onChange={e=>setHid(e.target.value)} placeholder="Enter HID e.g. SAMS-0001" className="min-w-0 flex-1 rounded-xl bg-[#071525] px-3 text-sm font-bold outline-none"/><button className="rounded-xl bg-[#0b63ce] px-4 py-3 text-xs font-black" type="submit">Search Report with HID</button></form></section></>}
+ </div></main>;
 }
