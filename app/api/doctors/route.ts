@@ -5,10 +5,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const departmentIdParam = searchParams.get("departmentId");
-
-    const departmentId = departmentIdParam
-      ? Number(departmentIdParam)
-      : null;
+    const departmentId = departmentIdParam ? Number(departmentIdParam) : null;
 
     const doctors = await prisma.doctor.findMany({
       where: {
@@ -26,8 +23,12 @@ export async function GET(request: Request) {
         photoUrl: true,
         departmentId: true,
         active: true,
+        department: {
+          select: { id: true, name: true, code: true },
+        },
       },
     });
+
     return NextResponse.json(doctors);
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
@@ -37,20 +38,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
     const doctor = await prisma.doctor.create({
       data: {
         name: body.name,
         qualification: body.qualification || null,
         introduction: body.introduction || null,
         photoUrl: body.photoUrl || null,
-        departmentId: body.departmentId
-          ? Number(body.departmentId)
-          : null,
+        departmentId: body.departmentId ? Number(body.departmentId) : null,
         active: true,
       },
     });
-
     return NextResponse.json(doctor, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
@@ -60,7 +57,6 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-
     const doctor = await prisma.doctor.update({
       where: { id: Number(body.id) },
       data: {
@@ -68,13 +64,10 @@ export async function PATCH(request: Request) {
         qualification: body.qualification || null,
         introduction: body.introduction || null,
         photoUrl: body.photoUrl || null,
-        departmentId: body.departmentId
-          ? Number(body.departmentId)
-          : null,
+        departmentId: body.departmentId ? Number(body.departmentId) : null,
         active: body.active ?? true,
       },
     });
-
     return NextResponse.json(doctor);
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
@@ -84,12 +77,10 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const body = await request.json();
-
     await prisma.doctor.update({
       where: { id: Number(body.id) },
       data: { active: false },
     });
-
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
