@@ -29,9 +29,10 @@ function makeTimeSlots(startHour: number, endHour: number) {
 function getSlotsForDate(date: string) {
   if (!date) return [];
   const month = Number(date.slice(5, 7));
-  // 01 October–31 March: 8 AM–2 PM. 01 April–30 September: 8 AM–3 PM.
-  const endHour = month >= 4 && month <= 9 ? 15 : 14;
-  return makeTimeSlots(8, endHour);
+  // 01 October–31 March: 9 AM–3 PM. 01 April–30 September: 8 AM–3 PM.
+  const endHour = 15;
+  const startHour = month >= 4 && month <= 9 ? 8 : 9;
+  return makeTimeSlots(startHour, endHour);
 }
 
 export default function AppointmentsPage() {
@@ -164,7 +165,7 @@ export default function AppointmentsPage() {
                   <input id="date" type="date" value={date} onChange={(event) => changeDate(event.target.value)} className="mt-2 w-full rounded-xl border border-[#ded5c5] bg-white px-4 py-3 text-sm outline-none focus:border-[#d6b46a]" />
                   <label className="mt-5 block text-xs font-bold text-[#52627a]">Available Time · 5-minute slots</label>
                   {!date ? <p className="mt-2 rounded-xl border border-dashed border-[#d6b46a] bg-[#fffaf0] px-4 py-3 text-xs text-[#667085]">Select a date to see available slots.</p> : <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">{times.map((slot) => <button key={slot} type="button" onClick={() => setTime(slot)} className={`rounded-xl border px-2 py-2.5 text-xs font-bold transition ${time === slot ? "border-[#d6b46a] bg-[#082b61] text-[#f3dfad]" : "border-[#ded5c5] bg-white text-[#52627a] hover:border-[#d6b46a]"}`}>{slot}</button>)}</div>}
-                  {date && <p className="mt-3 text-[11px] font-semibold text-[#9a7434]">{date.slice(5, 7) >= "04" && date.slice(5, 7) <= "09" ? "01 April–30 September · 8:00 AM–3:00 PM" : "01 October–31 March · 8:00 AM–2:00 PM"}</p>}
+                  {date && <p className="mt-3 text-[11px] font-semibold text-[#9a7434]">{date.slice(5, 7) >= "04" && date.slice(5, 7) <= "09" ? "01 April–30 September · 8:00 AM–3:00 PM" : "01 October–31 March · 9:00 AM–3:00 PM"}</p>}
                 </div>
               </section>
 
@@ -185,7 +186,7 @@ export default function AppointmentsPage() {
               <div className="rounded-3xl border border-[#d6b46a]/70 bg-[#071f46] p-6 text-white shadow-[0_24px_60px_rgba(7,31,70,0.25)] sm:p-7">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#d6b46a]">05 · Booking Summary</p>
                 <h2 className="mt-3 font-serif text-2xl font-medium text-[#f5e6bf]">Your Appointment</h2>
-                <div className="mt-6 space-y-4 border-y border-white/10 py-5 text-sm"><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Patient</p><p className="mt-1 font-semibold">{patientType === "new" ? "New Patient" : "Existing Patient"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Doctor</p><p className="mt-1 font-semibold">{selectedDoctor?.name || "Select your doctor"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Department</p><p className="mt-1 font-semibold">{selectedDoctor?.department?.name || "—"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Date</p><p className="mt-1 font-semibold">{date || "Select a date"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Time</p><p className="mt-1 font-semibold">{time || "Select a time slot"}</p></div></div>
+                <div className="mt-6 space-y-4 border-y border-white/10 py-5 text-sm"><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Patient</p><p className="mt-1 font-semibold">{patientType === "new" ? "New Patient" : "Existing Patient"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Doctor</p><p className="mt-1 font-semibold">{selectedDoctor?.name || "Select your doctor"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Date</p><p className="mt-1 font-semibold">{date || "Select a date"}</p></div><div><p className="text-[10px] uppercase tracking-wider text-blue-200/70">Time</p><p className="mt-1 font-semibold">{time || "Select a time slot"}</p></div></div>
                 {error && <p className="mt-4 rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-2 text-xs leading-5 text-red-100">{error}</p>}
                 <p className="mt-5 text-xs leading-5 text-blue-100/70">Review your details before confirming your appointment.</p>
                 <button type="button" onClick={confirmAppointment} className="mt-6 w-full rounded-2xl border border-[#f0d28a] bg-gradient-to-r from-[#c79b4b] via-[#e8d6a8] to-[#c79b4b] px-5 py-4 font-serif text-base font-bold text-[#08213f] shadow-[0_10px_30px_rgba(214,180,106,0.28)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(214,180,106,0.38)]">✦ Confirm Appointment</button>
