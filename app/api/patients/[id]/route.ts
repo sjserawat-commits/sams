@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-function normalizePhone(value: unknown) {
-  return String(value || "").replace(/\D/g, "");
-}
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -13,19 +9,12 @@ export async function GET(
     const { id } = await params;
     const rawId = decodeURIComponent(id).trim();
     const numericId = Number(rawId);
-    const phone = normalizePhone(new URL(request.url).searchParams.get("phone"));
 
     const patient = await prisma.patient.findFirst({
       where: Number.isInteger(numericId) && numericId > 0 ? { id: numericId } : { patientId: rawId },
       select: {
-        id: true,
-        patientId: true,
-        firstName: true,
-        lastName: true,
-        dateOfBirth: true,
-        gender: true,
-        phone: true,
-        createdAt: true,
+        id: true, patientId: true, firstName: true, lastName: true,
+        dateOfBirth: true, gender: true, phone: true, createdAt: true,
         encounters: {
           orderBy: { encounterDate: "desc" },
           select: { id: true, encounterDate: true, speciality: true, chiefComplaint: true, diagnosis: true, clinicalNotes: true, treatmentPlan: true, followUpDate: true },
@@ -34,8 +23,7 @@ export async function GET(
           orderBy: { createdAt: "desc" },
           select: {
             id: true, tokenNumber: true, visitType: true, status: true, createdAt: true,
-            departmentMaster: { select: { name: true } },
-            doctor: { select: { name: true } },
+            departmentMaster: { select: { name: true } }, doctor: { select: { name: true } },
             investigationOrders: {
               orderBy: { createdAt: "desc" },
               select: { id: true, investigation: true, price: true, netAmount: true, paymentStatus: true, status: true, reportText: true, reportedAt: true, createdAt: true },
@@ -53,8 +41,6 @@ export async function GET(
     });
 
     if (!patient) return NextResponse.json({ error: "Patient not found" }, { status: 404 });
-    if (!phone || normalizePhone(patient.phone) !== phone) return NextResponse.json({ error: "Patient verification failed." }, { status: 403 });
-
     return NextResponse.json(patient, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Patient portal lookup failed:", error);
