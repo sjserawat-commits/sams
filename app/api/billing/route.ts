@@ -47,10 +47,14 @@ async function syncVisitCharges(visitId: number) {
 export async function GET(request: Request) {
   try {
     const params = new URL(request.url).searchParams;
-    const visitId = Number(params.get("visitId"));
     const patientId = params.get("patientId")?.trim() ?? "";
+    const visitIdParam = params.get("visitId")?.trim() ?? "";
+    const visitId = visitIdParam ? Number(visitIdParam) : null;
 
-    if (patientId && !Number.isInteger(visitId)) {
+    // Patient lookup must work independently of visitId.
+    // Previously Number(null) became 0, which made Number.isInteger(visitId) true
+    // and incorrectly rejected a valid patientId-only request.
+    if (patientId && visitId === null) {
       const patient = await prisma.patient.findUnique({ where: { patientId } });
       if (!patient) return NextResponse.json({ error: "Patient not found." }, { status: 404 });
       const visits = await prisma.oPDVisit.findMany({ where: { patientId: patient.id }, include: { departmentMaster: true }, orderBy: { createdAt: "desc" } });
