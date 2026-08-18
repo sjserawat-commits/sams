@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && prisma db push && npm run seed:investigations && npx tsx prisma/normalize-investigation-pricing.ts && next dev",
-    "build": "prisma generate && prisma db push && npm run seed:investigations && npx tsx prisma/normalize-investigation-pricing.ts && next build",
+    "dev": "prisma generate && prisma db push && npm run seed:investigations && npx tsx prisma/normalize-investigation-pricing.ts && npx tsx prisma/dedupe-investigation-master.ts && next dev",
+    "build": "prisma generate && prisma db push && npm run seed:investigations && npx tsx prisma/normalize-investigation-pricing.ts && npx tsx prisma/dedupe-investigation-master.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "db:push": "prisma generate && prisma db push",
@@ -28,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tailwindcss": "^4",
+    "eslint-config-next": "16.3.0"
   }
 }
