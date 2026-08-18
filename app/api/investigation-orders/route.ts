@@ -5,6 +5,15 @@ const round = (value: number) => Math.round(value * 100) / 100;
 const billNumber = () => `SAMS-${Date.now().toString().slice(-10)}`;
 function tempPatientId(prefix: "WALKIN" | "REF") { return `${prefix}-${Date.now().toString().slice(-10)}-${Math.floor(Math.random() * 90 + 10)}`; }
 
+function effectiveRate(master: { rate: number; smsBenchmarkRate: number | null; corporateBenchmarkRate: number | null }) {
+  const sms = Number(master.smsBenchmarkRate || 0);
+  const corporate = Number(master.corporateBenchmarkRate || 0);
+  if (sms > 0) return Math.max(1, Math.round(sms * 1.65));
+  if (corporate > 0) return Math.max(1, Math.round(corporate * 0.65));
+  if (Number(master.rate) > 0) return Math.max(1, Math.round(Number(master.rate)));
+  return 1;
+}
+
 async function getOrCreateVisit(body: any) {
   const suppliedVisitId = Number(body?.opdVisitId || 0);
   if (Number.isInteger(suppliedVisitId) && suppliedVisitId > 0) {
@@ -31,7 +40,7 @@ export async function GET(request: Request) {
     const patientId = params.get("patientId")?.trim() || "";
     const status = params.get("status")?.trim().toUpperCase() || "";
     const orders = await prisma.investigationOrder.findMany({ where: { ...(visitId > 0 ? { opdVisitId: visitId } : {}), ...(status ? { status } : {}), ...(patientId ? { opdVisit: { patient: { patientId } } } : {}) }, include: { master: true, opdVisit: { include: { patient: true } } }, orderBy: { createdAt: "desc" } });
-    return NextResponse.json(orders);
+    return NextResponse.json(orders.map((order) => ({ ...order, price: effectiveRate(order.master), netAmount: effectiveRate(order.master) })));
   } catch (error) { console.error("Investigation order GET failed:", error); return NextResponse.json({ error: "Unable to load investigation orders." }, { status: 500 }); }
 }
 
@@ -42,7 +51,8 @@ export async function POST(request: Request) {
     const requested = Array.isArray(body?.investigations) ? body.investigations : [];
     if (!requested.length) return NextResponse.json({ error: "Select at least one investigation." }, { status: 400 });
     const visit = await getOrCreateVisit(body);
-    const ids = requested.map((x: any) => Number(x?.id)).filter((x: number) => Number.isInteger(x) && x > 0);
+    const ids = Array.from(new Set(requested.map((x: any) => Number(x?.id)).filter((x: number) => Number.isInteger(x) && x > 0)));
+    if (!ids.length) return NextResponse.json({ error: "Select valid investigations." }, { status: 400 });
     const masters = await prisma.investigationMaster.findMany({ where: { id: { in: ids }, active: true } });
     if (masters.length !== ids.length) return NextResponse.json({ error: "One or more investigations are invalid or inactive." }, { status: 400 });
     const existingBill = await prisma.billingRecord.findFirst({ where: { opdVisitId: visit.id }, orderBy: { createdAt: "desc" } });
@@ -53,7 +63,8 @@ export async function POST(request: Request) {
     const newMasters = masters.filter(m => !existingIds.has(m.id));
     const orders = [];
     for (const master of newMasters) {
-      orders.push(await prisma.investigationOrder.create({ data: { opdVisitId: visit.id, investigationId: master.id, investigation: master.name, price: round(master.rate), netAmount: round(master.rate), paymentStatus: "UNPAID", status: "ORDERED" }, include: { master: true } }));
+      const rate = effectiveRate(master);
+      orders.push(await prisma.investigationOrder.create({ data: { opdVisitId: visit.id, investigationId: master.id, investigation: master.name, price: rate, netAmount: rate, paymentStatus: "UNPAID", status: "ORDERED" }, include: { master: true } }));
     }
 
     const addedTotal = round(orders.reduce((sum, order) => sum + order.netAmount, 0));
