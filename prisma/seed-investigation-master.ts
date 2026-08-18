@@ -97,6 +97,38 @@ const investigations: InvestigationSeed[] = [
 ];
 
 async function main() {
+  // Keep the seed self-healing. Prisma 7's db push can report the configured
+  // database as in-sync even when a stale Codespace SQLite file was created
+  // before InvestigationMaster was added. Create the exact table if absent;
+  // this is non-destructive and only adds the missing catalogue table.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "InvestigationMaster" (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "code" TEXT NOT NULL UNIQUE,
+      "name" TEXT NOT NULL,
+      "shortName" TEXT,
+      "category" TEXT NOT NULL,
+      "department" TEXT,
+      "specimen" TEXT,
+      "method" TEXT,
+      "unit" TEXT,
+      "referenceRange" TEXT,
+      "maleReferenceRange" TEXT,
+      "femaleReferenceRange" TEXT,
+      "ageSpecificRange" TEXT,
+      "criticalValue" TEXT,
+      "smsLabDepartment" TEXT,
+      "aliases" TEXT,
+      "rate" REAL NOT NULL DEFAULT 0,
+      "smsBenchmarkRate" REAL,
+      "corporateBenchmarkRate" REAL,
+      "pricingLastVerifiedAt" DATETIME,
+      "active" INTEGER NOT NULL DEFAULT 1,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   for (const item of investigations) {
     await prisma.investigationMaster.upsert({
       where: { code: item.code },
