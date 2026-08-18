@@ -2,10 +2,10 @@ import Link from "next/link";
 import Navigation from "@/components/Navigation";
 
 const cards = [
-  { title: "Billing & Revenue", eyebrow: "FINANCE CONTROL", description: "Executive billing, collections, receivables, revenue trends and payment performance.", href: "/admin/billing", action: "Enter Finance →", icon: "₹", featured: true },
-  { title: "Doctors / Experts Team", eyebrow: "TEAM MANAGEMENT", description: "Add, edit, update profiles and manage doctors and experts displayed on the public Experts Team page.", href: "/settings#experts-team", action: "Manage Team →", icon: "✚" },
-  { title: "Settings", eyebrow: "SYSTEM CONTROL", description: "Hospital configuration, users, preferences and security controls.", href: "/settings", action: "Open Settings →", icon: "⚙" },
-  { title: "Investigation Master", eyebrow: "CLINICAL MASTER DATA", description: "Maintain investigation names, categories and rates used across clinical and billing workflows.", href: "/investigation-master", action: "Manage Master →", icon: "⌁" },
+  { title: "Billing & Revenue", eyebrow: "FINANCE CONTROL", description: "Executive billing, collections, receivables, revenue trends and payment performance.", href: "/admin/billing", primary: "Open Finance", icon: "₹", featured: true },
+  { title: "Doctors / Experts Team", eyebrow: "TEAM MANAGEMENT", description: "Add, edit, update profiles and manage doctors and experts displayed on the public Experts Team page.", href: "/settings#experts-team", primary: "Manage Team", icon: "✚" },
+  { title: "Settings", eyebrow: "SYSTEM CONTROL", description: "Hospital configuration, users, preferences and security controls.", href: "/settings", primary: "Open Settings", icon: "⚙" },
+  { title: "Investigation Master", eyebrow: "CLINICAL MASTER DATA", description: "Maintain investigation names, categories and rates used across clinical and billing workflows.", href: "/investigation-master", primary: "Manage Master", icon: "⌁" },
 ];
 
 export default function AdminPage() {
@@ -31,16 +31,17 @@ export default function AdminPage() {
             </div>
           </header>
 
-          <section className="mt-6 grid gap-4 sm:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/[.035] p-5"><p className="text-[9px] font-black uppercase tracking-[.2em] text-slate-500">Finance</p><p className="mt-2 text-xl font-black text-white">Billing & Revenue</p><p className="mt-1 text-[10px] text-slate-500">Executive financial oversight</p></div>
-            <div className="rounded-2xl border border-white/10 bg-white/[.035] p-5"><p className="text-[9px] font-black uppercase tracking-[.2em] text-slate-500">Team</p><p className="mt-2 text-xl font-black text-white">Doctors / Experts</p><p className="mt-1 text-[10px] text-slate-500">Public team management</p></div>
-            <div className="rounded-2xl border border-white/10 bg-white/[.035] p-5"><p className="text-[9px] font-black uppercase tracking-[.2em] text-slate-500">Configuration</p><p className="mt-2 text-xl font-black text-white">System Settings</p><p className="mt-1 text-[10px] text-slate-500">Core hospital controls</p></div>
-            <div className="rounded-2xl border border-[#c9a85c]/15 bg-[#c9a85c]/[.045] p-5"><p className="text-[9px] font-black uppercase tracking-[.2em] text-[#bda66f]">Master Data</p><p className="mt-2 text-xl font-black text-white">Investigations</p><p className="mt-1 text-[10px] text-slate-500">Clinical & billing catalogue</p></div>
-          </section>
-
           <section className="mt-8"><div className="mb-4 flex items-end justify-between gap-4"><div><p className="text-[9px] font-black uppercase tracking-[.3em] text-[#c9a85c]">Executive Workspace</p><h2 className="mt-1 text-2xl font-black tracking-tight text-white">Management Controls</h2></div><p className="hidden text-[10px] font-bold uppercase tracking-widest text-slate-600 sm:block">SAMS · Administration</p></div>
             <div className="grid gap-5 lg:grid-cols-4">
-              {cards.map((card) => <Link key={card.href} href={card.href} className={`group relative overflow-hidden rounded-[1.7rem] border p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_25px_70px_rgba(0,0,0,.35)] ${card.featured ? "border-[#c9a85c]/25 bg-[linear-gradient(145deg,#17150f,#111a27_72%)]" : "border-white/10 bg-white/[.045] hover:border-white/20 hover:bg-white/[.07]"}`}><div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" /><div className="flex items-start justify-between gap-4"><div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[.06] text-xl font-black text-slate-200">{card.icon}</div><span className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[8px] font-black tracking-[.16em] text-slate-500">{card.eyebrow}</span></div><h3 className="mt-7 text-xl font-black tracking-tight text-white">{card.title}</h3><p className="mt-2 min-h-[48px] text-xs leading-5 text-slate-400">{card.description}</p><div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4 text-[10px] font-black text-slate-300"><span>{card.action}</span><span className="transition-transform duration-300 group-hover:translate-x-1">→</span></div></Link>)}
+              {cards.map((card) => <div key={card.href} className={`group relative overflow-hidden rounded-[1.7rem] border p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_25px_70px_rgba(0,0,0,.35)] ${card.featured ? "border-[#c9a85c]/25 bg-[linear-gradient(145deg,#17150f,#111a27_72%)]" : "border-white/10 bg-white/[.045] hover:border-white/20 hover:bg-white/[.07]"}`}>
+                <div className={`absolute inset-x-0 top-0 h-px ${card.featured ? "bg-gradient-to-r from-transparent via-[#d9bb72] to-transparent" : "bg-gradient-to-r from-transparent via-white/20 to-transparent"}`} />
+                <div className="flex items-start justify-between gap-4"><div className={`flex h-14 w-14 items-center justify-center rounded-2xl border text-xl font-black shadow-inner ${card.featured ? "border-[#c9a85c]/30 bg-[#c9a85c]/10 text-[#e0c27a]" : "border-white/10 bg-white/[.06] text-slate-200"}`}>{card.icon}</div><span className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[8px] font-black tracking-[.16em] text-slate-500">{card.eyebrow}</span></div>
+                <h3 className="mt-7 text-xl font-black tracking-tight text-white">{card.title}</h3><p className="mt-2 min-h-[48px] text-xs leading-5 text-slate-400">{card.description}</p>
+                <div className="mt-6 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+                  <Link href={card.href} className={`rounded-xl px-3 py-2.5 text-center text-[9px] font-black uppercase tracking-wider transition ${card.featured ? "bg-[#c9a85c] text-[#10151d] hover:bg-[#e0c27a]" : "bg-white/[.09] text-white hover:bg-white/[.15]"}`}>{card.primary}</Link>
+                  <Link href="/admin" className="rounded-xl border border-white/10 bg-transparent px-3 py-2.5 text-center text-[9px] font-black uppercase tracking-wider text-slate-400 transition hover:bg-white/[.07] hover:text-white">Back to Admin</Link>
+                </div>
+              </div>)}
             </div>
           </section>
           <footer className="mt-8 flex flex-col gap-2 border-t border-white/10 py-5 text-[9px] font-bold uppercase tracking-[.2em] text-slate-600 sm:flex-row sm:items-center sm:justify-between"><span>SAMS · Secure Administration</span><span>Finance · Team · Configuration · Master Data</span></footer>
