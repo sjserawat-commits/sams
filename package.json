@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && prisma db push && npm run seed:investigations && next dev",
-    "build": "prisma generate && prisma db push && npm run seed:investigations && next build",
+    "dev": "prisma generate && prisma db push && npm run seed:investigations && npx tsx prisma/normalize-investigation-pricing.ts && next dev",
+    "build": "prisma generate && prisma db push && npm run seed:investigations && npx tsx prisma/normalize-investigation-pricing.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "db:push": "prisma generate && prisma db push",
