@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 const ALLOWED_STATUS = [
   "ORDERED",
   "APPROVED_FOR_SAMPLING",
+  "ACCEPTED",
   "SAMPLE_COLLECTED",
   "PROCESSING",
   "COMPLETED",
@@ -55,8 +56,8 @@ export async function GET(request: Request) {
     return NextResponse.json(
       orders.map((order) => {
         const bill = order.opdVisit.billingRecords[0] ?? null;
-        const billPaid = !bill || bill.balanceAmount <= 0;
-        const samplingApproved = order.status === "APPROVED_FOR_SAMPLING";
+        const billPaid = !bill || bill.balanceAmount <= 0 || bill.paymentStatus === "PAID";
+        const samplingApproved = order.status === "APPROVED_FOR_SAMPLING" || order.status === "ACCEPTED";
         return {
           ...order,
           billing: bill,
@@ -82,32 +83,29 @@ export async function PATCH(request: Request) {
     const requestedStatus = String(body?.status ?? "").trim().toUpperCase();
     const reportText = body?.reportText == null ? undefined : String(body.reportText).trim();
 
-    if (!Number.isInteger(id) || id <= 0) {
-      return NextResponse.json({ error: "A valid investigation order ID is required." }, { status: 400 });
-    }
-    if (!ALLOWED_STATUS.includes(requestedStatus as InvestigationStatus)) {
-      return NextResponse.json({ error: "Invalid investigation status." }, { status: 400 });
-    }
+    if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "A valid investigation order ID is required." }, { status: 400 });
+    if (!ALLOWED_STATUS.includes(requestedStatus as InvestigationStatus)) return NextResponse.json({ error: "Invalid investigation status." }, { status: 400 });
 
     const order = await prisma.investigationOrder.findUnique({
       where: { id },
-      include: {
-        opdVisit: {
-          include: {
-            billingRecords: { orderBy: { createdAt: "desc" }, take: 1 },
-          },
-        },
-      },
+      include: { opdVisit: { include: { billingRecords: { orderBy: { createdAt: "desc" }, take: 1 } } } },
     });
     if (!order) return NextResponse.json({ error: "Investigation order not found." }, { status: 404 });
 
     const bill = order.opdVisit.billingRecords[0] ?? null;
-    const billPaid = !bill || bill.balanceAmount <= 0;
+    const billPaid = !bill || bill.balanceAmount <= 0 || bill.paymentStatus === "PAID";
+    const samplingApproved = order.status === "APPROVED_FOR_SAMPLING" || order.status === "ACCEPTED";
 
-    if (requestedStatus === "SAMPLE_COLLECTED" || requestedStatus === "PROCESSING" || requestedStatus === "COMPLETED") {
-      if (!billPaid && order.status !== "APPROVED_FOR_SAMPLING") {
-        return NextResponse.json({ error: "Payment is pending. The order must be paid or explicitly approved for sampling before processing." }, { status: 400 });
-      }
+    if (requestedStatus === "APPROVED_FOR_SAMPLING" && billPaid) {
+      return NextResponse.json({ error: "This bill is already paid. Accept the order directly." }, { status: 400 });
+    }
+
+    if (requestedStatus === "ACCEPTED" && !billPaid && !samplingApproved && order.status !== "APPROVED_FOR_SAMPLING") {
+      return NextResponse.json({ error: "Payment is pending. Approve the order for sampling before accepting it." }, { status: 400 });
+    }
+
+    if (requestedStatus === "SAMPLE_COLLECTED" && !billPaid && !samplingApproved) {
+      return NextResponse.json({ error: "Payment is pending. The order must be paid or approved for sampling before sample collection." }, { status: 400 });
     }
 
     if (requestedStatus === "COMPLETED" && !reportText) {
@@ -121,10 +119,7 @@ export async function PATCH(request: Request) {
         ...(reportText !== undefined ? { reportText } : {}),
         reportedAt: requestedStatus === "COMPLETED" ? new Date() : null,
       },
-      include: {
-        master: true,
-        opdVisit: { include: { patient: true } },
-      },
+      include: { master: true, opdVisit: { include: { patient: true } } },
     });
 
     return NextResponse.json(updated);
