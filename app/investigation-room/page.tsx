@@ -19,8 +19,7 @@ type Order = {
   workflow: { paymentStatus: string; outstandingAmount: number; samplingEligible: boolean; paymentRequiredBeforeSampling: boolean };
 };
 
-const STATUSES = ["ALL", "ORDERED", "APPROVED_FOR_SAMPLING", "SAMPLE_COLLECTED", "PROCESSING", "COMPLETED", "CANCELLED"];
-const nextStatus: Record<string, string> = { ORDERED: "SAMPLE_COLLECTED", APPROVED_FOR_SAMPLING: "SAMPLE_COLLECTED", SAMPLE_COLLECTED: "PROCESSING", PROCESSING: "COMPLETED" };
+const STATUSES = ["ALL", "ORDERED", "APPROVED_FOR_SAMPLING", "ACCEPTED", "SAMPLE_COLLECTED", "PROCESSING", "COMPLETED", "CANCELLED"];
 
 export default function InvestigationRoomPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -52,7 +51,7 @@ export default function InvestigationRoomPage() {
   }
 
   useEffect(() => {
-    const timer = window.setTimeout(load, 200);
+    const timer = window.setTimeout(() => void load(), 200);
     return () => window.clearTimeout(timer);
   }, [q, status]);
 
@@ -94,8 +93,8 @@ export default function InvestigationRoomPage() {
 
         <section className="rounded-[2rem] bg-gradient-to-br from-[#082b61] via-[#075dcc] to-[#0b63ce] p-7 text-white shadow-xl sm:p-9">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-200">Laboratory / Diagnostics Workflow</p>
-          <h2 className="mt-3 text-3xl font-black tracking-tight">Order → Payment / Approval → Sample → Processing → Report</h2>
-          <p className="mt-2 max-w-4xl text-sm leading-6 text-blue-100">Sampling is blocked while an order is unpaid unless an authorized user explicitly approves it for sampling. Final reports still require a result.</p>
+          <h2 className="mt-3 text-3xl font-black tracking-tight">Order → Bill / Approval → Accept → Sample → Process → Report</h2>
+          <p className="mt-2 max-w-4xl text-sm leading-6 text-blue-100">Every order must be paid or explicitly approved for sampling. The laboratory then accepts the order before collecting the sample.</p>
         </section>
 
         {(error || message) && <div className={`mt-5 rounded-xl border p-4 text-sm font-semibold ${error ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>{error || message}</div>}
@@ -106,10 +105,13 @@ export default function InvestigationRoomPage() {
           {loading ? <div className="p-8 text-sm font-semibold text-slate-500">Loading investigation orders…</div> : orders.length === 0 ? <div className="p-10 text-center text-sm font-semibold text-slate-400">No investigation orders found.</div> : <div className="divide-y divide-slate-100">
             {orders.map((order) => {
               const patient = `${order.opdVisit.patient.firstName} ${order.opdVisit.patient.lastName}`.trim();
-              const next = nextStatus[order.status];
               const isEditing = editing === order.id;
-              const samplingApproved = order.status === "APPROVED_FOR_SAMPLING";
               const paid = order.paymentStatus === "PAID" || order.workflow.paymentStatus === "PAID" || order.workflow.outstandingAmount <= 0;
+              const canAccept = order.status === "ORDERED" && (paid || order.workflow.samplingEligible);
+              const canApprove = order.status === "ORDERED" && !paid;
+              const canCollect = order.status === "ACCEPTED";
+              const canProcess = order.status === "SAMPLE_COLLECTED";
+              const canFinalize = order.status === "PROCESSING";
               return <article key={order.id} className="p-5 sm:p-6">
                 <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 flex-1">
@@ -118,14 +120,18 @@ export default function InvestigationRoomPage() {
                     <p className="mt-1 text-xs font-semibold text-slate-500">{patient} · {order.opdVisit.patient.patientId} · OPD Visit #{order.opdVisit.id} · Token {order.opdVisit.tokenNumber}</p>
                     <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3"><span><b>Code:</b> {order.master?.code || "—"}</span><span><b>Specimen:</b> {order.master?.specimen || "—"}</span><span><b>Reference:</b> {order.master?.referenceRange || "—"}</span></div>
                   </div>
-                  <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-[480px] lg:justify-end">
-                    {order.status === "ORDERED" && !paid && <button disabled={saving} onClick={() => void updateOrder(order.id, "APPROVED_FOR_SAMPLING", order.reportText || undefined)} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-black text-amber-800 disabled:opacity-50">Approve for Sampling</button>}
-                    {next && <button disabled={saving || (!paid && !samplingApproved)} onClick={() => void updateOrder(order.id, next, order.reportText || undefined)} className="rounded-xl bg-[#0b63ce] px-4 py-2.5 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-40">{next === "SAMPLE_COLLECTED" ? "Collect Sample" : next === "COMPLETED" ? "Finalize Report" : next.replaceAll("_", " ")}</button>}
+                  <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-[520px] lg:justify-end">
+                    {canApprove && <button disabled={saving} onClick={() => void updateOrder(order.id, "APPROVED_FOR_SAMPLING")} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-black text-amber-800 disabled:opacity-50">Approve for Sampling</button>}
+                    {canAccept && <button disabled={saving} onClick={() => void updateOrder(order.id, "ACCEPTED")} className="rounded-xl bg-[#082b61] px-4 py-2.5 text-xs font-black text-white disabled:opacity-50">Accept Order</button>}
+                    {order.status === "APPROVED_FOR_SAMPLING" && <button disabled={saving} onClick={() => void updateOrder(order.id, "ACCEPTED")} className="rounded-xl bg-[#082b61] px-4 py-2.5 text-xs font-black text-white disabled:opacity-50">Accept Order</button>}
+                    {canCollect && <button disabled={saving} onClick={() => void updateOrder(order.id, "SAMPLE_COLLECTED")} className="rounded-xl bg-[#0b63ce] px-4 py-2.5 text-xs font-black text-white disabled:opacity-50">Collect Sample</button>}
+                    {canProcess && <button disabled={saving} onClick={() => void updateOrder(order.id, "PROCESSING")} className="rounded-xl bg-[#0b63ce] px-4 py-2.5 text-xs font-black text-white disabled:opacity-50">Start Processing</button>}
+                    {canFinalize && <button disabled={saving || !order.reportText} onClick={() => void updateOrder(order.id, "COMPLETED", order.reportText || undefined)} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-40">Finalize Report</button>}
                     {order.status !== "COMPLETED" && order.status !== "CANCELLED" && <button onClick={() => { setEditing(order.id); setDraft(order.reportText || ""); }} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-black text-[#082b61]">Enter Result</button>}
-                    {order.status === "COMPLETED" && <button onClick={() => window.print()} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-black text-[#082b61]">Print</button>}
+                    {order.status === "COMPLETED" && <button onClick={() => window.print()} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-black text-[#082b61]">Print Report</button>}
                   </div>
                 </div>
-                {!paid && !samplingApproved && order.status === "ORDERED" && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">Payment pending. Sampling is blocked until payment is received or this order is explicitly approved for sampling.</div>}
+                {order.status === "ORDERED" && !paid && <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">Bill is pending. Approve for Sampling first, then Accept Order.</div>}
                 {isEditing && <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/60 p-4"><textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} placeholder="Enter investigation result / report findings..." className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-[#0b63ce]"/><div className="mt-3 flex flex-wrap gap-2"><button disabled={saving} onClick={() => void updateOrder(order.id, order.status, draft)} className="rounded-xl bg-[#082b61] px-4 py-2.5 text-xs font-black text-white">Save Result</button><button onClick={() => { setEditing(null); setDraft(""); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black">Cancel</button></div></div>}
                 {order.reportText && <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4"><p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Result / Report</p><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{order.reportText}</p>{order.reportedAt && <p className="mt-2 text-[10px] font-semibold text-slate-400">Reported {new Date(order.reportedAt).toLocaleString()}</p>}</div>}
               </article>;
