@@ -141,3 +141,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const id = Number(body.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return NextResponse.json({ error: "A valid investigation id is required." }, { status: 400 });
+    }
+
+    const existing = await prisma.investigationMaster.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Investigation not found." }, { status: 404 });
+    }
+
+    const name = body.name != null ? String(body.name).trim() : existing.name;
+    const rate = body.rate != null ? Number(body.rate) : existing.rate;
+    if (!name) return NextResponse.json({ error: "Investigation name is required." }, { status: 400 });
+    if (!Number.isFinite(rate) || rate < 0) return NextResponse.json({ error: "Rate must be a valid non-negative number." }, { status: 400 });
+
+    const canonicalName = normalizeName(name);
+    const activeRows = await prisma.investigationMaster.findMany({ where: { active: true, NOT: { id } } });
+    const duplicate = activeRows.find((row) => normalizeName(row.name) === canonicalName);
+    if (duplicate) {
+      return NextResponse.json({ error: `Another investigation already uses this name: ${duplicate.name}.` }, { status: 409 });
+    }
+
+    const updated = await prisma.investigationMaster.update({
+      where: { id },
+      data: {
+        name,
+        rate,
+        ...(body.category != null ? { category: String(body.category).trim() } : {}),
+        ...(body.active != null ? { active: Boolean(body.active) } : {}),
+        pricingLastVerifiedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("PATCH /api/investigation-master failed:", error);
+    return NextResponse.json({ error: "Unable to update investigation master." }, { status: 500 });
+  }
+}
