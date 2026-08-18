@@ -24,16 +24,11 @@ export default function PatientsPage() {
           <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.pexels.com/photos/1582519/pexels-photo-1582519.jpeg?auto=compress&cs=tinysrgb&w=2200')" }} />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(232,241,238,0.84),rgba(240,246,243,0.94)_42%,rgba(235,242,239,0.98))]" />
           <div className="relative mx-auto max-w-[1500px] px-4 py-7 sm:px-7 lg:px-10 lg:py-9">
-            <header className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <header className="mb-7">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#35705a]">SAMS · Clinical Operations</p>
                 <h1 className="mt-1 text-3xl font-black tracking-tight text-[#12382a] sm:text-5xl">Patient Registry</h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">A spacious directory for finding, verifying and continuing an existing patient&apos;s care.</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-xl border border-[#173f30]/20 bg-white/90 px-4 py-3 text-sm font-bold text-[#173f30] shadow-sm backdrop-blur-sm transition hover:bg-white hover:border-[#173f30]/40">← Back to Dashboard</Link>
-                <Link href="/reception" className="inline-flex items-center gap-2 rounded-xl border border-[#35705a]/25 bg-white/90 px-4 py-3 text-sm font-bold text-[#25634b] shadow-sm backdrop-blur-sm transition hover:bg-white hover:border-[#35705a]/50">Reception</Link>
-                <Link href="/patients/new" className="inline-flex items-center gap-2 rounded-xl bg-[#b88b2d] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#6b5524]/15 transition hover:bg-[#9f7724]">+ Register Patient</Link>
               </div>
             </header>
 
