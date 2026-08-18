@@ -46,8 +46,8 @@ a {
 }
 
 ::selection {
-  background: #bfdbfe;
-  color: #082b61;
+  background: #fed7aa;
+  color: #7c2d12;
 }
 
 ::-webkit-scrollbar {
@@ -60,16 +60,136 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #e7c9b3;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #d9a98d;
 }
 
 @media (max-width: 1023px) {
   body {
     overflow-x: hidden;
   }
+}
+
+/* SAMS Appointments — warm, welcoming reception atmosphere */
+main[class*="radial-gradient(circle_at_12%_8%"] {
+  background:
+    radial-gradient(circle at 8% 5%, rgba(255, 196, 132, .34), transparent 27%),
+    radial-gradient(circle at 92% 10%, rgba(255, 220, 155, .42), transparent 29%),
+    radial-gradient(circle at 55% 72%, rgba(255, 177, 143, .14), transparent 34%),
+    linear-gradient(180deg, #fff8ef 0%, #fff4e7 46%, #fffaf3 100%) !important;
+  color: #57352a !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] header {
+  background: rgba(255, 251, 246, .94) !important;
+  border-color: rgba(255, 220, 193, .78) !important;
+  box-shadow: 0 8px 30px rgba(150, 82, 44, .08) !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] header p {
+  color: #b76842 !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] header h1 {
+  color: #6d3524 !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] header nav a {
+  color: #805b4a !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] header nav a:hover,
+main[class*="radial-gradient(circle_at_12%_8%"] header a:hover {
+  background: #fff0e2 !important;
+  color: #9a482b !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] header > div > a:last-child {
+  border-color: #f0cdb5 !important;
+  background: #fff8f0 !important;
+  color: #8b472e !important;
+}
+
+/* Hero becomes a bright sunrise welcome rather than a clinical dashboard */
+main[class*="radial-gradient(circle_at_12%_8%"] section[class*="linear-gradient(135deg"] {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 233, 184, .42), transparent 22%),
+    linear-gradient(135deg, #d85f3f 0%, #ed7b4f 48%, #f3a85f 100%) !important;
+  box-shadow: 0 24px 65px rgba(181, 89, 48, .20) !important;
+  border-color: rgba(255,255,255,.78) !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] section[class*="linear-gradient(135deg"] h2 {
+  letter-spacing: -.035em;
+}
+
+/* Warm translucent status cards */
+main[class*="radial-gradient(circle_at_12%_8%"] section[class*="linear-gradient(135deg"] div[class*="bg-white\/10"] {
+  background: rgba(255,255,255,.14) !important;
+  border-color: rgba(255,255,255,.24) !important;
+}
+
+/* Primary actions */
+main[class*="radial-gradient(circle_at_12%_8%"] button[class*="bg-\[#173f36\]"] {
+  background: #c95737 !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] button[class*="bg-\[#173f36\]"]:hover {
+  background: #a94329 !important;
+}
+
+/* Booking/list switch */
+main[class*="radial-gradient(circle_at_12%_8%"] section[class*="bg-white\/88"] button {
+  color: #8a6252 !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] section[class*="bg-white\/88"] button[class*="bg-\[#173f36\]"] {
+  color: white !important;
+}
+
+/* Soft warm surfaces throughout the workspace */
+main[class*="radial-gradient(circle_at_12%_8%"] section[class*="bg-white\/92"] {
+  background: rgba(255,255,255,.90) !important;
+  border-color: rgba(244, 216, 197, .88) !important;
+  box-shadow: 0 18px 55px rgba(154, 91, 58, .08) !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] div[class*="bg-\[#f8fbf7\]"] {
+  background: #fff8f2 !important;
+  border-color: #f0dfd2 !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] input,
+main[class*="radial-gradient(circle_at_12%_8%"] textarea,
+main[class*="radial-gradient(circle_at_12%_8%"] select {
+  border-color: #ead3c3 !important;
+  background: #fffdfa !important;
+  color: #5c3d31 !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] input:focus,
+main[class*="radial-gradient(circle_at_12%_8%"] textarea:focus,
+main[class*="radial-gradient(circle_at_12%_8%"] select:focus {
+  outline: 2px solid rgba(232, 119, 77, .22);
+  border-color: #e58b67 !important;
+}
+
+/* Friendly patient choice cards */
+main[class*="radial-gradient(circle_at_12%_8%"] button[class*="border-\[#dfe9df\]"] {
+  border-color: #efdcd0 !important;
+}
+
+main[class*="radial-gradient(circle_at_12%_8%"] button[class*="border-\[#7ca786\]"] {
+  border-color: #e48b68 !important;
+  background: #fffdf9 !important;
+  box-shadow: 0 8px 24px rgba(211, 108, 67, .10) !important;
+}
+
+/* Appointment list cards */
+main[class*="radial-gradient(circle_at_12%_8%"] section[class*="mt-5"] > div[class*="bg-white\/92"] {
+  border-color: #f0dfd3 !important;
 }
