@@ -8,7 +8,7 @@ type Appointment={id:number;appointmentNo:string;patientType:string;patientName:
 function slots(date:string){if(!date)return[];const m=Number(date.slice(5,7));const start=m>=4&&m<=9?8:9;const out:string[]=[];for(let x=start*60;x<=15*60;x+=5){const h=Math.floor(x/60),min=x%60,s=h>=12?"PM":"AM";out.push(`${h%12||12}:${String(min).padStart(2,"0")} ${s}`)}return out}
 
 const nav=[
- {label:"Home",href:"/"},{label:"Dashboard",href:"/dashboard"},{label:"Patient",href:"/patients"},{label:"Clinical",href:"/clinical"},{label:"Admin",href:"/admin"},{label:"Patient Portal",href:"/portal"}
+ {label:"Home",href:"/"},{label:"Dashboard",href:"/dashboard"},{label:"Patient",href:"/patients"},{label:"Patient Portal",href:"/portal"}
 ];
 
 export default function ReceptionAppointments(){
