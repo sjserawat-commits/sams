@@ -5,6 +5,10 @@ const round = (value: number) => Math.round(value * 100) / 100;
 const billNumber = () => `SAMS-${Date.now().toString().slice(-10)}`;
 const receiptNumber = () => `RCP-${Date.now().toString().slice(-10)}`;
 
+// Central consultation fee used when an OPD Visit is billed.
+// Keeping this in one place prevents staff from manually entering it on every bill.
+const CONSULTATION_FEE = 500;
+
 async function syncVisitCharges(visitId: number) {
   const visit = await prisma.oPDVisit.findUnique({
     where: { id: visitId },
@@ -20,27 +24,74 @@ async function syncVisitCharges(visitId: number) {
   });
   if (!visit) return null;
 
+  const latestBill = visit.billingRecords[0];
+  const billLocked = Boolean(latestBill?.paidAmount);
+
+  // Every OPD Visit carries one automatic consultation charge.
+  // Never add another consultation line if one already exists, and never mutate a paid bill.
+  const hasConsultation = visit.billingLineItems.some(
+    (line) => line.serviceType === "CONSULTATION" && line.sourceType === "OPD_VISIT"
+  );
+  if (!hasConsultation && !billLocked) {
+    await prisma.billingLineItem.create({
+      data: {
+        opdVisitId: visit.id,
+        serviceType: "CONSULTATION",
+        description: "OPD Consultation Fee",
+        quantity: 1,
+        unitPrice: CONSULTATION_FEE,
+        amount: CONSULTATION_FEE,
+        sourceType: "OPD_VISIT",
+        sourceId: visit.id,
+      },
+    });
+  }
+
   for (const order of visit.investigationOrders) {
     const existing = visit.billingLineItems.find((line) => line.sourceType === "INVESTIGATION_ORDER" && line.sourceId === order.id);
-    if (!existing) {
+    if (!existing && !billLocked) {
       await prisma.billingLineItem.create({
-        data: { opdVisitId: visit.id, serviceType: "INVESTIGATION", description: order.investigation, quantity: 1, unitPrice: round(order.netAmount), amount: round(order.netAmount), sourceType: "INVESTIGATION_ORDER", sourceId: order.id },
+        data: {
+          opdVisitId: visit.id,
+          serviceType: "INVESTIGATION",
+          description: order.investigation,
+          quantity: 1,
+          unitPrice: round(order.netAmount),
+          amount: round(order.netAmount),
+          sourceType: "INVESTIGATION_ORDER",
+          sourceId: order.id,
+        },
       });
     }
   }
 
   for (const prescription of visit.prescriptions) {
     const existing = visit.billingLineItems.find((line) => line.sourceType === "PRESCRIPTION" && line.sourceId === prescription.id);
-    if (!existing) {
+    if (!existing && !billLocked) {
       await prisma.billingLineItem.create({
-        data: { opdVisitId: visit.id, serviceType: "PHARMACY", description: prescription.medicineName, quantity: prescription.quantity, unitPrice: round(prescription.unitPrice), amount: round(prescription.quantity * prescription.unitPrice), sourceType: "PRESCRIPTION", sourceId: prescription.id },
+        data: {
+          opdVisitId: visit.id,
+          serviceType: "PHARMACY",
+          description: prescription.medicineName,
+          quantity: prescription.quantity,
+          unitPrice: round(prescription.unitPrice),
+          amount: round(prescription.quantity * prescription.unitPrice),
+          sourceType: "PRESCRIPTION",
+          sourceId: prescription.id,
+        },
       });
     }
   }
 
   return prisma.oPDVisit.findUnique({
     where: { id: visitId },
-    include: { patient: true, departmentMaster: true, clinicalEncounter: true, billingLineItems: { orderBy: { createdAt: "asc" } }, billingRecords: { orderBy: { createdAt: "desc" } } },
+    include: {
+      patient: true,
+      departmentMaster: true,
+      clinicalEncounter: true,
+      billingLineItems: { orderBy: { createdAt: "asc" } },
+      billingRecords: { orderBy: { createdAt: "desc" } },
+    },
   });
 }
 
@@ -51,14 +102,18 @@ export async function GET(request: Request) {
     const visitIdParam = params.get("visitId")?.trim() ?? "";
     const visitId = visitIdParam ? Number(visitIdParam) : null;
 
-    // Patient lookup must work independently of visitId.
-    // Previously Number(null) became 0, which made Number.isInteger(visitId) true
-    // and incorrectly rejected a valid patientId-only request.
     if (patientId && visitId === null) {
       const patient = await prisma.patient.findUnique({ where: { patientId } });
       if (!patient) return NextResponse.json({ error: "Patient not found." }, { status: 404 });
-      const visits = await prisma.oPDVisit.findMany({ where: { patientId: patient.id }, include: { departmentMaster: true }, orderBy: { createdAt: "desc" } });
-      return NextResponse.json({ patient: { id: patient.id, patientId: patient.patientId, name: `${patient.firstName} ${patient.lastName}`.trim(), phone: patient.phone }, visits: visits.map((visit) => ({ id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt })) });
+      const visits = await prisma.oPDVisit.findMany({
+        where: { patientId: patient.id },
+        include: { departmentMaster: true },
+        orderBy: { createdAt: "desc" },
+      });
+      return NextResponse.json({
+        patient: { id: patient.id, patientId: patient.patientId, name: `${patient.firstName} ${patient.lastName}`.trim(), phone: patient.phone },
+        visits: visits.map((visit) => ({ id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt })),
+      });
     }
 
     if (!Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID or patient ID is required." }, { status: 400 });
@@ -69,7 +124,15 @@ export async function GET(request: Request) {
     const subtotal = round(lineItems.reduce((sum, line) => sum + line.amount, 0));
     const bill = visit.billingRecords[0] ?? null;
 
-    return NextResponse.json({ visit: { id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt }, patient: { id: visit.patient.id, patientId: visit.patient.patientId, name: `${visit.patient.firstName} ${visit.patient.lastName}`.trim(), phone: visit.patient.phone }, encounter: visit.clinicalEncounter ? { id: visit.clinicalEncounter.id, treatmentPlan: visit.clinicalEncounter.treatmentPlan, followUpDate: visit.clinicalEncounter.followUpDate } : null, lineItems, totals: { subtotal }, bill });
+    return NextResponse.json({
+      visit: { id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt },
+      patient: { id: visit.patient.id, patientId: visit.patient.patientId, name: `${visit.patient.firstName} ${visit.patient.lastName}`.trim(), phone: visit.patient.phone },
+      encounter: visit.clinicalEncounter ? { id: visit.clinicalEncounter.id, treatmentPlan: visit.clinicalEncounter.treatmentPlan, followUpDate: visit.clinicalEncounter.followUpDate } : null,
+      lineItems,
+      totals: { subtotal },
+      bill,
+      consultationFee: CONSULTATION_FEE,
+    });
   } catch (error) {
     console.error("Billing lookup error:", error);
     return NextResponse.json({ error: "Unable to load billing information." }, { status: 500 });
