@@ -16,8 +16,9 @@ export default function Navigation({ variant = "default" }: NavigationProps) {
         <span className="hidden text-left sm:block"><span className="block text-lg font-black tracking-tight text-[#f2d38b]">SAMS</span><span className="block max-w-[300px] text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">Serawat Advanced Multispeciality Joint &amp; Spine Centre</span></span>
       </Link>
       <div className="ml-auto flex flex-wrap items-center gap-1">
+        <Link href="/" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b] sm:px-4">Home</Link>
+        <Link href="/dashboard" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b] sm:px-4">Dashboard</Link>
         {isPatientRegistry && <>
-          <Link href="/dashboard" className="rounded-xl border border-white/15 bg-white/[0.04] px-3 py-2 text-xs font-black text-slate-300 transition hover:border-[#d6a443]/40 hover:bg-white/[0.08] hover:text-[#f2d38b] sm:px-4">← Dashboard</Link>
           <Link href="/reception" className="rounded-xl border border-[#d6a443]/35 bg-[#d6a443]/10 px-3 py-2 text-xs font-black text-[#f2d38b] transition hover:bg-[#d6a443]/20 sm:px-4">Reception</Link>
           <Link href="/patients/new" className="rounded-xl border border-[#d6a443]/70 bg-[#d6a443] px-3 py-2 text-xs font-black text-[#071525] transition hover:bg-[#f2d58b] sm:px-4">+ Patient Registration</Link>
         </>}
