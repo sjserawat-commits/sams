@@ -4,9 +4,6 @@ import { prisma } from "@/lib/prisma";
 const round = (value: number) => Math.round(value * 100) / 100;
 const billNumber = () => `SAMS-${Date.now().toString().slice(-10)}`;
 const receiptNumber = () => `RCP-${Date.now().toString().slice(-10)}`;
-
-// Central consultation fee used when an OPD Visit is billed.
-// Keeping this in one place prevents staff from manually entering it on every bill.
 const CONSULTATION_FEE = 500;
 
 async function syncVisitCharges(visitId: number) {
@@ -27,8 +24,6 @@ async function syncVisitCharges(visitId: number) {
   const latestBill = visit.billingRecords[0];
   const billLocked = Boolean(latestBill?.paidAmount);
 
-  // Every OPD Visit carries one automatic consultation charge.
-  // Never add another consultation line if one already exists, and never mutate a paid bill.
   const hasConsultation = visit.billingLineItems.some(
     (line) => line.serviceType === "CONSULTATION" && line.sourceType === "OPD_VISIT"
   );
@@ -48,7 +43,9 @@ async function syncVisitCharges(visitId: number) {
   }
 
   for (const order of visit.investigationOrders) {
-    const existing = visit.billingLineItems.find((line) => line.sourceType === "INVESTIGATION_ORDER" && line.sourceId === order.id);
+    const existing = visit.billingLineItems.find(
+      (line) => line.sourceType === "INVESTIGATION_ORDER" && line.sourceId === order.id
+    );
     if (!existing && !billLocked) {
       await prisma.billingLineItem.create({
         data: {
@@ -66,7 +63,9 @@ async function syncVisitCharges(visitId: number) {
   }
 
   for (const prescription of visit.prescriptions) {
-    const existing = visit.billingLineItems.find((line) => line.sourceType === "PRESCRIPTION" && line.sourceId === prescription.id);
+    const existing = visit.billingLineItems.find(
+      (line) => line.sourceType === "PRESCRIPTION" && line.sourceId === prescription.id
+    );
     if (!existing && !billLocked) {
       await prisma.billingLineItem.create({
         data: {
@@ -83,7 +82,7 @@ async function syncVisitCharges(visitId: number) {
     }
   }
 
-  return prisma.oPDVisit.findUnique({
+  const refreshed = await prisma.oPDVisit.findUnique({
     where: { id: visitId },
     include: {
       patient: true,
@@ -93,6 +92,26 @@ async function syncVisitCharges(visitId: number) {
       billingRecords: { orderBy: { createdAt: "desc" } },
     },
   });
+  if (!refreshed) return null;
+
+  // An unpaid invoice must always reflect the current charge list.
+  // This prevents a stale subtotal/final amount when charges are added after invoice creation.
+  const bill = refreshed.billingRecords[0];
+  if (bill && bill.paidAmount === 0) {
+    const subtotal = round(refreshed.billingLineItems.reduce((sum, line) => sum + line.amount, 0));
+    const netAmount = round(Math.max(0, subtotal - bill.discount));
+    await prisma.billingRecord.update({
+      where: { id: bill.id },
+      data: {
+        subtotal,
+        netAmount,
+        balanceAmount: round(Math.max(0, netAmount - bill.paidAmount)),
+      },
+    });
+    refreshed.billingRecords[0] = { ...bill, subtotal, netAmount, balanceAmount: round(Math.max(0, netAmount - bill.paidAmount)) };
+  }
+
+  return refreshed;
 }
 
 export async function GET(request: Request) {
