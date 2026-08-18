@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     return NextResponse.json(rows);
   } catch (error) {
     console.error("GET /api/investigation-master failed:", error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    return NextResponse.json({ error: "Investigation Master is unavailable. Restart the SAMS server so the Investigation Master seed can run." }, { status: 500 });
   }
 }
 
@@ -41,10 +41,7 @@ export async function POST(request: Request) {
     const category = String(body.category ?? "").trim();
 
     if (!name || !category) {
-      return NextResponse.json(
-        { error: "Investigation name and category are required." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Investigation name and category are required." }, { status: 400 });
     }
 
     const code = String(body.code ?? name)
