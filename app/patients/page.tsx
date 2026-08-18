@@ -2,27 +2,76 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Sidebar from "@/components/Sidebar";
+import Navigation from "@/components/Navigation";
 
 type Patient = { id: string; firstName?: string; lastName?: string; patientId?: string; gender?: string; phone?: string; dateOfBirth?: string };
-const serif = { fontFamily: "Georgia, 'Times New Roman', serif" };
-const sans = { fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" };
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [query, setQuery] = useState("");
-  useEffect(() => { fetch("/api/patients").then((r) => r.json()).then((data) => setPatients(Array.isArray(data) ? data : [])).catch(() => setPatients([])); }, []);
-  const filtered = useMemo(() => { const q = query.trim().toLowerCase(); if (!q) return patients; return patients.filter((p) => [p.firstName, p.lastName, p.patientId, p.phone, p.dateOfBirth].filter(Boolean).join(" ").toLowerCase().includes(q)); }, [patients, query]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/patients")
+      .then((r) => r.json())
+      .then((data) => setPatients(Array.isArray(data) ? data : []))
+      .catch(() => setPatients([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return patients;
+    return patients.filter((p) => [p.firstName, p.lastName, p.patientId, p.phone, p.dateOfBirth, p.gender].filter(Boolean).join(" ").toLowerCase().includes(q));
+  }, [patients, query]);
+
   return (
-    <main className="min-h-screen bg-[#f4f7fb] text-slate-900" style={sans}>
-      <header className="relative overflow-hidden border-b border-[#d8c9a8] bg-[#082b61] text-white shadow-[0_12px_35px_rgba(8,43,97,0.18)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(212,175,55,0.22),transparent_30%),radial-gradient(circle_at_12%_110%,rgba(11,99,206,0.38),transparent_34%)]" />
-        <div className="relative mx-auto max-w-[1500px] px-5 py-5 sm:px-8 sm:py-6"><div className="flex items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-3 sm:gap-4"><Link href="/dashboard" className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black text-white shadow-sm transition hover:border-[#f1d27a]/70 hover:bg-white/15 hover:text-[#f1d27a]" aria-label="Back to Dashboard" title="Back to Dashboard">←</Link><div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#d4af37]/70 bg-white/10 sm:flex"><span className="text-2xl font-black text-[#f1d27a]" style={serif}>S</span></div><div className="min-w-0"><div className="flex items-center gap-2"><span className="h-px w-6 bg-[#d4af37]" /><p className="truncate text-[9px] font-black uppercase tracking-[0.28em] text-[#f1d27a]">SAMS · Clinical Operations</p></div><h1 className="mt-1 text-2xl font-black tracking-[-0.02em] sm:text-4xl" style={serif}>Patient Registry</h1><p className="mt-1 hidden text-xs font-medium tracking-wide text-blue-100 sm:block">A refined workspace for identifying, verifying and continuing patient care.</p></div></div><Link href="/patients/new" className="group flex shrink-0 items-center gap-2 rounded-xl border border-[#f1d27a]/70 bg-[#d4af37] px-3 py-2.5 text-xs font-black text-[#082b61] shadow-[0_8px_25px_rgba(0,0,0,0.18)] transition hover:-translate-y-0.5 hover:bg-[#f1d27a] sm:rounded-2xl sm:px-5 sm:py-3.5 sm:text-sm"><span className="text-base">✦</span><span className="hidden sm:inline">Register Patient</span><span className="sm:hidden">Register</span></Link></div><div className="mt-5 flex items-center gap-3 border-t border-white/10 pt-3 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-200"><span className="rounded-full border border-white/15 bg-white/5 px-3 py-1">Patient Care Workspace</span><span className="hidden h-1 w-1 rounded-full bg-[#d4af37] sm:block" /><span className="hidden sm:inline">Secure Clinical Directory</span></div></div>
-      </header>
-      <div className="mx-auto max-w-[1500px] space-y-7 px-5 py-7 sm:px-8 sm:py-9">
-        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0b63ce] via-[#0a56b4] to-[#082b61] px-7 py-5 text-white shadow-[0_18px_45px_rgba(8,43,97,0.20)] sm:px-9 sm:py-6"><div className="absolute -right-16 -top-20 h-64 w-64 rounded-full border border-white/10" /><div className="absolute -right-4 -top-8 h-40 w-40 rounded-full border border-[#d4af37]/20" /><div className="relative grid items-center gap-4 lg:grid-cols-[1fr_minmax(420px,1.3fr)]"><div><p className="text-[9px] font-black uppercase tracking-[0.26em] text-[#f1d27a]">Returning Patient Workflow</p><h2 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl" style={serif}>Find an existing patient</h2><p className="mt-1 max-w-2xl text-xs leading-5 text-blue-100">Search by patient ID, name, mobile number or date of birth. Verify the record before creating a new OPD visit.</p></div><div className="relative flex items-center gap-3 rounded-2xl border border-white/20 bg-white p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.14)]"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eef5ff] text-lg text-[#0b63ce]">⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Patient ID, name, mobile or date of birth" className="h-10 w-full bg-transparent px-1 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400" /></div></div></section>
-        <section className="overflow-hidden rounded-[1.75rem] border border-[#d9dde5] bg-white shadow-[0_14px_40px_rgba(15,38,70,0.08)]"><div className="flex items-end justify-between gap-4 border-b border-[#e8e4da] bg-[#fbfaf7] px-5 py-5 sm:px-7"><div><p className="text-[9px] font-black uppercase tracking-[0.24em] text-[#0b63ce]">Patient Directory</p><h2 className="mt-1 text-2xl font-black tracking-tight text-[#082b61] sm:text-3xl" style={serif}>{filtered.length} matching record{filtered.length === 1 ? "" : "s"}</h2></div><span className="hidden rounded-full border border-[#d4af37]/40 bg-[#fffaf0] px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-[#8b6a17] sm:inline-flex">Verified Clinical Records</span></div>
-          {filtered.length === 0 ? <div className="px-5 py-12 text-center"><p className="font-bold text-slate-600" style={serif}>No matching patient found</p><p className="mt-1 text-xs text-slate-400">Verify the details or register a new patient if no existing record belongs to this person.</p></div> : <div className="overflow-x-auto"><div className="min-w-[760px]"><div className="grid grid-cols-[1.4fr_180px_180px_120px] border-b border-[#e6e0d2] bg-[#082b61] px-6 py-3 text-[9px] font-black uppercase tracking-[0.18em] text-[#f1d27a]"><span>Patient</span><span>Patient ID</span><span>Contact</span><span className="text-right">Action</span></div>{filtered.slice(0, 50).map((p, index) => <div key={p.id} className={`grid grid-cols-[1.4fr_180px_180px_120px] items-center px-6 py-4 transition hover:bg-[#f8fbff] ${index < filtered.length - 1 ? "border-b border-[#edf0f4]" : ""}`}><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d4af37]/50 bg-[#fffaf0] text-sm font-black text-[#8b6a17]" style={serif}>{(p.firstName?.[0] || "P").toUpperCase()}</div><div><p className="font-bold tracking-tight text-[#082b61]" style={serif}>{[p.firstName, p.lastName].filter(Boolean).join(" ") || "Unnamed patient"}</p><p className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-400">{p.dateOfBirth ? `DOB: ${new Date(p.dateOfBirth).toLocaleDateString("en-IN")}` : "Patient record"}</p></div></div><span className="text-sm font-semibold text-slate-600">{p.patientId ?? p.id}</span><span className="text-sm text-slate-500">{p.phone ?? "—"}</span><div className="text-right"><Link href={`/patients/profile/${p.id}`} className="inline-flex rounded-xl border border-[#0b63ce]/20 bg-[#eef5ff] px-3 py-2 text-xs font-black text-[#0b63ce] transition hover:bg-[#0b63ce] hover:text-white">Verify →</Link></div></div>)}</div></div>}
-        </section>
+    <main className="min-h-screen bg-[#eaf1ee] text-slate-900 lg:flex">
+      <div className="lg:sticky lg:top-0 lg:h-screen lg:w-[270px] lg:shrink-0"><Sidebar variant="reception" /></div>
+      <div className="min-w-0 flex-1">
+        <Navigation variant="reception" />
+        <div className="relative min-h-[calc(100vh-64px)] overflow-hidden">
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://images.pexels.com/photos/1582519/pexels-photo-1582519.jpeg?auto=compress&cs=tinysrgb&w=2200')" }} />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(232,241,238,0.84),rgba(240,246,243,0.94)_42%,rgba(235,242,239,0.98))]" />
+
+          <div className="relative mx-auto max-w-[1500px] px-4 py-7 sm:px-7 lg:px-10 lg:py-9">
+            <header className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <Link href="/dashboard" className="text-xs font-bold text-[#14532d] hover:underline">← Back to Dashboard</Link>
+                <p className="mt-5 text-[10px] font-black uppercase tracking-[0.24em] text-[#35705a]">SAMS · Clinical Operations</p>
+                <h1 className="mt-1 text-3xl font-black tracking-tight text-[#12382a] sm:text-5xl">Patient Registry</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">A spacious directory for finding, verifying and continuing an existing patient&apos;s care.</p>
+              </div>
+              <Link href="/patients/new" className="inline-flex w-fit items-center gap-2 rounded-xl bg-[#b88b2d] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#6b5524]/15 transition hover:bg-[#9f7724]">+ Register Patient</Link>
+            </header>
+
+            <section className="rounded-[1.5rem] border border-white/80 bg-white/90 p-5 shadow-[0_18px_50px_rgba(35,70,55,0.10)] backdrop-blur-md sm:p-7">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#35705a]">Returning Patient Workflow</p>
+                  <h2 className="mt-1 text-xl font-black text-[#173f30] sm:text-2xl">Find an existing patient</h2>
+                  <p className="mt-1 text-sm text-slate-500">Search by Patient ID, name, mobile number, date of birth or gender.</p>
+                </div>
+                <div className="flex w-full max-w-2xl items-center rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#edf5f0] text-lg text-[#35705a]">⌕</span>
+                  <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search patient ID, name, mobile or DOB" className="h-10 w-full bg-transparent px-3 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400" aria-label="Search patients" />
+                  {query && <button type="button" onClick={() => setQuery("")} className="mr-2 rounded-lg px-3 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100">Clear</button>}
+                </div>
+              </div>
+            </section>
+
+            <section className="mt-6 overflow-hidden rounded-[1.5rem] border border-white/80 bg-white/95 shadow-[0_18px_55px_rgba(35,70,55,0.12)]">
+              <div className="flex flex-col gap-3 border-b border-slate-100 bg-white/90 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+                <div><p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#35705a]">Patient Directory</p><h2 className="mt-1 text-xl font-black text-[#173f30] sm:text-2xl">{loading ? "Loading records…" : `${filtered.length} matching record${filtered.length === 1 ? "" : "s"}`}</h2></div>
+                <span className="w-fit rounded-full border border-[#b88b2d]/30 bg-[#fff9ec] px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-[#87671e]">Clinical Records</span>
+              </div>
+
+              {loading ? <div className="px-6 py-16 text-center text-sm font-semibold text-slate-500">Loading patient records…</div> : filtered.length === 0 ? <div className="px-6 py-16 text-center"><p className="text-lg font-black text-[#173f30]">No matching patient found</p><p className="mt-2 text-sm text-slate-500">Try another search or register a new patient.</p><Link href="/patients/new" className="mt-5 inline-flex rounded-xl bg-[#173f30] px-5 py-3 text-sm font-bold text-white">Register New Patient</Link></div> : <div className="overflow-x-auto"><div className="min-w-[780px]"><div className="grid grid-cols-[1.5fr_170px_170px_120px] bg-[#173f30] px-6 py-3 text-[9px] font-black uppercase tracking-[0.18em] text-[#f2d58b]"><span>Patient</span><span>Patient ID</span><span>Contact</span><span className="text-right">Action</span></div>{filtered.slice(0, 100).map((p, index) => <div key={p.id} className={`grid grid-cols-[1.5fr_170px_170px_120px] items-center px-6 py-4 transition hover:bg-[#f1f7f3] ${index < Math.min(filtered.length, 100) - 1 ? "border-b border-slate-100" : ""}`}><div className="flex items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#b88b2d]/35 bg-[#fff8e8] text-sm font-black text-[#87671e]">{(p.firstName?.[0] || "P").toUpperCase()}</div><div><p className="font-bold text-[#173f30]">{[p.firstName, p.lastName].filter(Boolean).join(" ") || "Unnamed patient"}</p><p className="mt-0.5 text-[10px] font-medium text-slate-400">{p.dateOfBirth ? `DOB: ${new Date(p.dateOfBirth).toLocaleDateString("en-IN")}` : "Date of birth not recorded"}</p></div></div><span className="text-sm font-semibold text-slate-600">{p.patientId ?? p.id}</span><span className="text-sm text-slate-500">{p.phone ?? "Not provided"}</span><div className="text-right"><Link href={`/patients/profile/${p.id}`} className="inline-flex rounded-lg border border-[#35705a]/20 bg-[#edf5f0] px-3 py-2 text-xs font-black text-[#25634b] transition hover:bg-[#173f30] hover:text-white">Open Profile →</Link></div></div>)}</div></div>}
+              {filtered.length > 100 && <p className="border-t border-slate-100 px-6 py-3 text-center text-xs font-semibold text-slate-400">Showing first 100 results. Refine your search to find a specific record.</p>}
+            </section>
+          </div>
+        </div>
       </div>
     </main>
   );
