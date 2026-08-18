@@ -1,3 +1,5 @@
+import styles from "./registration-background.module.css";
+
 export default function NewPatientLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <div className={styles.registrationRoute}>{children}</div>;
 }
