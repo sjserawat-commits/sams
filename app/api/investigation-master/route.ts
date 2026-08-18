@@ -1,6 +1,52 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * Human-facing investigation names are the canonical identity in the master.
+ * Different source files often use punctuation, casing or spacing variations
+ * (e.g. "Anti-CCP" vs "Anti CCP"). Keep one orderable master row per name.
+ */
+function normalizeName(value: string) {
+  return value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function score(row: {
+  smsBenchmarkRate: number | null;
+  corporateBenchmarkRate: number | null;
+  rate: number;
+  id: number;
+}) {
+  return [
+    row.smsBenchmarkRate != null && row.smsBenchmarkRate > 0 ? 4 : 0,
+    row.corporateBenchmarkRate != null && row.corporateBenchmarkRate > 0 ? 2 : 0,
+    row.rate > 0 ? 1 : 0,
+    -row.id / 1_000_000_000,
+  ].reduce((a, b) => a + b, 0);
+}
+
+function dedupeRows<T extends {
+  id: number;
+  name: string;
+  smsBenchmarkRate: number | null;
+  corporateBenchmarkRate: number | null;
+  rate: number;
+}>(rows: T[]) {
+  const winners = new Map<string, T>();
+  for (const row of rows) {
+    const key = normalizeName(row.name);
+    if (!key) continue;
+    const current = winners.get(key);
+    if (!current || score(row) > score(current)) winners.set(key, row);
+  }
+  return Array.from(winners.values());
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -24,13 +70,16 @@ export async function GET(request: Request) {
             }
           : {}),
       },
-      orderBy: [{ category: "asc" }, { name: "asc" }],
+      orderBy: [{ category: "asc" }, { name: "asc" }, { id: "asc" }],
     });
 
-    return NextResponse.json(rows);
+    return NextResponse.json(dedupeRows(rows));
   } catch (error) {
     console.error("GET /api/investigation-master failed:", error);
-    return NextResponse.json({ error: "Investigation Master is unavailable. Restart the SAMS server so the Investigation Master seed can run." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Investigation Master is unavailable. Restart the SAMS server so the Investigation Master seed can run." },
+      { status: 500 }
+    );
   }
 }
 
@@ -42,6 +91,16 @@ export async function POST(request: Request) {
 
     if (!name || !category) {
       return NextResponse.json({ error: "Investigation name and category are required." }, { status: 400 });
+    }
+
+    const canonicalName = normalizeName(name);
+    const existing = await prisma.investigationMaster.findMany({ where: { active: true } });
+    const duplicate = existing.find((row) => normalizeName(row.name) === canonicalName);
+    if (duplicate) {
+      return NextResponse.json(
+        { error: `Investigation already exists: ${duplicate.name} (${duplicate.code}). Duplicate names are not allowed in Investigation Master.` },
+        { status: 409 }
+      );
     }
 
     const code = String(body.code ?? name)
