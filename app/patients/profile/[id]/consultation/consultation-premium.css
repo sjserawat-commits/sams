@@ -4,92 +4,38 @@
   color:#18343a;
 }
 .sams-consultation-workspace main { background:transparent !important; }
-.sams-consultation-workspace header {
-  background:rgba(255,253,248,.98) !important;
-  color:#18343a !important;
-  border-color:#e5dfd1 !important;
-  box-shadow:0 7px 24px rgba(24,52,58,.06) !important;
-}
+.sams-consultation-workspace header { background:rgba(255,253,248,.98) !important; color:#18343a !important; border-color:#e5dfd1 !important; box-shadow:0 7px 24px rgba(24,52,58,.06) !important; }
 .sams-consultation-workspace header h1 { color:#24434a !important; }
 .sams-consultation-workspace header p { color:#b18a3d !important; }
 .sams-consultation-workspace header button { background:#f2eee6 !important; color:#315258 !important; border:1px solid #ddd5c7 !important; }
 .sams-consultation-workspace header nav a { color:#49666b !important; }
 .sams-consultation-workspace header nav a:hover { background:#f3eee3 !important; color:#183f45 !important; }
-
-/* The printable consultation sheet stays white; never paint the whole page teal. */
-.sams-consultation-workspace .print-sheet {
-  background:#fff !important;
-  color:#18343a !important;
-  border:1px solid #e1e5df !important;
-  box-shadow:0 18px 55px rgba(24,52,58,.08) !important;
-}
-.sams-consultation-workspace .print-sheet > section:first-child {
-  background:linear-gradient(180deg,#fbfaf7 0%,#f4f7f4 100%) !important;
-  color:#18343a !important;
-  border-color:#e1e5df !important;
-  box-shadow:none !important;
-}
+.sams-consultation-workspace .print-sheet { background:#fff !important; color:#18343a !important; border:1px solid #e1e5df !important; box-shadow:0 18px 55px rgba(24,52,58,.08) !important; }
+.sams-consultation-workspace .print-sheet > section:first-child { background:linear-gradient(180deg,#fbfaf7 0%,#f4f7f4 100%) !important; color:#18343a !important; border-color:#e1e5df !important; box-shadow:none !important; }
 .sams-consultation-workspace .print-sheet > section:first-child * { color:inherit; }
 .sams-consultation-workspace .print-sheet > section:first-child h2 { color:#173f46 !important; font-size:clamp(1.3rem,2.2vw,1.9rem) !important; }
 .sams-consultation-workspace .print-sheet > section:first-child p { color:#b18a3d !important; }
 .sams-consultation-workspace .print-sheet > section:first-child .text-slate-400 { color:#7a8d8d !important; }
 .sams-consultation-workspace .print-sheet > section:first-child strong { color:#35575b !important; }
-
-/* Clinical navigation stays light and compact. */
 .sams-consultation-workspace .print-sheet > .grid { background:#f1f5f2 !important; }
-.sams-consultation-workspace .print-sheet > .grid > aside {
-  background:#edf3ef !important;
-  border-color:#d9e2dc !important;
-  box-shadow:none !important;
-}
-.sams-consultation-workspace .print-sheet > .grid > aside > .space-y-2 > button {
-  background:#fff !important;
-  color:#49666b !important;
-  border:1px solid #dce5df !important;
-  box-shadow:0 2px 8px rgba(34,63,60,.035);
-}
-.sams-consultation-workspace .print-sheet > .grid > aside > .space-y-2 > button[class*="bg-[#082b61]"] {
-  background:#176a68 !important;
-  color:#fff !important;
-  border-color:#176a68 !important;
-  box-shadow:0 7px 18px rgba(23,106,104,.14);
-}
+.sams-consultation-workspace .print-sheet > .grid > aside { background:#edf3ef !important; border-color:#d9e2dc !important; box-shadow:none !important; }
+.sams-consultation-workspace .print-sheet > .grid > aside > .space-y-2 > button { background:#fff !important; color:#49666b !important; border:1px solid #dce5df !important; box-shadow:0 2px 8px rgba(34,63,60,.035); }
+.sams-consultation-workspace .print-sheet > .grid > aside > .space-y-2 > button[class*="bg-[#082b61]"] { background:#176a68 !important; color:#fff !important; border-color:#176a68 !important; box-shadow:0 7px 18px rgba(23,106,104,.14); }
 .sams-consultation-workspace .print-sheet > .grid > aside .bg-white { background:#fff !important; border-color:#dce5df !important; }
-
-/* Main clinical work area: white cards, not a single colour slab. */
-.sams-consultation-workspace .print-sheet > .grid > section {
-  background:#f8faf8 !important;
-  color:#18343a !important;
-}
+.sams-consultation-workspace .print-sheet > .grid > section { background:#f8faf8 !important; color:#18343a !important; }
 .sams-consultation-workspace .print-sheet > .grid > section > .grid > div,
-.sams-consultation-workspace .print-sheet > .grid > section > div.rounded-2xl {
-  background:#fff !important;
-  border:1px solid #dfe7e1 !important;
-  box-shadow:0 7px 22px rgba(34,63,60,.045) !important;
-}
+.sams-consultation-workspace .print-sheet > .grid > section > div.rounded-2xl { background:#fff !important; border:1px solid #dfe7e1 !important; box-shadow:0 7px 22px rgba(34,63,60,.045) !important; }
 .sams-consultation-workspace .print-sheet > .grid > section > .grid > div p,
 .sams-consultation-workspace .print-sheet > .grid > section > div.rounded-2xl p { color:#315d61 !important; }
 .sams-consultation-workspace .print-sheet > .grid > section > .grid > div textarea { min-height:118px !important; background:#fff !important; }
-
-.sams-consultation-workspace input,.sams-consultation-workspace textarea,.sams-consultation-workspace select {
-  background:#fff !important;
-  color:#18343a !important;
-  border-color:#cfded8 !important;
-  box-shadow:none !important;
-}
-.sams-consultation-workspace input:focus,.sams-consultation-workspace textarea:focus,.sams-consultation-workspace select:focus {
-  border-color:#4d928b !important;
-  box-shadow:0 0 0 3px rgba(77,146,139,.11) !important;
-  outline:none !important;
-}
+.sams-consultation-workspace input,.sams-consultation-workspace textarea,.sams-consultation-workspace select { background:#fff !important; color:#18343a !important; border-color:#cfded8 !important; box-shadow:none !important; }
+.sams-consultation-workspace input:focus,.sams-consultation-workspace textarea:focus,.sams-consultation-workspace select:focus { border-color:#4d928b !important; box-shadow:0 0 0 3px rgba(77,146,139,.11) !important; outline:none !important; }
 .sams-consultation-workspace button { border-radius:13px !important; }
-.sams-consultation-workspace button[class*="bg-[#082b61]"],.sams-consultation-workspace button[class*="bg-[#0b63ce]"] {
-  background:#176a68 !important; color:#fff !important; box-shadow:0 8px 20px rgba(23,106,104,.12);
-}
-.sams-consultation-workspace button[class*="bg-[#082b61]"]:hover,.sams-consultation-workspace button[class*="bg-[#0b63ce]"]:hover { background:#125653 !important; }
-.sams-consultation-workspace button[class*="bg-[#d6a443]"],.sams-consultation-workspace button[class*="bg-[#f59e0b]"] { background:#c79a3d !important; color:#102d34 !important; }
-.sams-consultation-workspace .text-[#082b61],.sams-consultation-workspace .text-[#0b63ce] { color:#176a68 !important; }
-.sams-consultation-workspace .border-[#0b63ce] { border-color:#4d928b !important; color:#176a68 !important; }
+.sams-consultation-workspace button[class*="bg-[#082b61]"], .sams-consultation-workspace button[class*="bg-[#0b63ce]"] { background:#176a68 !important; color:#fff !important; box-shadow:0 8px 20px rgba(23,106,104,.12); }
+.sams-consultation-workspace button[class*="bg-[#082b61]"]:hover, .sams-consultation-workspace button[class*="bg-[#0b63ce]"]:hover { background:#125653 !important; }
+.sams-consultation-workspace button[class*="bg-[#d6a443]"], .sams-consultation-workspace button[class*="bg-[#f59e0b]"] { background:#c79a3d !important; color:#102d34 !important; }
+.sams-consultation-workspace [class*="text-[#082b61]"], .sams-consultation-workspace [class*="text-[#0b63ce]"] { color:#176a68 !important; }
+.sams-consultation-workspace [class*="border-[#0b63ce]"] { border-color:#4d928b !important; color:#176a68 !important; }
 .sams-consultation-workspace .text-slate-500 { color:#6b8285 !important; }
 .sams-consultation-workspace .text-slate-600 { color:#536d71 !important; }
 .sams-consultation-workspace .text-slate-700 { color:#314e53 !important; }
@@ -101,7 +47,4 @@
 .sams-consultation-workspace .text-emerald-700 { color:#24734e !important; }
 .sams-consultation-workspace .bg-red-50 { background:#fff1ef !important; }
 .sams-consultation-workspace .text-red-700 { color:#a53f34 !important; }
-
-@media (max-width:1023px) {
-  .sams-consultation-workspace .print-sheet > .grid > section { padding:1.25rem !important; }
-}
+@media (max-width:1023px) { .sams-consultation-workspace .print-sheet > .grid > section { padding:1.25rem !important; } }
