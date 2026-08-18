@@ -1,0 +1,59 @@
+.sams-consultation-workspace {
+  min-height: 100vh;
+  background: radial-gradient(circle at 10% 0%, rgba(214,164,67,.12), transparent 24%), radial-gradient(circle at 92% 8%, rgba(42,128,126,.10), transparent 24%), linear-gradient(180deg,#fbfaf6 0%,#eef5f3 52%,#f8f7f2 100%);
+  color:#18343a;
+}
+.sams-consultation-workspace main { background:transparent !important; }
+.sams-consultation-workspace header {
+  background:rgba(255,253,248,.96) !important;
+  color:#18343a !important;
+  border-color:#e5dfd1 !important;
+  box-shadow:0 8px 28px rgba(24,52,58,.07) !important;
+}
+.sams-consultation-workspace header h1,.sams-consultation-workspace header p { color:#18343a !important; }
+.sams-consultation-workspace header nav a { color:#49666b !important; }
+.sams-consultation-workspace header nav a:hover { background:#f3eee3 !important; color:#183f45 !important; }
+.sams-consultation-workspace section {
+  background:rgba(255,255,255,.94) !important;
+  color:#18343a !important;
+  border:1px solid #dfe7e4 !important;
+  box-shadow:0 14px 38px rgba(24,52,58,.07) !important;
+}
+.sams-consultation-workspace section:first-of-type {
+  background:linear-gradient(135deg,#174c50 0%,#236b69 62%,#2b7770 100%) !important;
+  color:#f8fffd !important;
+  border-color:rgba(214,164,67,.38) !important;
+  box-shadow:0 20px 55px rgba(25,77,78,.18) !important;
+}
+.sams-consultation-workspace section:first-of-type * { color:inherit; }
+.sams-consultation-workspace section:first-of-type p { color:#cfe2df !important; }
+.sams-consultation-workspace section:first-of-type .text-slate-500,.sams-consultation-workspace section:first-of-type .text-slate-600 { color:#cfe2df !important; }
+.sams-consultation-workspace aside {
+  background:rgba(255,255,255,.92) !important;
+  border-color:#dfe7e4 !important;
+  box-shadow:0 12px 32px rgba(24,52,58,.06) !important;
+}
+.sams-consultation-workspace textarea { min-height:110px !important; }
+.sams-consultation-workspace input,.sams-consultation-workspace textarea,.sams-consultation-workspace select {
+  background:#fffdf9 !important;
+  color:#18343a !important;
+  border-color:#d5e1de !important;
+  box-shadow:none !important;
+}
+.sams-consultation-workspace input:focus,.sams-consultation-workspace textarea:focus,.sams-consultation-workspace select:focus {
+  border-color:#4f9691 !important;
+  box-shadow:0 0 0 3px rgba(79,150,145,.10) !important;
+}
+.sams-consultation-workspace button { border-radius:13px !important; }
+.sams-consultation-workspace button[class*="bg-[#082b61]"],.sams-consultation-workspace button[class*="bg-[#0b63ce]"] {
+  background:#216b69 !important; color:#fff !important;
+}
+.sams-consultation-workspace button[class*="bg-[#d6a443]"],.sams-consultation-workspace button[class*="bg-[#f59e0b]"] {
+  background:#c79a3d !important; color:#102d34 !important;
+}
+.sams-consultation-workspace .text-slate-500 { color:#6b8285 !important; }
+.sams-consultation-workspace .text-slate-600 { color:#536d71 !important; }
+.sams-consultation-workspace .text-slate-700 { color:#314e53 !important; }
+.sams-consultation-workspace .text-white { color:#f8fffd !important; }
+.sams-consultation-workspace .border-slate-200 { border-color:#d8e3e0 !important; }
+.sams-consultation-workspace .bg-slate-50 { background:#f5f8f7 !important; }
