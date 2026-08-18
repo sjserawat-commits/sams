@@ -5,11 +5,11 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Prisma 7 config resolves file:./dev.db from prisma.config.ts to
-// prisma/dev.db. The Next.js runtime must use the exact same database,
-// otherwise seeded Investigation Master rows are invisible to API routes.
+// prisma.config.ts is at the repository root and its file:./dev.db
+// therefore resolves to the repository-root dev.db. Keep CLI, seed and
+// Next.js runtime on exactly the same SQLite database.
 const adapter = new PrismaBetterSqlite3({
-  url: "file:./prisma/dev.db",
+  url: "file:./dev.db",
 });
 
 export const prisma =
