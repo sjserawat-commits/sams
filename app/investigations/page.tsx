@@ -1,39 +1,89 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const modules = [
-  { title: "Investigation Orders", href: "/opd/investigations", number: "01", text: "Order investigations for a specific OPD Visit from the central Investigation Master." },
-  { title: "Investigation Room", href: "/investigation-room", number: "02", text: "Receive orders, collect samples, process investigations and enter results." },
-  { title: "Reports & Results", href: "/investigation-reports", number: "03", text: "Review finalized, patient-wise reports linked to the original OPD Visit and print them." },
+  {
+    title: "Place Investigation Order",
+    href: "/opd/investigations",
+    number: "01",
+    eyebrow: "Order & Billing",
+    text: "Search the patient, select investigations from the central master, review charges and place the order.",
+    icon: "⌁",
+  },
+  {
+    title: "Investigation Room",
+    href: "/investigation-room",
+    number: "02",
+    eyebrow: "Receive & Process",
+    text: "Receive orders, accept them, manage sample collection and processing, then enter the investigation result.",
+    icon: "◈",
+  },
+  {
+    title: "Reports & Results",
+    href: "/investigation-reports",
+    number: "03",
+    eyebrow: "Report & Print",
+    text: "Review finalized patient-wise reports, upload or complete results and print the final investigation report.",
+    icon: "▤",
+  },
 ];
 
 export default function InvestigationsPage() {
   return (
-    <main className="min-h-screen bg-[#f4f7fb] px-5 py-7 text-slate-900 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-[1180px]">
-        <header className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-[1.6rem] border border-slate-200 bg-white px-5 py-4 shadow-[0_12px_35px_rgba(8,43,97,0.06)] sm:px-7">
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-black text-[#082b61] shadow-sm">←</Link>
-            <div><p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#0b63ce]">SAMS · Clinical Workspace</p><h1 className="mt-1 text-xl font-black tracking-tight text-[#082b61]">Investigation</h1></div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2"><Link href="/investigation-master" className="rounded-xl bg-[#082b61] px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">Investigation Master →</Link><Link href="/investigation-room" className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-[#0b63ce]">Investigation Room →</Link><Link href="/investigation-reports" className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">Reports →</Link></div>
-        </header>
+    <main className="min-h-screen bg-[#050d17] text-slate-100">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_75%_0%,rgba(214,164,67,0.14),transparent_27%),radial-gradient(circle_at_10%_35%,rgba(14,87,145,0.20),transparent_30%),linear-gradient(135deg,#040b13_0%,#071827_48%,#050d17_100%)] px-3 py-3 sm:px-5 lg:px-7 lg:py-5">
+        <div className="mx-auto max-w-[1500px]">
+          <header className="relative overflow-hidden rounded-[1.7rem] border border-[#d6a443]/30 bg-[linear-gradient(135deg,rgba(8,25,42,0.96),rgba(10,35,56,0.92))] px-4 py-4 shadow-[0_22px_70px_rgba(0,0,0,0.34)] sm:px-6 lg:px-8">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#082b61] via-[#d6a443] to-[#f4d58c]" />
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                <Link href="/reception" className="flex h-11 shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-[#071525]/80 px-3 text-xs font-black text-slate-200 transition hover:border-[#d6a443]/50 hover:text-[#f4d58c]">
+                  <span className="text-base">←</span><span>Reception</span>
+                </Link>
+                <div className="h-9 w-px bg-white/10" />
+                <Image src="/serawat-logo.png" alt="SAMS" width={62} height={50} className="h-11 w-auto shrink-0 object-contain" priority />
+                <div className="min-w-0">
+                  <p className="truncate text-base font-black tracking-tight text-[#f4d58c] sm:text-lg">Serawat Advanced Multispeciality Joint &amp; Spine Centre</p>
+                  <p className="mt-0.5 text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">SAMS · Investigation Workspace</p>
+                </div>
+              </div>
+              <nav className="flex flex-wrap gap-2 xl:justify-end">
+                <Link href="/investigation-master" className="rounded-xl border border-[#d6a443]/35 bg-[#d6a443]/10 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-[#f4d58c] transition hover:bg-[#d6a443]/20">Investigation Master</Link>
+                <Link href="/investigation-room" className="rounded-xl border border-blue-300/20 bg-blue-500/10 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-blue-100 transition hover:bg-blue-500/20">Investigation Room</Link>
+                <Link href="/investigation-reports" className="rounded-xl border border-emerald-300/20 bg-emerald-500/10 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-emerald-100 transition hover:bg-emerald-500/20">Reports</Link>
+              </nav>
+            </div>
+          </header>
 
-        <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#082b61] via-[#075dcc] to-[#0b63ce] p-7 text-white shadow-[0_25px_70px_rgba(8,43,97,0.18)] sm:p-10">
-          <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full border-[42px] border-white/10" />
-          <p className="relative text-[10px] font-black uppercase tracking-[0.24em] text-blue-200">Investigation Workspace</p>
-          <h2 className="relative mt-3 text-3xl font-black tracking-tight sm:text-4xl">Diagnostics & investigations</h2>
-          <p className="relative mt-3 max-w-2xl text-sm leading-6 text-blue-100">Investigation ordering, billing, sample workflow and reporting stay connected to the central Investigation Master and the original OPD Visit.</p>
-        </section>
+          <section className="relative mt-5 overflow-hidden rounded-[2.25rem] border border-[#d6a443]/35 bg-[linear-gradient(135deg,rgba(7,24,41,0.96),rgba(9,39,62,0.93)_50%,rgba(6,18,30,0.97))] px-5 py-10 text-center shadow-[0_30px_90px_rgba(0,0,0,0.40)] sm:px-10 sm:py-14 lg:px-16 lg:py-16">
+            <div className="pointer-events-none absolute -left-28 -top-28 h-72 w-72 rounded-full bg-[#0b63ce]/15 blur-3xl" />
+            <div className="pointer-events-none absolute -right-24 -bottom-28 h-80 w-80 rounded-full bg-[#d6a443]/10 blur-3xl" />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.07]"><Image src="/serawat-H-logo.png" alt="" aria-hidden="true" width={700} height={700} className="h-[420px] w-[420px] object-contain" /></div>
+            <div className="relative z-10 mx-auto max-w-4xl">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d6a443]/40 bg-[#071525]/80 p-2 shadow-[0_12px_35px_rgba(214,164,67,0.15)]"><Image src="/serawat-logo.png" alt="SAMS" width={70} height={70} className="h-full w-full object-contain" /></div>
+              <p className="mt-6 text-[10px] font-black uppercase tracking-[0.30em] text-[#d6a443]">SAMS Diagnostics</p>
+              <h1 className="mt-3 text-4xl font-black tracking-[-0.035em] text-white sm:text-5xl lg:text-6xl">Welcome to SAMS<br className="hidden sm:block" /> Investigation Workspace</h1>
+              <p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">A single premium workspace for investigation ordering, billing, order receiving, sample processing, results and final patient reports.</p>
+              <div className="mx-auto mt-7 flex max-w-xl items-center justify-center gap-3"><span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#d6a443]/60" /><span className="h-2.5 w-2.5 rotate-45 border border-[#d6a443] bg-[#d6a443]/20" /><span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#d6a443]/60" /></div>
+            </div>
+          </section>
 
-        <div className="mt-5 grid gap-5 md:grid-cols-3">
-          {modules.map((module) => (
-            <Link key={module.title} href={module.href} className="rounded-[1.6rem] border border-slate-200 bg-white p-6 shadow-[0_15px_40px_rgba(8,43,97,0.06)] transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-sm font-black text-[#0b63ce]">{module.number}</span>
-              <h3 className="mt-5 text-lg font-black text-[#082b61]">{module.title}</h3>
-              <p className="mt-2 text-sm leading-5 text-slate-500">{module.text}</p>
-              <p className="mt-5 text-xs font-black text-[#0b63ce]">Open module →</p>
-            </Link>
-          ))}
+          <section className="mt-6 rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,29,47,0.90),rgba(5,17,29,0.94))] p-4 shadow-[0_22px_70px_rgba(0,0,0,0.28)] sm:p-6 lg:p-7">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3 px-1">
+              <div><p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#d6a443]">Investigation Workflow</p><h2 className="mt-1.5 text-xl font-black text-white sm:text-2xl">Choose a workspace</h2></div>
+              <p className="text-xs font-semibold text-slate-500">Order → Receive → Process → Report</p>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-3">
+              {modules.map((module) => (
+                <Link key={module.title} href={module.href} className="group relative overflow-hidden rounded-[1.7rem] border border-white/10 bg-[linear-gradient(145deg,rgba(17,42,65,0.95),rgba(6,19,32,0.98))] p-6 shadow-[0_14px_38px_rgba(0,0,0,0.25)] transition duration-300 hover:-translate-y-1 hover:border-[#d6a443]/45 hover:shadow-[0_25px_55px_rgba(0,0,0,0.38)] sm:p-7">
+                  <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#d6a443]/5 blur-2xl transition group-hover:bg-[#d6a443]/10" />
+                  <div className="relative flex items-start justify-between"><div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#d6a443]/30 bg-[#071525] text-2xl text-[#f4d58c] shadow-inner">{module.icon}</div><span className="rounded-full border border-[#d6a443]/25 bg-[#d6a443]/10 px-3 py-1.5 text-[10px] font-black tracking-[0.16em] text-[#f4d58c]">{module.number}</span></div>
+                  <div className="relative mt-6"><p className="text-[9px] font-black uppercase tracking-[0.20em] text-[#d6a443]">{module.eyebrow}</p><h3 className="mt-2 text-xl font-black tracking-tight text-white">{module.title}</h3><p className="mt-3 min-h-[72px] text-sm leading-6 text-slate-300">{module.text}</p></div>
+                  <div className="relative mt-6 flex items-center justify-between border-t border-white/10 pt-4"><span className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-500">Open workspace</span><span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#d6a443]/50 bg-[#d6a443] text-lg font-bold text-[#071525] transition group-hover:translate-x-1 group-hover:bg-[#f4d58c]">→</span></div>
+                </Link>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     </main>
