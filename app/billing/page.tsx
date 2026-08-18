@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type Visit={id:number;tokenNumber:number;visitType:string;status:string;department:string|null;createdAt:string};
 type Line={id:number;serviceType:string;description:string;quantity:number;unitPrice:number;amount:number;sourceType:string|null;sourceId:number|null};
@@ -11,10 +12,14 @@ const label=(x:string)=>({CONSULTATION:"Consultation",INVESTIGATION:"Investigati
 const money=(n:number)=>`₹${n.toFixed(2)}`;
 
 export default function BillingPage(){
- const [pid,setPid]=useState(""),[visits,setVisits]=useState<Visit[]>([]),[patient,setPatient]=useState<Data["patient"]|null>(null),[data,setData]=useState<Data|null>(null),[tab,setTab]=useState<Tab>("charges"),[type,setType]=useState("CONSULTATION"),[desc,setDesc]=useState(""),[qty,setQty]=useState("1"),[rate,setRate]=useState(""),[discount,setDiscount]=useState(""),[payAmount,setPayAmount]=useState(""),[method,setMethod]=useState("CASH"),[loading,setLoading]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState("");
+ const search=useSearchParams();
+ const initialPatientId=search.get("patientId")||"";
+ const initialVisitId=Number(search.get("visitId")||0);
+ const [pid,setPid]=useState(initialPatientId),[visits,setVisits]=useState<Visit[]>([]),[patient,setPatient]=useState<Data["patient"]|null>(null),[data,setData]=useState<Data|null>(null),[tab,setTab]=useState<Tab>("charges"),[type,setType]=useState("CONSULTATION"),[desc,setDesc]=useState(""),[qty,setQty]=useState("1"),[rate,setRate]=useState(""),[discount,setDiscount]=useState(""),[payAmount,setPayAmount]=useState(""),[method,setMethod]=useState("CASH"),[loading,setLoading]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState("");
  const run=async(url:string,init?:RequestInit)=>{const r=await fetch(url,init);const x=await r.json();if(!r.ok)throw new Error(x.error||"Billing request failed.");return x;};
- async function find(){setLoading(true);setError("");setMessage("");setData(null);setPatient(null);try{const x=await run(`/api/billing?patientId=${encodeURIComponent(pid.trim())}`);setPatient(x.patient);setVisits(x.visits);if(!x.visits.length)setMessage("Patient found, but no OPD visits are recorded yet.");}catch(e){setError(e instanceof Error?e.message:"Unable to find patient.")}finally{setLoading(false)}}
+ async function find(forwardVisitId=initialVisitId){setLoading(true);setError("");setMessage("");setData(null);setPatient(null);try{const x=await run(`/api/billing?patientId=${encodeURIComponent(pid.trim())}`);setPatient(x.patient);setVisits(x.visits);if(!x.visits.length)setMessage("Patient found, but no OPD visits are recorded yet.");else if(forwardVisitId>0){const match=x.visits.find((v:Visit)=>v.id===forwardVisitId);if(match)await load(match.id);}}catch(e){setError(e instanceof Error?e.message:"Unable to find patient.")}finally{setLoading(false)}}
  async function load(id:number){setLoading(true);setError("");try{const x=await run(`/api/billing?visitId=${id}`);setData(x);setPatient(x.patient);setTab("charges")}catch(e){setError(e instanceof Error?e.message:"Unable to load visit.")}finally{setLoading(false)}}
+ useEffect(()=>{if(initialPatientId){void find(initialVisitId)}},[]);
  async function add(){if(!data)return;const q=Number(qty),r=Number(rate);if(!desc.trim()||!Number.isFinite(q)||q<=0||!Number.isFinite(r)||r<0){setError("Enter service, quantity and valid rate.");return}setLoading(true);setError("");try{await run("/api/billing",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addLine",visitId:data.visit.id,serviceType:type,description:desc.trim(),quantity:q,unitPrice:r})});setDesc("");setQty("1");setRate("");setMessage("Service added.");await load(data.visit.id)}catch(e){setError(e instanceof Error?e.message:"Unable to add service.")}finally{setLoading(false)}}
  async function remove(id:number){if(!data)return;setLoading(true);setError("");try{await run(`/api/billing?lineId=${id}`,{method:"DELETE"});await load(data.visit.id);setMessage("Charge removed.")}catch(e){setError(e instanceof Error?e.message:"Unable to remove charge.")}finally{setLoading(false)}}
  async function invoice(){if(!data)return;setLoading(true);setError("");try{await run("/api/billing",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({visitId:data.visit.id})});await load(data.visit.id);setTab("invoices");setMessage("Invoice generated.")}catch(e){setError(e instanceof Error?e.message:"Unable to generate invoice.")}finally{setLoading(false)}}
