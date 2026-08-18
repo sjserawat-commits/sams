@@ -5,10 +5,11 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// This must match prisma.config.ts so the CLI (db push) and the
-// Next.js runtime always use the same SQLite database in Codespaces.
+// Prisma 7 config resolves file:./dev.db from prisma.config.ts to
+// prisma/dev.db. The Next.js runtime must use the exact same database,
+// otherwise seeded Investigation Master rows are invisible to API routes.
 const adapter = new PrismaBetterSqlite3({
-  url: "file:./dev.db",
+  url: "file:./prisma/dev.db",
 });
 
 export const prisma =
