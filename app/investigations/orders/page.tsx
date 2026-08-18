@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Investigation = { id: number; code: string; name: string; category: string; department?: string | null; rate: number; specimen?: string | null };
@@ -16,29 +16,52 @@ function InvestigationOrdersContent() {
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState("");
   const [investigationInput, setInvestigationInput] = useState("");
+  const [category, setCategory] = useState("ALL");
+  const [catalogue, setCatalogue] = useState<Investigation[]>([]);
   const [suggestions, setSuggestions] = useState<Investigation[]>([]);
   const [selected, setSelected] = useState<Investigation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [catalogueLoading, setCatalogueLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const q = investigationInput.trim();
-    if (!q) { setSuggestions([]); return; }
-    const timer = window.setTimeout(async () => {
-      setSearching(true); setError("");
+    async function loadCatalogue() {
+      setCatalogueLoading(true);
       try {
-        const response = await fetch(`/api/investigation-master?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-        if (!response.ok) throw new Error("Unable to search Investigation Master.");
+        const response = await fetch("/api/investigation-master", { cache: "no-store" });
         const rows: Investigation[] = await response.json();
-        const ids = new Set(selected.map(x => x.id));
-        setSuggestions(rows.filter(x => !ids.has(x.id)).slice(0, 12));
-      } catch (e) { setError(e instanceof Error ? e.message : "Unable to search investigations."); }
-      finally { setSearching(false); }
-    }, 220);
+        if (!response.ok) throw new Error(rows as unknown as string);
+        setCatalogue(Array.isArray(rows) ? rows : []);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Unable to load Investigation Master.");
+      } finally {
+        setCatalogueLoading(false);
+      }
+    }
+    void loadCatalogue();
+  }, []);
+
+  const categories = useMemo(() => Array.from(new Set(catalogue.map(x => x.category).filter(Boolean))).sort(), [catalogue]);
+  const visibleOptions = useMemo(() => {
+    const q = investigationInput.trim().toLowerCase();
+    const ids = new Set(selected.map(x => x.id));
+    return catalogue
+      .filter(x => !ids.has(x.id))
+      .filter(x => category === "ALL" || x.category === category)
+      .filter(x => !q || `${x.name} ${x.code} ${x.category} ${x.department || ""}`.toLowerCase().includes(q))
+      .slice(0, 40);
+  }, [catalogue, selected, category, investigationInput]);
+
+  useEffect(() => {
+    setSearching(Boolean(investigationInput.trim()));
+    const timer = window.setTimeout(() => {
+      setSuggestions(visibleOptions);
+      setSearching(false);
+    }, 100);
     return () => window.clearTimeout(timer);
-  }, [investigationInput, selected]);
+  }, [visibleOptions, investigationInput]);
 
   function add(item: Investigation) { setSelected(v => [...v, item]); setInvestigationInput(""); setSuggestions([]); }
   function remove(id: number) { setSelected(v => v.filter(x => x.id !== id)); }
@@ -69,7 +92,7 @@ function InvestigationOrdersContent() {
   return (
     <main className="min-h-screen bg-[#eef2f7] text-slate-900">
       <header className="border-b border-[#d7c08a]/30 bg-[#071f46] px-5 py-5 text-white shadow-lg sm:px-8">
-        <div className="mx-auto max-w-6xl"><p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#f1d27a]">SAMS · Diagnostics</p><h1 className="mt-1 text-2xl font-black">Investigation Orders</h1><p className="mt-1 text-xs text-blue-100">One central order → billing → laboratory / radiology queue → report.</p></div>
+        <div className="mx-auto max-w-6xl"><p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#f1d27a]">SAMS · Diagnostics</p><h1 className="mt-1 text-2xl font-black">Place Investigation Order</h1><p className="mt-1 text-xs text-blue-100">Select investigations from the central Investigation Master. Billing is generated with the order.</p></div>
       </header>
       <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 sm:px-8">
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xl">
@@ -86,32 +109,26 @@ function InvestigationOrdersContent() {
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xl">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0b63ce]">Investigation advice / order</p>
-          <div className="relative mt-3"><input value={investigationInput} onChange={e => setInvestigationInput(e.target.value)} placeholder="Search investigation by name or code…" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#0b63ce]" />{suggestions.length > 0 && <div className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">{suggestions.map(item => <button key={item.id} type="button" onClick={() => add(item)} className="block w-full border-b border-slate-100 px-4 py-3 text-left hover:bg-blue-50"><span className="font-bold text-[#082b61]">{item.name}</span><span className="ml-2 text-[10px] text-slate-400">{item.code} · {item.category}</span></button>)}</div>}</div>
-          {searching && <p className="mt-2 text-[10px] font-bold text-slate-400">Searching…</p>}
-          <div className="mt-4 space-y-2">{selected.map(item => <div key={item.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div><p className="text-sm font-bold text-[#082b61]">{item.name}</p><p className="text-[10px] text-slate-400">{item.code} · {item.category}</p></div><div className="flex items-center gap-4"><span className="text-sm font-black text-slate-700">₹{Number(item.rate || 0).toFixed(2)}</span><button type="button" onClick={() => remove(item.id)} className="text-xs font-black text-red-500">Remove</button></div></div>)}</div>
-          {selected.length > 0 && <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-4"><div><p className="text-[10px] font-black uppercase text-slate-400">Billing total</p><p className="text-2xl font-black text-[#082b61]">₹{total.toFixed(2)}</p></div><button type="button" disabled={loading} onClick={placeOrder} className="rounded-2xl bg-[#082b61] px-6 py-3 text-xs font-black text-white shadow-lg disabled:opacity-50">{loading ? "Placing…" : "Place Order → Send to Lab & Bill"}</button></div>}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex-1"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0b63ce]">Investigation catalogue</p><p className="mt-1 text-xs text-slate-400">Choose directly from the seeded Investigation Master or search by name/code.</p></div>
+            <label className="text-xs font-bold text-slate-600 lg:w-72">Category<select value={category} onChange={e => setCategory(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value="ALL">All categories</option>{categories.map(item => <option key={item} value={item}>{item}</option>)}</select></label>
+          </div>
+          <div className="relative mt-4"><input value={investigationInput} onChange={e => setInvestigationInput(e.target.value)} placeholder="Search investigation by name, code or category…" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#0b63ce]" />
+            {suggestions.length > 0 && <div className="absolute z-20 mt-1 max-h-80 w-full overflow-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">{suggestions.map(item => <button key={item.id} type="button" onClick={() => add(item)} className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left hover:bg-blue-50"><span><span className="font-bold text-[#082b61]">{item.name}</span><span className="ml-2 text-[10px] text-slate-400">{item.code} · {item.category}</span></span><span className="text-sm font-black text-slate-700">₹{Number(item.rate || 0).toFixed(2)}</span></button>)}</div>}
+          </div>
+          {catalogueLoading ? <p className="mt-4 text-xs font-semibold text-slate-400">Loading Investigation Master…</p> : <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-3"><div className="mb-2 flex items-center justify-between"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Available investigations</p><p className="text-[10px] font-bold text-slate-400">{visibleOptions.length} shown · {catalogue.length} active total</p></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{visibleOptions.slice(0, 12).map(item => <button key={item.id} type="button" onClick={() => add(item)} className="rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-[#0b63ce] hover:shadow-sm"><p className="text-xs font-black text-[#082b61]">{item.name}</p><p className="mt-1 text-[10px] text-slate-400">{item.code} · {item.category}</p><p className="mt-2 text-xs font-black text-slate-700">₹{Number(item.rate || 0).toFixed(2)}</p></button>)}</div>{visibleOptions.length === 0 && <p className="py-5 text-center text-xs font-semibold text-slate-400">No active investigations match this category/search.</p>}</div>}
+
+          {selected.length > 0 && <div className="mt-5 space-y-2">{selected.map(item => <div key={item.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3"><div><p className="text-sm font-bold text-[#082b61]">{item.name}</p><p className="text-[10px] text-slate-400">{item.code} · {item.category}</p></div><div className="flex items-center gap-4"><span className="text-sm font-black text-slate-700">₹{Number(item.rate || 0).toFixed(2)}</span><button type="button" onClick={() => remove(item.id)} className="text-xs font-black text-red-500">Remove</button></div></div>)}</div>}
+          {selected.length > 0 && <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-4"><div><p className="text-[10px] font-black uppercase text-slate-400">Billing total</p><p className="text-2xl font-black text-[#082b61]">₹{total.toFixed(2)}</p></div><button type="button" disabled={loading} onClick={placeOrder} className="rounded-2xl bg-[#082b61] px-6 py-3 text-xs font-black text-white shadow-lg disabled:opacity-50">{loading ? "Placing…" : "Place Order → Generate Bill"}</button></div>}
         </section>
 
         {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
         {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
-        <p className="text-[10px] font-medium text-slate-400">Clinical advice does not persist pricing. Rates are applied when the central order is converted into billing.</p>
       </div>
     </main>
   );
 }
 
-
 export default function InvestigationOrdersPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-[#eef2f7] p-8 text-slate-600">
-          Loading Investigation Orders…
-        </main>
-      }
-    >
-      <InvestigationOrdersContent />
-    </Suspense>
-  );
+  return <Suspense fallback={<main className="min-h-screen bg-[#eef2f7] p-8 text-slate-600">Loading Investigation Orders…</main>}><InvestigationOrdersContent /></Suspense>;
 }
