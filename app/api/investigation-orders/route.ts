@@ -5,12 +5,13 @@ const round = (value: number) => Math.round(value * 100) / 100;
 const billNumber = () => `SAMS-${Date.now().toString().slice(-10)}`;
 function tempPatientId(prefix: "WALKIN" | "REF") { return `${prefix}-${Date.now().toString().slice(-10)}-${Math.floor(Math.random() * 90 + 10)}`; }
 
-function effectiveRate(master: { rate: number; smsBenchmarkRate: number | null; corporateBenchmarkRate: number | null }) {
+function effectiveRate(master: { rate: number | null; smsBenchmarkRate: number | null; corporateBenchmarkRate: number | null }) {
   const sms = Number(master.smsBenchmarkRate || 0);
   const corporate = Number(master.corporateBenchmarkRate || 0);
+  const rate = Number(master.rate || 0);
   if (sms > 0) return Math.max(1, Math.round(sms * 1.65));
   if (corporate > 0) return Math.max(1, Math.round(corporate * 0.65));
-  if (Number(master.rate) > 0) return Math.max(1, Math.round(Number(master.rate)));
+  if (rate > 0) return Math.max(1, Math.round(rate));
   return 1;
 }
 
@@ -61,10 +62,11 @@ export async function POST(request: Request) {
     const existingOrders = await prisma.investigationOrder.findMany({ where: { opdVisitId: visit.id, investigationId: { in: ids }, status: { not: "CANCELLED" } } });
     const existingIds = new Set(existingOrders.map(x => x.investigationId).filter(Boolean));
     const newMasters = masters.filter(m => !existingIds.has(m.id));
-    const orders = [];
+    const orders: Array<{ id: number; netAmount: number; investigation: string }> = [];
     for (const master of newMasters) {
       const rate = effectiveRate(master);
-      orders.push(await prisma.investigationOrder.create({ data: { opdVisitId: visit.id, investigationId: master.id, investigation: master.name, price: rate, netAmount: rate, paymentStatus: "UNPAID", status: "ORDERED" }, include: { master: true } }));
+      const order = await prisma.investigationOrder.create({ data: { opdVisitId: visit.id, investigationId: master.id, investigation: master.name, price: rate, netAmount: rate, paymentStatus: "UNPAID", status: "ORDERED" }, include: { master: true } });
+      orders.push({ id: order.id, netAmount: order.netAmount, investigation: order.investigation });
     }
 
     const addedTotal = round(orders.reduce((sum, order) => sum + order.netAmount, 0));
