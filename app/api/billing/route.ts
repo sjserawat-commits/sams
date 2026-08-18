@@ -94,8 +94,6 @@ async function syncVisitCharges(visitId: number) {
   });
   if (!refreshed) return null;
 
-  // An unpaid invoice must always reflect the current charge list.
-  // This prevents a stale subtotal/final amount when charges are added after invoice creation.
   const bill = refreshed.billingRecords[0];
   if (bill && bill.paidAmount === 0) {
     const subtotal = round(refreshed.billingLineItems.reduce((sum, line) => sum + line.amount, 0));
@@ -136,7 +134,7 @@ export async function GET(request: Request) {
     }
 
     if (!Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID or patient ID is required." }, { status: 400 });
-    const visit = await syncVisitCharges(visitId);
+    const visit = await syncVisitCharges(visitId as number);
     if (!visit) return NextResponse.json({ error: "OPD visit not found." }, { status: 404 });
 
     const lineItems = visit.billingLineItems.map((line) => ({ id: line.id, serviceType: line.serviceType, description: line.description, quantity: line.quantity, unitPrice: round(line.unitPrice), amount: round(line.amount), sourceType: line.sourceType, sourceId: line.sourceId }));
