@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:push": "prisma generate && prisma db push",
     "seed:departments-consultants": "npx tsx prisma/seed-department-consultant-master.ts",
-    "seed:investigations": "npx tsx prisma/seed-investigation-master.ts && npx tsx prisma/seed-investigation-expansion.ts && npx tsx prisma/seed-investigation-tertiary.ts"
+    "seed:investigations": "npx tsx prisma/seed-investigation-master.ts && npx tsx prisma/seed-investigation-expansion.ts && npx tsx prisma/seed-investigation-tertiary.ts && npx tsx prisma/seed-investigation-secondary.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.9.1",
@@ -29,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tailwindcss": "^4",
+    "eslint-config-next": "16.3.0"
   }
 }
