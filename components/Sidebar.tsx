@@ -15,6 +15,7 @@ const receptionItems = [
   { href: "/opd", label: "OPD Queue", icon: "☷" },
   { href: "/slip-print?from=reception", label: "Consultation Slip Print", icon: "▤" },
   { href: "/doctor-desk", label: "Doctor Desk", icon: "🩺" },
+  { href: "/investigations", label: "Investigation", icon: "🧪" },
   { href: "/billing", label: "Billing", icon: "₹" },
   { href: "/portal", label: "Patient Portal", icon: "♙" },
 ];
