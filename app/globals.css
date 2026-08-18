@@ -45,13 +45,12 @@ main[class*="radial-gradient(circle_at_12%_8%"] button[class*="border-\[#dfe9df\
 main[class*="radial-gradient(circle_at_12%_8%"] button[class*="border-\[#7ca786\]"] { border-color: #c59a43 !important; background: #fffdf8 !important; box-shadow: 0 8px 24px rgba(167, 123, 45, .10) !important; }
 main[class*="radial-gradient(circle_at_12%_8%"] section[class*="mt-5"] > div[class*="bg-white\/92"] { border-color: #eadfcf !important; }
 
-/* Doctor Desk — focused physician workspace. Intentionally scoped to the Doctor Desk main only. */
+/* Doctor Desk — focused physician workspace */
 main[class*="bg-\[#050c16\]"] { background: radial-gradient(circle at 12% 6%, rgba(31, 112, 112, .18), transparent 28%), radial-gradient(circle at 88% 12%, rgba(214, 164, 67, .13), transparent 25%), linear-gradient(180deg, #06121f 0%, #081827 48%, #04101b 100%) !important; color: #e8f2f3 !important; }
 main[class*="bg-\[#050c16\]"] header { background: rgba(5, 18, 31, .94) !important; border-color: rgba(91, 157, 155, .24) !important; box-shadow: 0 10px 35px rgba(0,0,0,.25) !important; }
 main[class*="bg-\[#050c16\]"] header nav a { color: #b7cccf !important; }
 main[class*="bg-\[#050c16\]"] header nav a:hover { background: rgba(91,157,155,.12) !important; color: #fff !important; }
 main[class*="bg-\[#050c16\]"] header nav a.bg-\[#d6a443\] { background: #d6a443 !important; color: #081827 !important; box-shadow: 0 8px 22px rgba(214,164,67,.18); }
-main[class*="bg-\[#050c16\]"] > div { position: relative; }
 main[class*="bg-\[#050c16\]"] section { border-color: rgba(91,157,155,.18) !important; }
 main[class*="bg-\[#050c16\]"] section[class*="linear-gradient(135deg"] { background: radial-gradient(circle at 88% 18%, rgba(214,164,67,.14), transparent 24%), linear-gradient(135deg,#071827 0%,#0b2935 58%,#09232d 100%) !important; box-shadow: 0 28px 80px rgba(0,0,0,.34) !important; }
 main[class*="bg-\[#050c16\]"] section[class*="linear-gradient(135deg"] h1 { letter-spacing: -.04em; }
@@ -68,3 +67,31 @@ main[class*="bg-\[#050c16\]"] div[class*="border-white/10"] { border-color: rgba
 main[class*="bg-\[#050c16\]"] .text-slate-400 { color: #93aeb3 !important; }
 main[class*="bg-\[#050c16\]"] .text-slate-300 { color: #b4c8cb !important; }
 main[class*="bg-\[#050c16\]"] .text-white { color: #f4fbfb !important; }
+
+/* Consultation Workspace — the next clinical sophistication level */
+.sams-consultation-workspace { min-height: 100vh; background: radial-gradient(circle at 8% 4%, rgba(38,130,126,.16), transparent 25%), radial-gradient(circle at 92% 8%, rgba(214,164,67,.14), transparent 23%), linear-gradient(180deg,#f2f7f7 0%,#e8f1f1 45%,#f7f8f4 100%); color:#12313a; }
+.sams-consultation-workspace main { background: transparent !important; }
+.sams-consultation-workspace header { background: rgba(248,252,250,.94) !important; border-color: rgba(38,130,126,.16) !important; box-shadow: 0 10px 34px rgba(18,62,68,.08) !important; backdrop-filter: blur(14px); }
+.sams-consultation-workspace header nav a { color:#48656a !important; }
+.sams-consultation-workspace header nav a:hover { background:#e4f0ef !important; color:#164f50 !important; }
+.sams-consultation-workspace section { border-color:rgba(38,130,126,.14) !important; box-shadow:0 16px 44px rgba(18,62,68,.07); }
+.sams-consultation-workspace section:first-of-type { background:linear-gradient(135deg,#0b3039 0%,#15545a 62%,#1b6664 100%) !important; border-color:rgba(214,164,67,.32) !important; box-shadow:0 24px 65px rgba(11,48,57,.20) !important; }
+.sams-consultation-workspace section:first-of-type h1 { color:#fff !important; letter-spacing:-.04em; }
+.sams-consultation-workspace section:first-of-type p { color:#c7dddc !important; }
+.sams-consultation-workspace section:first-of-type p:first-child { color:#e1b85c !important; }
+.sams-consultation-workspace button { transition:transform .16s ease, box-shadow .16s ease, background .16s ease; }
+.sams-consultation-workspace button:hover { transform:translateY(-1px); }
+.sams-consultation-workspace button[class*="bg-\[#082b61\]"], .sams-consultation-workspace button[class*="bg-\[#0b63ce\]"] { background:#166b68 !important; color:#fff !important; box-shadow:0 10px 24px rgba(22,107,104,.16); }
+.sams-consultation-workspace button[class*="bg-\[#d6a443\]"], .sams-consultation-workspace button[class*="bg-\[#f59e0b\]"] { background:#d6a443 !important; color:#102d34 !important; box-shadow:0 10px 24px rgba(214,164,67,.16); }
+.sams-consultation-workspace input,.sams-consultation-workspace textarea,.sams-consultation-workspace select { background:#fbfdfc !important; border-color:#c8dddd !important; color:#18353b !important; border-radius:14px !important; }
+.sams-consultation-workspace input:focus,.sams-consultation-workspace textarea:focus,.sams-consultation-workspace select:focus { outline:none; border-color:#4f9691 !important; box-shadow:0 0 0 3px rgba(79,150,145,.12); }
+.sams-consultation-workspace label { color:#567277 !important; }
+.sams-consultation-workspace .text-slate-500 { color:#678187 !important; }
+.sams-consultation-workspace .text-slate-600 { color:#4e686e !important; }
+.sams-consultation-workspace .text-slate-700 { color:#29484f !important; }
+.sams-consultation-workspace .text-white { color:#f8ffff !important; }
+.sams-consultation-workspace .border-slate-200 { border-color:#cbdede !important; }
+.sams-consultation-workspace .bg-slate-50 { background:#f5f9f8 !important; }
+.sams-consultation-workspace .bg-white { background:rgba(255,255,255,.92) !important; }
+.sams-consultation-workspace [class*="rounded-2xl"] { border-radius:20px !important; }
+.sams-consultation-workspace [class*="rounded-xl"] { border-radius:15px !important; }
