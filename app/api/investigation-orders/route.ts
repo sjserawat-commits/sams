@@ -6,7 +6,8 @@ const billNumber = () => `SAMS-${Date.now().toString().slice(-10)}`;
 function tempPatientId(prefix: "WALKIN" | "REF") { return `${prefix}-${Date.now().toString().slice(-10)}-${Math.floor(Math.random() * 90 + 10)}`; }
 
 type InvestigationMasterRate = { rate: number | null; smsBenchmarkRate: number | null; corporateBenchmarkRate: number | null };
-function effectiveRate(master: InvestigationMasterRate) {
+function effectiveRate(master: InvestigationMasterRate | null) {
+  if (!master) return 1;
   const sms = Number(master.smsBenchmarkRate || 0), corporate = Number(master.corporateBenchmarkRate || 0), rate = Number(master.rate || 0);
   if (sms > 0) return Math.max(1, Math.round(sms * 1.65));
   if (corporate > 0) return Math.max(1, Math.round(corporate * 0.65));
