@@ -9,6 +9,7 @@ const actions = [
   { href: "/appointments", label: "Appointments", description: "Review today's schedule and manage upcoming appointments.", icon: "📅", tone: "Scheduling" },
   { href: "/opd", label: "OPD Queue", description: "Monitor active department queues and patient movement.", icon: "🧑‍⚕️", tone: "Patient Flow" },
   { href: "/slip-print?from=reception", label: "Consultation Slip Print", description: "Search a patient by name or HID and print a completed post-consultation OPD slip.", icon: "🧾", tone: "Records" },
+  { href: "/investigations", label: "Investigation", description: "Place investigation orders, manage billing and follow orders through the investigation room to final report and print.", icon: "🧪", tone: "Diagnostics" },
 ];
 
 export default function ReceptionPage() {
@@ -18,7 +19,7 @@ export default function ReceptionPage() {
       <div className="min-w-0 flex-1">
         <Navigation variant="reception" />
         <div className="relative overflow-hidden px-3 py-4 sm:px-6 lg:px-8 lg:py-6">
-          <div className="pointer-events-none absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_50%_15%,rgba(255,255,255,0.06),transparent_24%),linear-gradient(90deg,transparent_0%,rgba(214,164,67,0.035)_50%,transparent_100%)]" />
+          <div className="pointer-events-none absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_50%_15%,rgba(255,255,255,0.06),transparent_24%),linear-gradient(90deg,transparent 0%,rgba(214,164,67,0.035)_50%,transparent 100%)]" />
           <section className="relative mx-auto max-w-[1500px] overflow-hidden rounded-[2.25rem] border border-[#d6a443]/45 bg-[linear-gradient(135deg,rgba(5,18,31,0.94),rgba(12,38,61,0.90)_52%,rgba(5,14,24,0.95))] px-5 py-8 text-center shadow-[0_30px_90px_rgba(0,0,0,0.48)] sm:px-10 sm:py-10 lg:px-16 lg:py-11">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#082b61] via-[#d6a443] to-[#f4d58c]" /><div className="absolute -left-32 -top-32 h-72 w-72 rounded-full bg-[#0b63ce]/15 blur-3xl" /><div className="absolute -right-28 -bottom-32 h-80 w-80 rounded-full bg-[#d6a443]/12 blur-3xl" />
             <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden">
