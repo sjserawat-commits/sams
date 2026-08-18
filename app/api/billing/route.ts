@@ -48,8 +48,8 @@ export async function GET(request: Request) {
       const visits = await prisma.oPDVisit.findMany({ where: { patientId: patient.id }, include: { departmentMaster: true }, orderBy: { createdAt: "desc" } });
       return NextResponse.json({ patient: { id: patient.id, patientId: patient.patientId, name: `${patient.firstName} ${patient.lastName}`.trim(), phone: patient.phone }, visits: visits.map((visit) => ({ id: visit.id, tokenNumber: visit.tokenNumber, visitType: visit.visitType, status: visit.status, department: visit.departmentMaster?.name ?? null, createdAt: visit.createdAt })) });
     }
-    if (!Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID or patient ID is required." }, { status: 400 });
-    const validVisitId = visitId;
+    if (visitId === null || !Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID or patient ID is required." }, { status: 400 });
+    const validVisitId: number = visitId;
     const visit = await syncVisitCharges(validVisitId);
     if (!visit) return NextResponse.json({ error: "OPD visit not found." }, { status: 404 });
     const lineItems = visit.billingLineItems.map((line) => ({ id: line.id, serviceType: line.serviceType, description: line.description, quantity: line.quantity, unitPrice: round(line.unitPrice), amount: round(line.amount), sourceType: line.sourceType, sourceId: line.sourceId }));
