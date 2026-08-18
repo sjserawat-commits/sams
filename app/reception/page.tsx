@@ -6,7 +6,6 @@ import Navigation from "@/components/Navigation";
 const actions = [
   { href: "/patients/new", label: "Patient Registration", description: "Create a new patient record and begin the front-desk journey.", icon: "👤", tone: "Registration" },
   { href: "/patients/list", label: "Patient Registry", description: "Search, verify and open an existing patient record.", icon: "📋", tone: "Records" },
-  { href: "/appointments", label: "Appointments", description: "Review today's schedule and manage upcoming appointments.", icon: "📅", tone: "Scheduling" },
   { href: "/opd", label: "OPD Queue", description: "Monitor active department queues and patient movement.", icon: "🧑‍⚕️", tone: "Patient Flow" },
   { href: "/slip-print?from=reception", label: "Consultation Slip Print", description: "Search a patient by name or HID and print a completed post-consultation OPD slip.", icon: "🧾", tone: "Records" },
   { href: "/investigations", label: "Investigation", description: "Place investigation orders, manage billing and follow orders through the investigation room to final report and print.", icon: "🧪", tone: "Diagnostics" },
@@ -22,10 +21,7 @@ export default function ReceptionPage() {
           <div className="pointer-events-none absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_50%_15%,rgba(255,255,255,0.06),transparent_24%),linear-gradient(90deg,transparent 0%,rgba(214,164,67,0.035)_50%,transparent 100%)]" />
           <section className="relative mx-auto max-w-[1500px] overflow-hidden rounded-[2.25rem] border border-[#d6a443]/45 bg-[linear-gradient(135deg,rgba(5,18,31,0.94),rgba(12,38,61,0.90)_52%,rgba(5,14,24,0.95))] px-5 py-8 text-center shadow-[0_30px_90px_rgba(0,0,0,0.48)] sm:px-10 sm:py-10 lg:px-16 lg:py-11">
             <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#082b61] via-[#d6a443] to-[#f4d58c]" /><div className="absolute -left-32 -top-32 h-72 w-72 rounded-full bg-[#0b63ce]/15 blur-3xl" /><div className="absolute -right-28 -bottom-32 h-80 w-80 rounded-full bg-[#d6a443]/12 blur-3xl" />
-            <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden">
-              <Image src="/serawat-H-logo.png" alt="" aria-hidden="true" fill sizes="(max-width: 1024px) 100vw, 1500px" className="object-contain p-3 opacity-[0.34] saturate-125 contrast-125 drop-shadow-[0_0_28px_rgba(67,190,205,0.20)] sm:p-5 lg:p-7" priority />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,18,31,0.34),rgba(5,18,31,0.08)_48%,rgba(5,18,31,0.30))]" />
-            </div>
+            <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden"><Image src="/serawat-H-logo.png" alt="" aria-hidden="true" fill sizes="(max-width: 1024px) 100vw, 1500px" className="object-contain p-3 opacity-[0.34] saturate-125 contrast-125 drop-shadow-[0_0_28px_rgba(67,190,205,0.20)] sm:p-5 lg:p-7" priority /><div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,18,31,0.34),rgba(5,18,31,0.08)_48%,rgba(5,18,31,0.30))]" /></div>
             <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#d6a443]/45 bg-[#071525]/80 p-2 shadow-[0_8px_30px_rgba(214,164,67,0.14)] sm:h-16 sm:w-16"><Image src="/serawat-logo.png" alt="SAMS" width={70} height={70} className="h-full w-full object-contain" priority /></div>
               <p className="max-w-5xl text-2xl font-black leading-tight tracking-[-0.02em] text-[#f4d58c] sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl">Serawat Advanced Multispeciality Joint &amp; Spine Centre</p>
