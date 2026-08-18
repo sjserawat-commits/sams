@@ -11,15 +11,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const patientId = Number(id);
+    const rawId = decodeURIComponent(id).trim();
+    const numericId = Number(rawId);
     const phone = normalizePhone(new URL(request.url).searchParams.get("phone"));
 
-    if (!Number.isInteger(patientId)) {
-      return NextResponse.json({ error: "Invalid patient ID" }, { status: 400 });
-    }
-
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
+    const patient = await prisma.patient.findFirst({
+      where: Number.isInteger(numericId) && numericId > 0 ? { id: numericId } : { patientId: rawId },
       select: {
         id: true,
         patientId: true,
@@ -31,84 +28,34 @@ export async function GET(
         createdAt: true,
         encounters: {
           orderBy: { encounterDate: "desc" },
-          select: {
-            id: true,
-            encounterDate: true,
-            speciality: true,
-            chiefComplaint: true,
-            diagnosis: true,
-            clinicalNotes: true,
-            treatmentPlan: true,
-            followUpDate: true,
-          },
+          select: { id: true, encounterDate: true, speciality: true, chiefComplaint: true, diagnosis: true, clinicalNotes: true, treatmentPlan: true, followUpDate: true },
         },
         opdVisits: {
           orderBy: { createdAt: "desc" },
           select: {
-            id: true,
-            tokenNumber: true,
-            visitType: true,
-            status: true,
-            createdAt: true,
+            id: true, tokenNumber: true, visitType: true, status: true, createdAt: true,
             departmentMaster: { select: { name: true } },
             doctor: { select: { name: true } },
             investigationOrders: {
               orderBy: { createdAt: "desc" },
-              select: {
-                id: true,
-                investigation: true,
-                price: true,
-                netAmount: true,
-                paymentStatus: true,
-                status: true,
-                reportText: true,
-                reportedAt: true,
-                createdAt: true,
-              },
+              select: { id: true, investigation: true, price: true, netAmount: true, paymentStatus: true, status: true, reportText: true, reportedAt: true, createdAt: true },
             },
           },
         },
         billingRecords: {
           orderBy: { createdAt: "desc" },
           select: {
-            id: true,
-            billNumber: true,
-            receiptNumber: true,
-            subtotal: true,
-            discount: true,
-            netAmount: true,
-            paymentStatus: true,
-            paymentMethod: true,
-            paidAmount: true,
-            balanceAmount: true,
-            paidAt: true,
-            createdAt: true,
-            lineItems: {
-              select: {
-                id: true,
-                serviceType: true,
-                description: true,
-                quantity: true,
-                unitPrice: true,
-                amount: true,
-              },
-            },
+            id: true, billNumber: true, receiptNumber: true, subtotal: true, discount: true, netAmount: true, paymentStatus: true, paymentMethod: true, paidAmount: true, balanceAmount: true, paidAt: true, createdAt: true,
+            lineItems: { select: { id: true, serviceType: true, description: true, quantity: true, unitPrice: true, amount: true } },
           },
         },
       },
     });
 
-    if (!patient) {
-      return NextResponse.json({ error: "Patient not found" }, { status: 404 });
-    }
+    if (!patient) return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+    if (!phone || normalizePhone(patient.phone) !== phone) return NextResponse.json({ error: "Patient verification failed." }, { status: 403 });
 
-    if (!phone || normalizePhone(patient.phone) !== phone) {
-      return NextResponse.json({ error: "Patient verification failed." }, { status: 403 });
-    }
-
-    return NextResponse.json(patient, {
-      headers: { "Cache-Control": "no-store" },
-    });
+    return NextResponse.json(patient, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Patient portal lookup failed:", error);
     return NextResponse.json({ error: "Unable to load patient portal data" }, { status: 500 });
