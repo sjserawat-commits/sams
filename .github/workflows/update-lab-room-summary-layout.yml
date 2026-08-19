@@ -1,0 +1,56 @@
+name: Fix Lab Room Summary Layout
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Move Lab Summary to right side
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/investigation-room/page.tsx')
+          text = path.read_text(encoding='utf-8')
+
+          hero = '<section className="mt-5 rounded-[2rem] bg-[#031a38] p-7 text-white shadow-2xl">'
+          grid = '<div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">'
+          if grid not in text:
+              if hero not in text:
+                  raise SystemExit('Lab Room hero section not found; no change made.')
+              text = text.replace(hero, grid + hero, 1)
+
+          summary = '<section className="mt-5 rounded-[2rem] border border-[#d8b43e] bg-[#fff8df] p-5 shadow-xl">'
+          summary_new = '<section className="rounded-[2rem] border border-[#d8b43e] bg-[#fff8df] p-5 shadow-xl lg:sticky lg:top-5">'
+          if summary in text:
+              text = text.replace(summary, summary_new, 1)
+
+          marker = 'const summaryDetail=summaryOpen?summaryOrders(summaryOpen):[];'
+          if marker in text and '</div>\\n ' + marker not in text and '</div>' + marker not in text:
+              text = text.replace(marker, '</div>\\n ' + marker, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit layout change
+        run: |
+          if git diff --quiet; then
+            echo "Layout already applied; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/investigation-room/page.tsx .github/workflows/update-lab-room-summary-layout.yml
+          git commit -m "fix: show lab summary on right side"
+          git push origin main
