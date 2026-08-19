@@ -37,8 +37,8 @@ jobs:
               text = text.replace(summary, summary_new, 1)
 
           marker = 'const summaryDetail=summaryOpen?summaryOrders(summaryOpen):[];'
-          if marker in text and '</div>\\n ' + marker not in text and '</div>' + marker not in text:
-              text = text.replace(marker, '</div>\\n ' + marker, 1)
+          if marker in text and '</div>\n ' + marker not in text and '</div>' + marker not in text:
+              text = text.replace(marker, '</div>\n ' + marker, 1)
 
           path.write_text(text, encoding='utf-8')
           PY
