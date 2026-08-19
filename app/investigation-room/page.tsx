@@ -1,41 +1,329 @@
 "use client";
+
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-type Master={code:string;category:string;specimen:string|null;unit:string|null;referenceRange:string|null;method?:string|null;criticalValue?:string|null};
-type Order={id:number;investigation:string;status:string;specimen:string|null;accessionNumber:string|null;reportText:string|null;resultData?:any;criticalFlag:boolean;master:Master|null;opdVisit:{id:number;tokenNumber:number;visitType:string;patient:{patientId:string;firstName:string;lastName:string;gender:string|null}};workflow:{paymentStatus:string;outstandingAmount:number}};
-type Queue={key:string;patient:Order["opdVisit"]["patient"];visitId:number;token:number;orders:Order[]};
-type SummaryKey="patients"|"investigations"|"awaiting"|"accepted"|"collected"|"processing"|"ready"|"verified"|"published";
-const stages=["ORDERED","APPROVED_FOR_SAMPLING","ACCEPTED","SAMPLE_COLLECTED","PROCESSING","COMPLETED","VERIFIED","PUBLISHED"];
-const statusLabel=(s:string)=>({ORDERED:"Order Placed",APPROVED_FOR_SAMPLING:"Approved for Sampling",ACCEPTED:"Order Accepted",SAMPLE_COLLECTED:"Sample Collected",PROCESSING:"In Processing",COMPLETED:"Result Ready",VERIFIED:"Report Verified",PUBLISHED:"Report Published"}[s]||s.replaceAll("_"," "));
+type Master = {
+  code: string;
+  category: string;
+  specimen: string | null;
+  unit: string | null;
+  referenceRange: string | null;
+  method?: string | null;
+  criticalValue?: string | null;
+};
 
-export default function LabRoomPage(){
- const[orders,setOrders]=useState<Order[]>([]),[q,setQ]=useState(""),[filter,setFilter]=useState("ALL"),[loading,setLoading]=useState(true),[busy,setBusy]=useState<number|null>(null),[selected,setSelected]=useState<string|null>(null),[edit,setEdit]=useState<number|null>(null),[draft,setDraft]=useState(""),[machine,setMachine]=useState<number|null>(null),[summaryOpen,setSummaryOpen]=useState<SummaryKey|null>(null); const fileRef=useRef<HTMLInputElement>(null);
- async function load(){setLoading(true);try{const p=new URLSearchParams();if(q)p.set("q",q);if(filter!=="ALL")p.set("status",filter);const r=await fetch(`/api/investigation-room?${p}`,{cache:"no-store"});const d=await r.json();setOrders(Array.isArray(d)?d:[])}finally{setLoading(false)}}
- useEffect(()=>{const t=setTimeout(load,180);return()=>clearTimeout(t)},[q,filter]);
- const activeOrders=useMemo(()=>orders.filter(o=>o.status!=="CANCELLED"),[orders]);
- const queues=useMemo<Queue[]>(()=>{const m=new Map<string,Queue>();for(const o of activeOrders){const p=o.opdVisit.patient,k=`${p.patientId}-${o.opdVisit.id}`;const x=m.get(k);if(x)x.orders.push(o);else m.set(k,{key:k,patient:p,visitId:o.opdVisit.id,token:o.opdVisit.tokenNumber,orders:[o]})}return[...m.values()]},[activeOrders]);
- const summary=useMemo(()=>({patients:queues.length,investigations:activeOrders.length,awaiting:activeOrders.filter(o=>o.status==="ORDERED"||o.status==="APPROVED_FOR_SAMPLING").length,accepted:activeOrders.filter(o=>o.status==="ACCEPTED").length,collected:activeOrders.filter(o=>o.status==="SAMPLE_COLLECTED").length,processing:activeOrders.filter(o=>o.status==="PROCESSING").length,ready:activeOrders.filter(o=>o.status==="COMPLETED").length,verified:activeOrders.filter(o=>o.status==="VERIFIED").length,published:activeOrders.filter(o=>o.status==="PUBLISHED").length}),[activeOrders,queues]);
- const selectedQueue=queues.find(x=>x.key===selected)||null;
- const summaryCards=[
-  {key:"patients" as SummaryKey,label:"Total Patients",value:summary.patients,sub:"Active lab patients",tone:"navy"},
-  {key:"investigations" as SummaryKey,label:"Total Investigations",value:summary.investigations,sub:"All active orders",tone:"gold"},
-  {key:"awaiting" as SummaryKey,label:"Awaiting Sampling",value:summary.awaiting,sub:"Order / approval stage",tone:"amber"},
-  {key:"accepted" as SummaryKey,label:"Order Accepted",value:summary.accepted,sub:"Accepted by laboratory",tone:"blue"},
-  {key:"collected" as SummaryKey,label:"Sample Collected",value:summary.collected,sub:"Ready for processing",tone:"violet"},
-  {key:"processing" as SummaryKey,label:"In Processing",value:summary.processing,sub:"Laboratory work in progress",tone:"purple"},
-  {key:"ready" as SummaryKey,label:"Result Ready",value:summary.ready,sub:"Awaiting verification",tone:"green"},
-  {key:"verified" as SummaryKey,label:"Report Verified",value:summary.verified,sub:"Ready for publication",tone:"teal"},
-  {key:"published" as SummaryKey,label:"Report Published",value:summary.published,sub:"Final laboratory reports",tone:"dark"}
- ];
- function summaryOrders(key:SummaryKey){if(key==="patients")return activeOrders;if(key==="investigations")return activeOrders;if(key==="awaiting")return activeOrders.filter(o=>o.status==="ORDERED"||o.status==="APPROVED_FOR_SAMPLING");if(key==="accepted")return activeOrders.filter(o=>o.status==="ACCEPTED");if(key==="collected")return activeOrders.filter(o=>o.status==="SAMPLE_COLLECTED");if(key==="processing")return activeOrders.filter(o=>o.status==="PROCESSING");if(key==="ready")return activeOrders.filter(o=>o.status==="COMPLETED");if(key==="verified")return activeOrders.filter(o=>o.status==="VERIFIED");return activeOrders.filter(o=>o.status==="PUBLISHED")}
- function summaryTitle(key:SummaryKey){return summaryCards.find(x=>x.key===key)?.label||"Lab Detail"}
- function summaryDescription(key:SummaryKey){if(key==="patients")return "Detailed patient-wise laboratory queue and all active investigations.";if(key==="investigations")return "Complete active investigation register with patient, visit, payment and workflow details.";return `All investigations currently in the ${summaryTitle(key).toLowerCase()} stage.`}
- function patientQueueKey(o:Order){const p=o.opdVisit.patient;return `${p.patientId}-${o.opdVisit.id}`}
- async function advance(o:Order,next:string,extra:any={}){setBusy(o.id);const r=await fetch("/api/investigation-room",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:o.id,status:next,...extra})});const d=await r.json();setBusy(null);if(!r.ok){alert(d?.error||"Unable to update laboratory workflow");return}setEdit(null);setDraft("");await load()}
- async function importMachine(o:Order,file:File){setMachine(o.id);try{const text=await file.text();let parsed:any;try{parsed=JSON.parse(text)}catch{const lines=text.trim().split(/\r?\n/).map(x=>x.split(","));const heads=lines.shift()||[];parsed=lines.map(row=>Object.fromEntries(heads.map((h,i)=>[h.trim(),row[i]?.trim()||""])))}const rows=Array.isArray(parsed)?parsed:(Array.isArray(parsed?.results)?parsed.results:[parsed]);const resultData={source:"MACHINE_IMPORT",importedAt:new Date().toISOString(),instrument:parsed?.instrument||parsed?.analyzer||"Laboratory Analyzer",results:rows};const reportText=rows.map((r:any)=>`${r.analyte||r.test||r.name||o.investigation}: ${r.value??r.result??""}${r.unit?` ${r.unit}`:""}`).join("\n");await advance(o,"COMPLETED",{reportText:reportText||text,resultData})}catch(e){alert(`Machine result import failed: ${e instanceof Error?e.message:"Invalid result file"}`)}finally{setMachine(null)}}
- function action(o:Order){const paid=o.workflow.outstandingAmount<=0||o.workflow.paymentStatus==="PAID";if(o.status==="ORDERED"&&!paid)return <button className="action amber" disabled={busy===o.id} onClick={()=>advance(o,"APPROVED_FOR_SAMPLING")}>Approve Sampling</button>;if(o.status==="ORDERED"||o.status==="APPROVED_FOR_SAMPLING")return <button className="action blue" disabled={busy===o.id} onClick={()=>advance(o,"ACCEPTED")}>Accept Order</button>;if(o.status==="ACCEPTED")return <button className="action blue" disabled={busy===o.id} onClick={()=>advance(o,"SAMPLE_COLLECTED",{specimen:o.specimen||o.master?.specimen||"Sample",sampleCollectedBy:"Laboratory"})}>Collect Sample</button>;if(o.status==="SAMPLE_COLLECTED")return <button className="action blue" disabled={busy===o.id} onClick={()=>advance(o,"PROCESSING")}>Start Processing</button>;if(o.status==="PROCESSING"&&o.reportText)return <button className="action green" disabled={busy===o.id} onClick={()=>advance(o,"COMPLETED",{reportText:o.reportText})}>Finalize Result</button>;if(o.status==="PROCESSING")return <button className="action ghost" onClick={()=>{setEdit(o.id);setDraft(o.reportText||"")}}>Manual Result</button>;if(o.status==="COMPLETED")return <button className="action green" disabled={busy===o.id} onClick={()=>advance(o,"VERIFIED",{verifiedBy:"Authorized Laboratory User"})}>Verify Report</button>;if(o.status==="VERIFIED")return <button className="action gold" disabled={busy===o.id} onClick={()=>advance(o,"PUBLISHED")}>Publish Report</button>;return null}
- const profile=(x:Queue)=><section className="mt-5 overflow-hidden rounded-[1.9rem] border border-[#d8b43e] bg-[#fff8df] shadow-xl"><header className="flex flex-wrap items-center justify-between gap-4 bg-[#031a38] p-5 text-white"><div className="flex items-center gap-3"><button className="action nav" onClick={()=>setSelected(null)}>← Queue</button><div><p className="eyebrow">Patient Lab Profile</p><h2 className="text-2xl font-black">{x.patient.firstName} {x.patient.lastName}</h2><p className="text-xs text-blue-100">{x.patient.patientId} · Visit #{x.visitId} · Token {x.token}</p></div></div><div className="statDark"><b>{x.orders.length}</b><span>Total Investigations</span></div></header><div className="p-5"><div className="mb-5 grid gap-3 sm:grid-cols-3"><div className="profileStat"><span>Patient ID</span><b>{x.patient.patientId}</b></div><div className="profileStat"><span>Gender</span><b>{x.patient.gender||"—"}</b></div><div className="profileStat"><span>Visit / Token</span><b>#{x.visitId} / {x.token}</b></div></div><h3 className="mb-3 text-lg font-black">Investigation List</h3><div className="space-y-3">{x.orders.map(o=>{const idx=stages.indexOf(o.status);return <div key={o.id} className="rounded-2xl border border-[#eadb9d] bg-white p-4"><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div className="min-w-0 flex-1"><div className="flex flex-wrap gap-2"><span className="pillDark">LAB #{o.id}</span><span className="status">{statusLabel(o.status)}</span></div><h4 className="mt-2 text-lg font-black">{o.investigation}</h4><p className="text-[10px] font-semibold text-slate-500">{o.master?.category||"Laboratory"} · Specimen: {o.specimen||o.master?.specimen||"—"} · Accession: {o.accessionNumber||"Pending"}</p><div className="mt-4 grid gap-2 sm:grid-cols-3"><div className="bio"><span>Biological / Reference Value</span><b>{o.master?.referenceRange||"Not configured"}</b></div><div className="bio"><span>Unit</span><b>{o.master?.unit||"—"}</b></div><div className="bio"><span>Method / Critical</span><b>{o.master?.method||o.master?.criticalValue||"—"}</b></div></div></div><div className="flex flex-wrap gap-2 lg:max-w-[430px] lg:justify-end">{action(o)}<button className="action machine" disabled={machine===o.id} onClick={()=>{setMachine(o.id);fileRef.current?.click()}}>{machine===o.id?"Importing…":"⇧ Machine Result"}</button>{(o.status==="VERIFIED"||o.status==="PUBLISHED")&&<Link className="action ghost" href={`/investigation-reports/${o.id}`}>View / Print</Link>}</div></div><div className="mt-3 flex items-center gap-1">{stages.map((s,i)=><div key={s} className="flex flex-1 items-center gap-1"><i className={`h-2 w-2 rounded-full ${i<=idx?"bg-[#061a38]":"bg-[#d7c98d]"}`}/>{i<stages.length-1&&<i className={`h-px flex-1 ${i<idx?"bg-[#061a38]":"bg-[#d7c98d]"}`}/>}</div>)}</div>{edit===o.id&&<div className="mt-4 rounded-xl border border-[#d8b43e] bg-[#fffdf3] p-4"><p className="label">Manual Result Entry</p><textarea value={draft} onChange={e=>setDraft(e.target.value)} rows={5} placeholder="Enter laboratory result / findings…" className="mt-2 w-full rounded-xl border border-[#d6c27a] bg-white p-4 text-sm outline-none"/><div className="mt-3 flex gap-2"><button className="action green" disabled={!draft.trim()||busy===o.id} onClick={()=>advance(o,"COMPLETED",{reportText:draft})}>Save & Finalize Result</button><button className="action ghost" onClick={()=>setEdit(null)}>Cancel</button></div></div>}{o.reportText&&<div className="mt-3 rounded-xl border border-[#eadb9d] bg-[#fffdf3] p-3"><p className="label">Current Result</p><p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{o.reportText}</p></div>}</div>})}</div></div><input ref={fileRef} hidden type="file" accept=".json,.csv,.txt,application/json,text/csv,text/plain" onChange={e=>{const f=e.target.files?.[0];const o=selectedQueue?.orders.find(v=>v.id===machine);if(f&&o)void importMachine(o,f);e.currentTarget.value=""}}/></section>;
- </div>
- const summaryDetail=summaryOpen?summaryOrders(summaryOpen):[];
- return <main className="min-h-screen bg-[#FDC823] px-4 py-5 text-[#061a38] sm:px-7"><div className="mx-auto max-w-[1500px]"><header className="flex flex-wrap items-center justify-between gap-4 rounded-[1.7rem] bg-[#031a38] p-5 text-white shadow-2xl"><div className="flex min-w-0 items-center gap-3"><Link href="/investigations" className="action nav">← Investigation Dashboard</Link><div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-[#FDC823]/60 bg-white p-1 shadow-sm"><img src="/serawat-logo.png" alt="Serawat logo" className="h-full w-full object-contain" /></div><div className="min-w-0"><p className="eyebrow">SAMS · Laboratory</p><p className="text-sm font-black text-white">Serawat Advanced Multispeciality Joint &amp; Spine Centre</p><h1 className="text-xl font-black">Lab Room</h1></div></div><button className="action refresh" onClick={load}>↻ Refresh</button></header>{selectedQueue?profile(selectedQueue):<><div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]"><section className="mt-5 rounded-[2rem] bg-[#031a38] p-7 text-white shadow-2xl"><p className="eyebrow">Laboratory Command Centre</p><h2 className="mt-2 text-3xl font-black">Patient Queue</h2><p className="mt-2 text-sm text-blue-100">Cancelled investigations are excluded. Current laboratory status is shown directly on each patient profile.</p></section><section className="rounded-[2rem] border border-[#d8b43e] bg-[#fff8df] p-5 shadow-xl lg:sticky lg:top-5"><div className="flex flex-wrap items-end justify-between gap-3"><div><p className="eyebrowDark">Live Laboratory Overview</p><h2 className="mt-1 text-2xl font-black">Lab Summary</h2><p className="mt-1 text-xs font-semibold text-slate-500">Every summary card is clickable and opens a detailed, live report.</p></div><div className="summaryLive">LIVE</div></div><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">{summaryCards.map(c=><button type="button" key={c.key} onClick={()=>setSummaryOpen(c.key)} className={`summaryCard ${c.tone}`}><span>{c.label}</span><b>{c.value}</b><small>{c.sub}</small><em>View detailed report →</em></button>)}</div></section><section className="mt-5 flex gap-3 rounded-2xl border border-[#d8b43e] bg-[#fff8df] p-4"><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search patient ID, name or laboratory investigation…" className="w-full rounded-xl border border-[#d6c27a] bg-white px-4 py-3 text-sm font-bold outline-none"/><select value={filter} onChange={e=>setFilter(e.target.value)} className="rounded-xl border border-[#d6c27a] bg-white px-4 text-sm font-black">{["ALL",...stages,"CANCELLED"].map(s=><option key={s}>{s}</option>)}</select></section><section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{loading?<div className="rounded-2xl bg-[#fff8df] p-8 font-bold">Loading…</div>:queues.map((x,i)=><button key={x.key} onClick={()=>setSelected(x.key)} className="queue"><div className="flex justify-between"><div className="avatar">{x.patient.firstName.charAt(0)}</div><span className="pillDark">QUEUE #{i+1}</span></div><h3 className="mt-4 text-xl font-black">{x.patient.firstName} {x.patient.lastName}</h3><p className="text-xs text-slate-500">{x.patient.patientId} · Visit #{x.visitId}</p><div className="mt-4 grid grid-cols-2 gap-2"><div className="mini"><span>Queue No.</span><b>#{i+1}</b></div><div className="mini"><span>Total Investigations</span><b>{x.orders.length}</b></div></div><p className="label mt-4">Current Status</p><div className="mt-2 flex flex-wrap gap-2">{[...new Set(x.orders.map(o=>o.status))].map(s=><span className="status" key={s}>{statusLabel(s)}</span>)}</div><div className="mt-4 text-right font-black">Open Profile →</div></button>)}</section></>}</div>{summaryOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-[#031a38]/75 p-3 sm:p-6" onMouseDown={e=>{if(e.target===e.currentTarget)setSummaryOpen(null)}}><section className="flex max-h-[92vh] w-full max-w-[1400px] flex-col overflow-hidden rounded-[1.8rem] bg-[#fffdf3] shadow-2xl"><header className="flex flex-wrap items-center justify-between gap-3 bg-[#031a38] p-5 text-white"><div><p className="eyebrow">Detailed Laboratory Report</p><h2 className="text-2xl font-black">{summaryTitle(summaryOpen)}</h2><p className="mt-1 text-xs text-blue-100">{summaryDescription(summaryOpen)}</p></div><div className="flex items-center gap-2"><span className="reportCount">{summaryDetail.length} records</span><button className="action close" onClick={()=>setSummaryOpen(null)}>✕ Close</button></div></header><div className="grid gap-3 border-b border-[#eadb9d] bg-[#fff8df] p-4 sm:grid-cols-4"><div className="reportStat"><span>Patients</span><b>{new Set(summaryDetail.map(o=>patientQueueKey(o))).size}</b></div><div className="reportStat"><span>Investigations</span><b>{summaryDetail.length}</b></div><div className="reportStat"><span>Paid / Cleared</span><b>{summaryDetail.filter(o=>o.workflow.paymentStatus==="PAID"||o.workflow.outstandingAmount<=0).length}</b></div><div className="reportStat"><span>Outstanding</span><b>{summaryDetail.reduce((n,o)=>n+Number(o.workflow.outstandingAmount||0),0).toFixed(2)}</b></div></div><div className="min-h-0 flex-1 overflow-auto p-4"><div className="overflow-x-auto rounded-2xl border border-[#eadb9d] bg-white"><table className="w-full min-w-[1050px] text-left text-xs"><thead className="sticky top-0 bg-[#061a38] text-white"><tr><th className="px-4 py-3">Patient</th><th className="px-4 py-3">Visit / Token</th><th className="px-4 py-3">Investigation</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Specimen / Accession</th><th className="px-4 py-3">Payment</th><th className="px-4 py-3">Result / Reference</th><th className="px-4 py-3">Action</th></tr></thead><tbody>{summaryDetail.length===0?<tr><td colSpan={8} className="px-4 py-12 text-center font-bold text-slate-500">No records in this category.</td></tr>:summaryDetail.map(o=><tr key={o.id} className="border-t border-[#eee4c2] align-top hover:bg-[#fffaf0]"><td className="px-4 py-4"><b>{o.opdVisit.patient.firstName} {o.opdVisit.patient.lastName}</b><span className="block text-[10px] text-slate-500">{o.opdVisit.patient.patientId}</span></td><td className="px-4 py-4">#{o.opdVisit.id}<span className="block text-[10px] text-slate-500">Token {o.opdVisit.tokenNumber}</span></td><td className="px-4 py-4"><b>{o.investigation}</b><span className="block text-[10px] text-slate-500">{o.master?.category||"Laboratory"}</span></td><td className="px-4 py-4"><span className="status">{statusLabel(o.status)}</span>{o.criticalFlag&&<span className="critical">CRITICAL</span>}</td><td className="px-4 py-4">{o.specimen||o.master?.specimen||"—"}<span className="block text-[10px] text-slate-500">{o.accessionNumber||"No accession"}</span></td><td className="px-4 py-4"><b>{o.workflow.paymentStatus||"—"}</b><span className="block text-[10px] text-slate-500">Outstanding ₹{Number(o.workflow.outstandingAmount||0).toFixed(2)}</span></td><td className="px-4 py-4"><b>{o.reportText||"Result not entered"}</b><span className="mt-1 block text-[10px] text-slate-500">Ref: {o.master?.referenceRange||"Not configured"}</span></td><td className="px-4 py-4"><div className="flex flex-wrap gap-2"><button className="action miniAction" onClick={()=>{setSummaryOpen(null);setSelected(patientQueueKey(o))}}>Open Patient</button>{(o.status==="VERIFIED"||o.status==="PUBLISHED")&&<Link className="action miniAction" href={`/investigation-reports/${o.id}`}>View / Print</Link>}</div></td></tr>)}</tbody></table></div></div></section></div>}<style jsx>{`.action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;border-radius:.8rem;padding:.7rem 1rem;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap;transition:.15s}.action:hover{transform:translateY(-1px);box-shadow:0 7px 18px #031a3830}.action:disabled{opacity:.45;cursor:not-allowed}.nav{border:1px solid #FDC823;background:#061a38;color:#FDC823}.refresh{background:#FDC823;color:#061a38}.close{background:#FDC823;color:#061a38}.amber{background:#fff0b0;color:#5a4200;border:1px solid #d6a72f}.blue{background:#061a38;color:white}.green{background:#047857;color:white}.gold{background:#d6a443;color:#07111c}.ghost{background:white;border:1px solid #b8a45d;color:#061a38}.machine{background:#7c3aed;color:white;border:1px solid #6d28d9}.miniAction{min-height:34px;padding:.45rem .65rem;background:#061a38;color:white}.eyebrow{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.25em;color:#FDC823}.eyebrowDark{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:#8a6a00}.pillDark{border-radius:999px;background:#061a38;color:#FDC823;padding:.42rem .7rem;font-size:9px;font-weight:900}.status{display:inline-flex;border-radius:999px;border:1px solid #b8a45d;background:#fff8df;padding:.42rem .7rem;font-size:9px;font-weight:900;color:#061a38}.critical{display:inline-flex;margin-left:.35rem;border-radius:999px;background:#991b1b;color:white;padding:.42rem .6rem;font-size:8px;font-weight:900}.bio{border:1px solid #eadb9d;background:#fff8df;border-radius:.8rem;padding:.7rem}.bio span,.mini span,.label{display:block;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:#64748b}.bio b{display:block;margin-top:.25rem;font-size:.9rem}.queue{border:1px solid #d8b43e;background:#fff8df;border-radius:1.7rem;padding:1.25rem;text-align:left;box-shadow:0 14px 35px #3d2b0028;transition:.15s}.queue:hover{transform:translateY(-2px);border-color:#061a38}.avatar{display:flex;height:4rem;width:4rem;align-items:center;justify-content:center;border-radius:1rem;background:#061a38;color:#FDC823;font-size:1.5rem;font-weight:900}.mini{border-radius:.8rem;background:white;padding:.75rem}.mini b{display:block;font-size:1rem;margin-top:.2rem}.statDark{border-radius:.8rem;background:#ffffff18;padding:.6rem 1rem;text-align:center}.statDark b{display:block;font-size:1.2rem}.statDark span{font-size:8px;font-weight:900;text-transform:uppercase;color:#dbeafe}.profileStat{border:1px solid #eadb9d;background:#fffdf3;border-radius:.9rem;padding:.75rem}.summaryLive{border-radius:999px;background:#047857;color:white;padding:.5rem .8rem;font-size:9px;font-weight:900;letter-spacing:.15em}.summaryCard{min-height:150px;border:1px solid #d8b43e;border-radius:1.2rem;padding:1rem;text-align:left;box-shadow:0 10px 25px #3d2b0015;transition:.15s}.summaryCard:hover{transform:translateY(-3px);border-color:#061a38;box-shadow:0 15px 30px #3d2b0030}.summaryCard span{display:block;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em}.summaryCard b{display:block;margin-top:.5rem;font-size:2rem}.summaryCard small{display:block;margin-top:.25rem;font-size:9px;font-weight:700;color:#64748b}.summaryCard em{display:block;margin-top:1rem;font-size:9px;font-style:normal;font-weight:900}.navy{background:#e9f0f9}.gold{background:#fff8df}.amber{background:#fff4cf}.blue{background:#eaf3ff}.violet{background:#f1edff}.purple{background:#f5ecff}.green{background:#e9f9f1}.teal{background:#e8faf7}.dark{background:#edf0f3}.reportCount{border:1px solid #d8b43e;border-radius:999px;background:#fff8df;color:#061a38;padding:.6rem .8rem;font-size:10px;font-weight:900}.reportStat{border:1px solid #eadb9d;border-radius:1rem;background:white;padding:.8rem}.reportStat span{display:block;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#64748b}.reportStat b{display:block;margin-top:.25rem;font-size:1.15rem}`}</style></main>}
+type Order = {
+  id: number;
+  investigation: string;
+  status: string;
+  specimen: string | null;
+  accessionNumber: string | null;
+  reportText: string | null;
+  criticalFlag: boolean;
+  master: Master | null;
+  opdVisit: {
+    id: number;
+    tokenNumber: number;
+    visitType: string;
+    patient: {
+      patientId: string;
+      firstName: string;
+      lastName: string;
+      gender: string | null;
+    };
+  };
+  workflow: {
+    paymentStatus: string;
+    outstandingAmount: number;
+  };
+};
+
+type Queue = {
+  key: string;
+  patient: Order["opdVisit"]["patient"];
+  visitId: number;
+  token: number;
+  orders: Order[];
+};
+
+type SummaryKey =
+  | "patients"
+  | "investigations"
+  | "awaiting"
+  | "accepted"
+  | "collected"
+  | "processing"
+  | "ready"
+  | "verified"
+  | "published";
+
+const stages = [
+  "ORDERED",
+  "APPROVED_FOR_SAMPLING",
+  "ACCEPTED",
+  "SAMPLE_COLLECTED",
+  "PROCESSING",
+  "COMPLETED",
+  "VERIFIED",
+  "PUBLISHED",
+];
+
+const statusLabel = (status: string) =>
+  ({
+    ORDERED: "Order Placed",
+    APPROVED_FOR_SAMPLING: "Approved for Sampling",
+    ACCEPTED: "Order Accepted",
+    SAMPLE_COLLECTED: "Sample Collected",
+    PROCESSING: "In Processing",
+    COMPLETED: "Result Ready",
+    VERIFIED: "Report Verified",
+    PUBLISHED: "Report Published",
+  })[status] || status.replaceAll("_", " ");
+
+export default function LabRoomPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<number | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState<SummaryKey | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [draft, setDraft] = useState("");
+
+  async function load() {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (query) params.set("q", query);
+      if (filter !== "ALL") params.set("status", filter);
+      const response = await fetch(`/api/investigation-room?${params.toString()}`, {
+        cache: "no-store",
+      });
+      const data = await response.json();
+      setOrders(Array.isArray(data) ? data : []);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(() => void load(), 180);
+    return () => clearTimeout(timer);
+  }, [query, filter]);
+
+  const activeOrders = useMemo(
+    () => orders.filter((order) => order.status !== "CANCELLED"),
+    [orders],
+  );
+
+  const queues = useMemo<Queue[]>(() => {
+    const map = new Map<string, Queue>();
+    for (const order of activeOrders) {
+      const patient = order.opdVisit.patient;
+      const key = `${patient.patientId}-${order.opdVisit.id}`;
+      const current = map.get(key);
+      if (current) {
+        current.orders.push(order);
+      } else {
+        map.set(key, {
+          key,
+          patient,
+          visitId: order.opdVisit.id,
+          token: order.opdVisit.tokenNumber,
+          orders: [order],
+        });
+      }
+    }
+    return [...map.values()];
+  }, [activeOrders]);
+
+  const summary = useMemo(
+    () => ({
+      patients: queues.length,
+      investigations: activeOrders.length,
+      awaiting: activeOrders.filter(
+        (o) => o.status === "ORDERED" || o.status === "APPROVED_FOR_SAMPLING",
+      ).length,
+      accepted: activeOrders.filter((o) => o.status === "ACCEPTED").length,
+      collected: activeOrders.filter((o) => o.status === "SAMPLE_COLLECTED").length,
+      processing: activeOrders.filter((o) => o.status === "PROCESSING").length,
+      ready: activeOrders.filter((o) => o.status === "COMPLETED").length,
+      verified: activeOrders.filter((o) => o.status === "VERIFIED").length,
+      published: activeOrders.filter((o) => o.status === "PUBLISHED").length,
+    }),
+    [activeOrders, queues],
+  );
+
+  const summaryCards: Array<{
+    key: SummaryKey;
+    label: string;
+    value: number;
+    sub: string;
+    tone: string;
+  }> = [
+    { key: "patients", label: "Total Patients", value: summary.patients, sub: "Active lab patients", tone: "navy" },
+    { key: "investigations", label: "Total Investigations", value: summary.investigations, sub: "All active orders", tone: "gold" },
+    { key: "awaiting", label: "Awaiting Sampling", value: summary.awaiting, sub: "Order / approval stage", tone: "amber" },
+    { key: "accepted", label: "Order Accepted", value: summary.accepted, sub: "Accepted by laboratory", tone: "blue" },
+    { key: "collected", label: "Sample Collected", value: summary.collected, sub: "Ready for processing", tone: "violet" },
+    { key: "processing", label: "In Processing", value: summary.processing, sub: "Laboratory work in progress", tone: "purple" },
+    { key: "ready", label: "Result Ready", value: summary.ready, sub: "Awaiting verification", tone: "green" },
+    { key: "verified", label: "Report Verified", value: summary.verified, sub: "Ready for publication", tone: "teal" },
+    { key: "published", label: "Report Published", value: summary.published, sub: "Final laboratory reports", tone: "dark" },
+  ];
+
+  function summaryOrders(key: SummaryKey) {
+    if (key === "patients" || key === "investigations") return activeOrders;
+    if (key === "awaiting") return activeOrders.filter((o) => o.status === "ORDERED" || o.status === "APPROVED_FOR_SAMPLING");
+    if (key === "accepted") return activeOrders.filter((o) => o.status === "ACCEPTED");
+    if (key === "collected") return activeOrders.filter((o) => o.status === "SAMPLE_COLLECTED");
+    if (key === "processing") return activeOrders.filter((o) => o.status === "PROCESSING");
+    if (key === "ready") return activeOrders.filter((o) => o.status === "COMPLETED");
+    if (key === "verified") return activeOrders.filter((o) => o.status === "VERIFIED");
+    return activeOrders.filter((o) => o.status === "PUBLISHED");
+  }
+
+  function patientKey(order: Order) {
+    const patient = order.opdVisit.patient;
+    return `${patient.patientId}-${order.opdVisit.id}`;
+  }
+
+  async function advance(order: Order, nextStatus: string, extra: Record<string, unknown> = {}) {
+    setBusy(order.id);
+    try {
+      const response = await fetch("/api/investigation-room", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: order.id, status: nextStatus, ...extra }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data?.error || "Unable to update laboratory workflow");
+        return;
+      }
+      setEditId(null);
+      setDraft("");
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function actionFor(order: Order) {
+    const paid = order.workflow.outstandingAmount <= 0 || order.workflow.paymentStatus === "PAID";
+    if (order.status === "ORDERED" && !paid) {
+      return <button className="action amber" disabled={busy === order.id} onClick={() => void advance(order, "APPROVED_FOR_SAMPLING")}>Approve Sampling</button>;
+    }
+    if (order.status === "ORDERED" || order.status === "APPROVED_FOR_SAMPLING") {
+      return <button className="action blue" disabled={busy === order.id} onClick={() => void advance(order, "ACCEPTED")}>Accept Order</button>;
+    }
+    if (order.status === "ACCEPTED") {
+      return <button className="action blue" disabled={busy === order.id} onClick={() => void advance(order, "SAMPLE_COLLECTED", { specimen: order.specimen || order.master?.specimen || "Sample", sampleCollectedBy: "Laboratory" })}>Collect Sample</button>;
+    }
+    if (order.status === "SAMPLE_COLLECTED") {
+      return <button className="action blue" disabled={busy === order.id} onClick={() => void advance(order, "PROCESSING")}>Start Processing</button>;
+    }
+    if (order.status === "PROCESSING") {
+      return <button className="action ghost" onClick={() => { setEditId(order.id); setDraft(order.reportText || ""); }}>Manual Result</button>;
+    }
+    if (order.status === "COMPLETED") {
+      return <button className="action green" disabled={busy === order.id} onClick={() => void advance(order, "VERIFIED", { verifiedBy: "Authorized Laboratory User" })}>Verify Report</button>;
+    }
+    if (order.status === "VERIFIED") {
+      return <button className="action gold" disabled={busy === order.id} onClick={() => void advance(order, "PUBLISHED")}>Publish Report</button>;
+    }
+    return null;
+  }
+
+  const selectedQueue = queues.find((queue) => queue.key === selected) || null;
+  const detail = summaryOpen ? summaryOrders(summaryOpen) : [];
+
+  return (
+    <main className="page">
+      <div className="shell">
+        <header className="topbar">
+          <div className="brandRow">
+            <Link href="/investigations" className="action nav">← Investigation Dashboard</Link>
+            <div className="logoBox"><img src="/serawat-logo.png" alt="Serawat logo" /></div>
+            <div><p className="eyebrow">SAMS · Laboratory</p><p className="brandName">Serawat Advanced Multispeciality Joint &amp; Spine Centre</p><h1>Lab Room</h1></div>
+          </div>
+          <button className="action refresh" onClick={() => void load()}>↻ Refresh</button>
+        </header>
+
+        {selectedQueue ? (
+          <section className="profile">
+            <header className="profileHead">
+              <div>
+                <button className="action nav" onClick={() => setSelected(null)}>← Queue</button>
+                <p className="eyebrow">Patient Lab Profile</p>
+                <h2>{selectedQueue.patient.firstName} {selectedQueue.patient.lastName}</h2>
+                <p>{selectedQueue.patient.patientId} · Visit #{selectedQueue.visitId} · Token {selectedQueue.token}</p>
+              </div>
+              <div className="statDark"><b>{selectedQueue.orders.length}</b><span>Total Investigations</span></div>
+            </header>
+            <div className="profileBody">
+              <div className="patientStats">
+                <div><span>Patient ID</span><b>{selectedQueue.patient.patientId}</b></div>
+                <div><span>Gender</span><b>{selectedQueue.patient.gender || "—"}</b></div>
+                <div><span>Visit / Token</span><b>#{selectedQueue.visitId} / {selectedQueue.token}</b></div>
+              </div>
+              <h3>Investigation List</h3>
+              <div className="orderList">
+                {selectedQueue.orders.map((order) => {
+                  const index = stages.indexOf(order.status);
+                  return (
+                    <article className="orderCard" key={order.id}>
+                      <div className="orderTop">
+                        <div>
+                          <span className="pillDark">LAB #{order.id}</span>
+                          <span className="status">{statusLabel(order.status)}</span>
+                          <h4>{order.investigation}</h4>
+                          <p className="muted">{order.master?.category || "Laboratory"} · Specimen: {order.specimen || order.master?.specimen || "—"} · Accession: {order.accessionNumber || "Pending"}</p>
+                          <div className="bioGrid">
+                            <div><span>Reference Value</span><b>{order.master?.referenceRange || "Not configured"}</b></div>
+                            <div><span>Unit</span><b>{order.master?.unit || "—"}</b></div>
+                            <div><span>Method / Critical</span><b>{order.master?.method || order.master?.criticalValue || "—"}</b></div>
+                          </div>
+                        </div>
+                        <div className="actions">{actionFor(order)}{(order.status === "VERIFIED" || order.status === "PUBLISHED") && <Link className="action ghost" href={`/investigation-reports/${order.id}`}>View / Print</Link>}</div>
+                      </div>
+                      <div className="progress">{stages.map((stage, i) => <span key={stage} className={i <= index ? "on" : ""} />)}</div>
+                      {editId === order.id && <div className="editor"><p className="label">Manual Result Entry</p><textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={5} placeholder="Enter laboratory result / findings…" /><div className="actions"><button className="action green" disabled={!draft.trim() || busy === order.id} onClick={() => void advance(order, "COMPLETED", { reportText: draft })}>Save &amp; Finalize Result</button><button className="action ghost" onClick={() => setEditId(null)}>Cancel</button></div></div>}
+                      {order.reportText && <div className="result"><span>Current Result</span><p>{order.reportText}</p></div>}
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        ) : (
+          <div className="layout">
+            <section>
+              <div className="hero"><p className="eyebrow">Laboratory Command Centre</p><h2>Patient Queue</h2><p>Cancelled investigations are excluded. Current laboratory status is shown directly on each patient profile.</p></div>
+              <div className="filters"><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search patient ID, name or laboratory investigation…" /><select value={filter} onChange={(e) => setFilter(e.target.value)}>{["ALL", ...stages, "CANCELLED"].map((value) => <option key={value}>{value}</option>)}</select></div>
+              <section className="queueGrid">
+                {loading ? <div className="empty">Loading…</div> : queues.length === 0 ? <div className="empty">No active laboratory patients.</div> : queues.map((queue, index) => <button className="queue" key={queue.key} onClick={() => setSelected(queue.key)}><div className="queueTop"><div className="avatar">{queue.patient.firstName.charAt(0)}</div><span className="pillDark">QUEUE #{index + 1}</span></div><h3>{queue.patient.firstName} {queue.patient.lastName}</h3><p className="muted">{queue.patient.patientId} · Visit #{queue.visitId}</p><div className="miniGrid"><div><span>Queue No.</span><b>#{index + 1}</b></div><div><span>Total Investigations</span><b>{queue.orders.length}</b></div></div><span className="label">Current Status</span><div className="statusRow">{[...new Set(queue.orders.map((o) => o.status))].map((status) => <span className="status" key={status}>{statusLabel(status)}</span>)}</div><strong>Open Profile →</strong></button>)}
+              </section>
+            </section>
+
+            <aside className="summaryPanel">
+              <div className="summaryHeader"><div><p className="eyebrowDark">Live Laboratory Overview</p><h2>Lab Summary</h2><p>Click any card to open its detailed live report.</p></div><span className="live">LIVE</span></div>
+              <div className="summaryGrid">{summaryCards.map((card) => <button key={card.key} className={`summaryCard ${card.tone}`} onClick={() => setSummaryOpen(card.key)}><span>{card.label}</span><b>{card.value}</b><small>{card.sub}</small><em>View detailed report →</em></button>)}</div>
+            </aside>
+          </div>
+        )}
+      </div>
+
+      {summaryOpen && <div className="modalBackdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) setSummaryOpen(null); }}><section className="modal"><header><div><p className="eyebrow">Detailed Laboratory Report</p><h2>{summaryCards.find((c) => c.key === summaryOpen)?.label}</h2><p>Live records for this laboratory workflow category.</p></div><div className="actions"><span className="reportCount">{detail.length} records</span><button className="action close" onClick={() => setSummaryOpen(null)}>✕ Close</button></div></header><div className="reportStats"><div><span>Patients</span><b>{new Set(detail.map(patientKey)).size}</b></div><div><span>Investigations</span><b>{detail.length}</b></div><div><span>Paid / Cleared</span><b>{detail.filter((o) => o.workflow.paymentStatus === "PAID" || o.workflow.outstandingAmount <= 0).length}</b></div><div><span>Outstanding</span><b>₹{detail.reduce((sum, o) => sum + Number(o.workflow.outstandingAmount || 0), 0).toFixed(2)}</b></div></div><div className="tableWrap"><table><thead><tr><th>Patient</th><th>Visit / Token</th><th>Investigation</th><th>Status</th><th>Specimen / Accession</th><th>Payment</th><th>Result / Reference</th><th>Action</th></tr></thead><tbody>{detail.length === 0 ? <tr><td colSpan={8} className="emptyCell">No records in this category.</td></tr> : detail.map((order) => <tr key={order.id}><td><b>{order.opdVisit.patient.firstName} {order.opdVisit.patient.lastName}</b><small>{order.opdVisit.patient.patientId}</small></td><td>#{order.opdVisit.id}<small>Token {order.opdVisit.tokenNumber}</small></td><td><b>{order.investigation}</b><small>{order.master?.category || "Laboratory"}</small></td><td><span className="status">{statusLabel(order.status)}</span>{order.criticalFlag && <span className="critical">CRITICAL</span>}</td><td>{order.specimen || order.master?.specimen || "—"}<small>{order.accessionNumber || "No accession"}</small></td><td><b>{order.workflow.paymentStatus || "—"}</b><small>Outstanding ₹{Number(order.workflow.outstandingAmount || 0).toFixed(2)}</small></td><td><b>{order.reportText || "Result not entered"}</b><small>Ref: {order.master?.referenceRange || "Not configured"}</small></td><td><button className="action miniAction" onClick={() => { setSummaryOpen(null); setSelected(patientKey(order)); }}>Open Patient</button></td></tr>)}</tbody></table></div></section></div>}
+
+      <style jsx>{`
+        .page{min-height:100vh;background:#FDC823;color:#061a38;padding:20px 16px}.shell{max-width:1500px;margin:auto}.topbar,.hero,.profileHead{background:#031a38;color:#fff;border-radius:28px;box-shadow:0 18px 45px #3d2b0028}.topbar{padding:20px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brandRow{display:flex;align-items:center;gap:12px;min-width:0}.brandRow h1{margin:2px 0 0;font-size:22px;font-weight:900}.brandName{margin:0;font-size:13px;font-weight:900}.logoBox{width:46px;height:46px;border-radius:12px;background:#fff;padding:4px;flex:none}.logoBox img{width:100%;height:100%;object-fit:contain}.eyebrow,.eyebrowDark{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.23em}.eyebrow{color:#FDC823;margin:0 0 5px}.eyebrowDark{color:#8a6a00}.action{display:inline-flex;align-items:center;justify-content:center;min-height:40px;border:0;border-radius:11px;padding:9px 13px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap}.action:disabled{opacity:.45;cursor:not-allowed}.nav{background:#061a38;color:#FDC823;border:1px solid #FDC823}.refresh,.close{background:#FDC823;color:#061a38}.layout{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start;margin-top:20px}.hero{padding:28px;margin-bottom:20px}.hero h2{font-size:32px;margin:0;font-weight:900}.hero p:last-child{margin:7px 0 0;color:#dbeafe;font-size:13px}.filters{display:flex;gap:10px;padding:14px;background:#fff8df;border:1px solid #d8b43e;border-radius:18px;margin-bottom:16px}.filters input,.filters select{border:1px solid #d6c27a;background:#fff;border-radius:11px;padding:12px;font-size:13px;font-weight:700;outline:none}.filters input{flex:1}.summaryPanel{background:#fff8df;border:1px solid #d8b43e;border-radius:28px;padding:18px;position:sticky;top:18px;box-shadow:0 14px 35px #3d2b0028}.summaryHeader{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.summaryHeader h2{margin:3px 0;font-size:25px;font-weight:900}.summaryHeader p:last-child{margin:0;color:#64748b;font-size:10px;font-weight:700}.live{background:#047857;color:#fff;border-radius:999px;padding:7px 10px;font-size:8px;font-weight:900;letter-spacing:.15em}.summaryGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.summaryCard{min-height:145px;text-align:left;border:1px solid #d8b43e;border-radius:18px;padding:13px;cursor:pointer;transition:.15s}.summaryCard:hover{transform:translateY(-2px);border-color:#061a38}.summaryCard span{display:block;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.summaryCard b{display:block;font-size:30px;margin-top:7px}.summaryCard small{display:block;color:#64748b;font-size:8px;font-weight:700}.summaryCard em{display:block;margin-top:10px;font-size:8px;font-style:normal;font-weight:900}.navy{background:#e9f0f9}.gold{background:#fff8df}.amber{background:#fff4cf}.blue{background:#eaf3ff}.violet{background:#f1edff}.purple{background:#f5ecff}.green{background:#e9f9f1}.teal{background:#e8faf7}.dark{background:#edf0f3}.queueGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.queue{border:1px solid #d8b43e;background:#fff8df;border-radius:22px;padding:18px;text-align:left;box-shadow:0 12px 30px #3d2b0020;cursor:pointer}.queue:hover{border-color:#061a38}.queue h3{margin:14px 0 2px;font-size:19px}.queue strong{display:block;text-align:right;margin-top:14px}.queueTop{display:flex;justify-content:space-between;align-items:center}.avatar{height:52px;width:52px;display:grid;place-items:center;border-radius:14px;background:#061a38;color:#FDC823;font-size:20px;font-weight:900}.pillDark,.status{display:inline-flex;border-radius:999px;padding:6px 9px;font-size:8px;font-weight:900}.pillDark{background:#061a38;color:#FDC823}.status{background:#fff;border:1px solid #b8a45d;color:#061a38}.muted{color:#64748b;font-size:9px;font-weight:700}.label{display:block;margin-top:12px;color:#64748b;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.1em}.miniGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.miniGrid div,.patientStats>div,.bioGrid>div,.reportStats>div{background:#fff;border:1px solid #eadb9d;border-radius:12px;padding:10px}.miniGrid span,.patientStats span,.bioGrid span,.reportStats span,.result>span{display:block;color:#64748b;font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.1em}.miniGrid b,.patientStats b,.bioGrid b,.reportStats b{display:block;margin-top:3px}.statusRow{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.empty{background:#fff8df;border:1px solid #d8b43e;border-radius:18px;padding:30px;font-weight:800}.profile{margin-top:20px;background:#fff8df;border:1px solid #d8b43e;border-radius:28px;overflow:hidden}.profileHead{padding:20px;display:flex;justify-content:space-between;gap:15px}.profileHead h2{font-size:26px;margin:8px 0 2px}.profileHead p:last-child{font-size:10px;color:#dbeafe}.statDark{background:#ffffff18;border-radius:12px;padding:9px 14px;text-align:center;height:max-content}.statDark b{display:block;font-size:20px}.statDark span{font-size:7px;font-weight:900;text-transform:uppercase}.profileBody{padding:20px}.patientStats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}.profileBody h3{font-size:18px;margin:0 0 10px}.orderList{display:grid;gap:12px}.orderCard{background:#fff;border:1px solid #eadb9d;border-radius:18px;padding:15px}.orderTop{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:15px}.orderTop h4{font-size:18px;margin:9px 0 2px}.actions{display:flex;flex-wrap:wrap;gap:7px;align-items:flex-start}.amber{background:#fff0b0;color:#5a4200;border:1px solid #d6a72f}.blue{background:#061a38;color:#fff}.green{background:#047857;color:#fff}.gold{background:#d6a443;color:#07111c}.ghost{background:#fff;border:1px solid #b8a45d;color:#061a38}.bioGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:13px}.progress{display:flex;gap:3px;margin-top:13px}.progress span{height:6px;flex:1;border-radius:99px;background:#d7c98d}.progress span.on{background:#061a38}.editor{margin-top:12px;padding:12px;border:1px solid #d8b43e;border-radius:14px;background:#fffdf3}.editor textarea{width:100%;border:1px solid #d6c27a;border-radius:10px;padding:10px;margin:7px 0;outline:none}.result{margin-top:10px;padding:10px;border:1px solid #eadb9d;border-radius:12px;background:#fffdf3}.result p{white-space:pre-wrap;margin:4px 0 0;font-size:12px}.modalBackdrop{position:fixed;inset:0;z-index:50;background:#031a38cc;display:flex;align-items:center;justify-content:center;padding:16px}.modal{width:100%;max-width:1400px;max-height:92vh;background:#fffdf3;border-radius:24px;overflow:hidden;display:flex;flex-direction:column}.modal>header{background:#031a38;color:#fff;padding:18px;display:flex;justify-content:space-between;gap:12px}.modal h2{margin:2px 0;font-size:24px}.modal header p:last-child{margin:0;color:#dbeafe;font-size:9px}.reportCount{background:#fff8df;color:#061a38;border:1px solid #d8b43e;border-radius:999px;padding:7px 9px;font-size:9px;font-weight:900}.reportStats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px;background:#fff8df}.tableWrap{overflow:auto;padding:14px}.tableWrap table{width:100%;min-width:1050px;border-collapse:collapse;background:#fff}.tableWrap th{background:#061a38;color:#fff;padding:11px;text-align:left;font-size:9px}.tableWrap td{padding:11px;border-bottom:1px solid #eee4c2;vertical-align:top;font-size:10px}.tableWrap td small{display:block;color:#64748b;font-size:8px;margin-top:3px}.critical{display:inline-flex;margin-left:4px;background:#991b1b;color:#fff;border-radius:999px;padding:4px 5px;font-size:7px;font-weight:900}.miniAction{background:#061a38;color:#fff;min-height:32px;padding:7px 9px}.emptyCell{text-align:center;padding:35px!important;color:#64748b;font-weight:800}
+        @media (max-width:1100px){.layout{grid-template-columns:minmax(0,1fr) 340px}.queueGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.summaryGrid{grid-template-columns:1fr 1fr}}
+        @media (max-width:800px){.layout{grid-template-columns:1fr}.summaryPanel{position:static}.queueGrid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}.filters{flex-direction:column}.orderTop{grid-template-columns:1fr}.patientStats,.bioGrid,.reportStats{grid-template-columns:1fr 1fr}}
+        @media (max-width:520px){.summaryGrid,.patientStats,.bioGrid,.reportStats{grid-template-columns:1fr}.brandName{font-size:10px}.topbar{padding:14px}.hero h2{font-size:26px}}
+      `}</style>
+    </main>
+  );
+}
