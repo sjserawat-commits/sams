@@ -7,27 +7,24 @@ const receiptNumber = () => `RCP-${Date.now().toString().slice(-10)}`;
 const CONSULTATION_FEE = 500;
 
 async function syncVisitCharges(visitId: number) {
-  const visit = await prisma.oPDVisit.findUnique({
-    where: { id: visitId },
-    include: { patient: true, departmentMaster: true, clinicalEncounter: true, investigationOrders: { orderBy: { createdAt: "asc" } }, prescriptions: { where: { status: "ACTIVE" }, orderBy: { createdAt: "asc" } }, billingRecords: { orderBy: { createdAt: "desc" } }, billingLineItems: { orderBy: { createdAt: "asc" } } },
-  });
+  const visit = await prisma.oPDVisit.findUnique({ where: { id: visitId }, include: { patient: true, departmentMaster: true, clinicalEncounter: true, investigationOrders: { orderBy: { createdAt: "asc" } }, prescriptions: { where: { status: "ACTIVE" }, orderBy: { createdAt: "asc" } }, billingRecords: { orderBy: { createdAt: "desc" } }, billingLineItems: { orderBy: { createdAt: "asc" } } } });
   if (!visit) return null;
   const latestBill = visit.billingRecords[0];
-  const billLocked = Boolean(latestBill?.paidAmount);
+  const billLocked = Boolean(latestBill?.paidAmount) || latestBill?.paymentStatus === "PAID";
   const hasConsultation = visit.billingLineItems.some((line) => line.serviceType === "CONSULTATION" && line.sourceType === "OPD_VISIT");
-  if (!hasConsultation && !billLocked) await prisma.billingLineItem.create({ data: { opdVisitId: visit.id, serviceType: "CONSULTATION", description: "OPD Consultation Fee", quantity: 1, unitPrice: CONSULTATION_FEE, amount: CONSULTATION_FEE, sourceType: "OPD_VISIT", sourceId: visit.id } });
+  if (!hasConsultation && !latestBill && !billLocked) await prisma.billingLineItem.create({ data: { opdVisitId: visit.id, serviceType: "CONSULTATION", description: "OPD Consultation Fee", quantity: 1, unitPrice: CONSULTATION_FEE, amount: CONSULTATION_FEE, sourceType: "OPD_VISIT", sourceId: visit.id } });
   for (const order of visit.investigationOrders) {
     const existing = visit.billingLineItems.find((line) => line.sourceType === "INVESTIGATION_ORDER" && line.sourceId === order.id);
-    if (!existing && !billLocked) await prisma.billingLineItem.create({ data: { opdVisitId: visit.id, serviceType: "INVESTIGATION", description: order.investigation, quantity: 1, unitPrice: round(order.netAmount), amount: round(order.netAmount), sourceType: "INVESTIGATION_ORDER", sourceId: order.id } });
+    if (!existing && !billLocked) await prisma.billingLineItem.create({ data: { billingRecordId: latestBill?.id ?? undefined, opdVisitId: visit.id, serviceType: "INVESTIGATION", description: order.investigation, quantity: 1, unitPrice: round(order.netAmount), amount: round(order.netAmount), sourceType: "INVESTIGATION_ORDER", sourceId: order.id } });
   }
   for (const prescription of visit.prescriptions) {
     const existing = visit.billingLineItems.find((line) => line.sourceType === "PRESCRIPTION" && line.sourceId === prescription.id);
-    if (!existing && !billLocked) await prisma.billingLineItem.create({ data: { opdVisitId: visit.id, serviceType: "PHARMACY", description: prescription.medicineName, quantity: prescription.quantity, unitPrice: round(prescription.unitPrice), amount: round(prescription.quantity * prescription.unitPrice), sourceType: "PRESCRIPTION", sourceId: prescription.id } });
+    if (!existing && !billLocked) await prisma.billingLineItem.create({ data: { billingRecordId: latestBill?.id ?? undefined, opdVisitId: visit.id, serviceType: "PHARMACY", description: prescription.medicineName, quantity: prescription.quantity, unitPrice: round(prescription.unitPrice), amount: round(prescription.quantity * prescription.unitPrice), sourceType: "PRESCRIPTION", sourceId: prescription.id } });
   }
   const refreshed = await prisma.oPDVisit.findUnique({ where: { id: visitId }, include: { patient: true, departmentMaster: true, clinicalEncounter: true, billingLineItems: { orderBy: { createdAt: "asc" } }, billingRecords: { orderBy: { createdAt: "desc" } } } });
   if (!refreshed) return null;
   const bill = refreshed.billingRecords[0];
-  if (bill && bill.paidAmount === 0) {
+  if (bill && bill.paidAmount === 0 && bill.paymentStatus !== "DISCARDED") {
     const subtotal = round(refreshed.billingLineItems.reduce((sum, line) => sum + line.amount, 0));
     const netAmount = round(Math.max(0, subtotal - bill.discount));
     await prisma.billingRecord.update({ where: { id: bill.id }, data: { subtotal, netAmount, balanceAmount: round(Math.max(0, netAmount - bill.paidAmount)) } });
@@ -66,20 +63,35 @@ export async function POST(request: Request) {
     if (!Number.isInteger(visitId) || visitId <= 0) return NextResponse.json({ error: "A valid OPD visit ID is required." }, { status: 400 });
     const visit = await syncVisitCharges(visitId);
     if (!visit) return NextResponse.json({ error: "OPD visit not found." }, { status: 404 });
+
     if (body?.action === "addLine") {
       const serviceType = String(body.serviceType ?? "OTHER").trim().toUpperCase(); const description = String(body.description ?? "").trim(); const quantity = Number(body.quantity); const unitPrice = Number(body.unitPrice);
       if (!description || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) return NextResponse.json({ error: "Enter service, quantity and valid rate." }, { status: 400 });
-      if (visit.billingRecords[0]?.paidAmount) return NextResponse.json({ error: "Paid bills cannot be modified." }, { status: 400 });
-      const line = await prisma.billingLineItem.create({ data: { opdVisitId: visitId, serviceType, description, quantity, unitPrice: round(unitPrice), amount: round(quantity * unitPrice) } });
+      const bill = visit.billingRecords[0];
+      if (bill?.paidAmount || bill?.paymentStatus === "PAID") return NextResponse.json({ error: "Paid bills cannot be modified." }, { status: 400 });
+      const amount = round(quantity * unitPrice);
+      const line = await prisma.billingLineItem.create({ data: { billingRecordId: bill?.id ?? undefined, opdVisitId: visitId, serviceType, description, quantity, unitPrice: round(unitPrice), amount } });
+      if (bill) await prisma.billingRecord.update({ where: { id: bill.id }, data: { subtotal: round(bill.subtotal + amount), netAmount: round(Math.max(0, bill.netAmount + amount)), balanceAmount: round(Math.max(0, bill.balanceAmount + amount)) } });
       return NextResponse.json({ line }, { status: 201 });
     }
+
+    if (body?.action === "processBill") {
+      const bill = visit.billingRecords[0];
+      if (!bill) return NextResponse.json({ error: "No draft bill exists for this Visit." }, { status: 404 });
+      if (bill.paymentStatus === "DISCARDED") return NextResponse.json({ error: "This bill has already been discarded." }, { status: 409 });
+      if (bill.paidAmount > 0) return NextResponse.json({ bill, existing: true });
+      const updated = await prisma.billingRecord.update({ where: { id: bill.id }, data: { paymentStatus: "UNPAID" } });
+      await prisma.billingLineItem.updateMany({ where: { opdVisitId: visitId, billingRecordId: null }, data: { billingRecordId: updated.id } });
+      return NextResponse.json({ bill: updated, existing: true, processed: true });
+    }
+
     const subtotal = round(visit.billingLineItems.reduce((sum, line) => sum + line.amount, 0));
     if (visit.billingRecords[0]) return NextResponse.json({ bill: visit.billingRecords[0], existing: true });
-    const bill = await prisma.billingRecord.create({ data: { billNumber: billNumber(), patientId: visit.patientId, opdVisitId: visit.id, subtotal, netAmount: subtotal, balanceAmount: subtotal } });
+    const bill = await prisma.billingRecord.create({ data: { billNumber: billNumber(), patientId: visit.patientId, opdVisitId: visit.id, subtotal, netAmount: subtotal, balanceAmount: subtotal, paymentStatus: "UNPAID" } });
     await prisma.billingLineItem.updateMany({ where: { opdVisitId: visitId, billingRecordId: null }, data: { billingRecordId: bill.id } });
     const updated = await prisma.billingRecord.findUnique({ where: { id: bill.id }, include: { lineItems: true } });
     return NextResponse.json({ bill: updated, existing: false }, { status: 201 });
-  } catch (error) { console.error("Billing write error:", error); return NextResponse.json({ error: "Unable to update billing." }, { status: 500 }); }
+  } catch (error) { console.error("Billing write error:", error); return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to update billing." }, { status: 500 }); }
 }
 
 export async function PATCH(request: Request) {
@@ -88,6 +100,17 @@ export async function PATCH(request: Request) {
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "A valid bill ID is required." }, { status: 400 });
     const bill = await prisma.billingRecord.findUnique({ where: { id } });
     if (!bill) return NextResponse.json({ error: "Bill not found." }, { status: 404 });
+    if (body?.action === "discardBill") {
+      if (bill.paidAmount > 0 || bill.paymentStatus === "PAID") return NextResponse.json({ error: "A paid bill cannot be discarded." }, { status: 400 });
+      const result = await prisma.$transaction(async (tx) => {
+        const sourceLines = await tx.billingLineItem.findMany({ where: { billingRecordId: bill.id, sourceType: "INVESTIGATION_ORDER", sourceId: { not: null } }, select: { sourceId: true } });
+        await tx.billingLineItem.deleteMany({ where: { billingRecordId: bill.id } });
+        await tx.investigationOrder.updateMany({ where: { id: { in: sourceLines.map((x) => x.sourceId!).filter((x): x is number => typeof x === "number") } }, data: { status: "CANCELLED", paymentStatus: "UNPAID" } });
+        const updated = await tx.billingRecord.update({ where: { id: bill.id }, data: { paymentStatus: "DISCARDED", balanceAmount: 0 } });
+        return updated;
+      });
+      return NextResponse.json({ bill: result, discarded: true });
+    }
     if (body?.action === "discount") {
       if (bill.paidAmount > 0) return NextResponse.json({ error: "Paid bills cannot be discounted." }, { status: 400 });
       const discount = Number(body.discount); if (!Number.isFinite(discount) || discount < 0 || discount > bill.subtotal) return NextResponse.json({ error: "Enter a valid discount." }, { status: 400 });
@@ -101,7 +124,7 @@ export async function PATCH(request: Request) {
     const updated = await prisma.billingRecord.update({ where: { id }, data: { paidAmount: newPaid, balanceAmount: balance, paymentMethod, paymentStatus: balance === 0 ? "PAID" : "PARTIAL", paidAt: new Date(), receiptNumber: bill.receiptNumber ?? receiptNumber() } });
     if (bill.opdVisitId) await prisma.investigationOrder.updateMany({ where: { opdVisitId: bill.opdVisitId }, data: { paymentStatus: balance === 0 ? "PAID" : "PARTIAL" } });
     return NextResponse.json({ bill: updated });
-  } catch (error) { console.error("Billing patch error:", error); return NextResponse.json({ error: "Unable to update billing." }, { status: 500 }); }
+  } catch (error) { console.error("Billing patch error:", error); return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to update billing." }, { status: 500 }); }
 }
 
 export async function DELETE(request: Request) {
@@ -110,7 +133,7 @@ export async function DELETE(request: Request) {
     if (!Number.isInteger(lineId) || lineId <= 0) return NextResponse.json({ error: "A valid line item ID is required." }, { status: 400 });
     const line = await prisma.billingLineItem.findUnique({ where: { id: lineId }, include: { billingRecord: true } });
     if (!line) return NextResponse.json({ error: "Charge not found." }, { status: 404 });
-    if (line.billingRecord?.paidAmount) return NextResponse.json({ error: "Paid bills cannot be modified." }, { status: 400 });
+    if (line.billingRecord?.paidAmount || line.billingRecord?.paymentStatus === "PAID") return NextResponse.json({ error: "Paid bills cannot be modified." }, { status: 400 });
     await prisma.billingLineItem.delete({ where: { id: lineId } });
     if (line.billingRecordId) {
       const remaining = await prisma.billingLineItem.findMany({ where: { billingRecordId: line.billingRecordId } });
