@@ -2,67 +2,30 @@
 import { ReactNode, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const nav = [
-  ["Billing Dashboard", "/billing", "▥"],
-  ["Patient Charges", "/billing", "♙"],
-  ["Procedure / Surgery", "/billing", "⌘"],
-  ["Invoices", "/billing", "▤"],
-  ["Payments", "/billing", "▣"],
-  ["Receipts", "/billing/receipt", "▧"],
-  ["Refunds", "/billing", "↻"],
-  ["Reports", "/reports", "▥"],
-  ["Settings", "/settings", "⚙"]
-] as const;
+const nav = [["Billing Dashboard","/billing","▥"],["Patient Charges","/billing","♙"],["Procedure / Surgery","/billing","⌘"],["Invoices","/billing","▤"],["Payments","/billing","▣"],["Receipts","/billing/receipt","▧"],["Refunds","/billing","↻"],["Reports","/reports","▥"],["Settings","/settings","⚙"]] as const;
 
 export default function BillingLayout({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  return (
-    <div className="billing-shell min-h-screen bg-[#fffaf0] text-[#172b3a]">
-      <style jsx global>{`
-        .billing-shell { --billing-navy:#0b2748; --billing-green:#0d5b4c; --billing-green-dark:#08483d; --billing-gold:#d7a93d; --billing-line:#eadfca; }
-        .billing-sidebar { position:fixed; inset:0 auto 0 0; width:230px; z-index:45; background:#fffaf0; border-right:1px solid var(--billing-line); display:flex; flex-direction:column; }
-        .billing-brand { height:88px; display:flex; align-items:center; gap:12px; padding:0 24px; border-bottom:1px solid var(--billing-line); }
-        .billing-brand-mark { width:42px; height:42px; border-radius:14px; display:grid; place-items:center; background:var(--billing-green); color:#f5d47b; font-weight:900; font-size:20px; }
-        .billing-nav { padding:22px 14px; display:flex; flex:1; flex-direction:column; gap:5px; }
-        .billing-nav a { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:13px; color:#17344b; font-size:13px; font-weight:800; transition:.18s ease; }
-        .billing-nav a:hover { background:#edf5ee; color:var(--billing-green); transform:translateX(1px); }
-        .billing-nav a.active { background:var(--billing-green); color:white; box-shadow:0 8px 20px rgba(13,91,76,.18); }
-        .billing-nav .icon { width:22px; text-align:center; font-size:17px; }
-        .billing-topbar { margin-left:230px; box-shadow:0 1px 0 var(--billing-line); background:#fffaf0; }
-        .billing-topbar button { transition:transform .18s ease,box-shadow .18s ease,background .18s ease; }
-        .billing-topbar button:hover { transform:translateY(-1px); box-shadow:0 8px 18px rgba(13,91,76,.14); }
-        .billing-shell main { margin-left:230px; }
-        .billing-shell main.min-h-screen { background:#fffaf0 !important; }
-        .billing-shell main > div > header { background:linear-gradient(135deg,#08483d 0%,#0d5b4c 55%,#176f5e 100%) !important; color:white !important; border:1px solid rgba(215,169,61,.35) !important; box-shadow:0 18px 45px rgba(13,91,76,.18) !important; }
-        .billing-shell main > div > header p { color:#f5d47b !important; }
-        .billing-shell main > div > header h1 { color:#fff !important; }
-        .billing-shell main > div > header p:last-child { color:#e5f4ee !important; }
-        .billing-shell main > div > section { box-shadow:0 7px 22px rgba(22,48,66,.055); }
-        .billing-shell main > div > section, .billing-shell main > div > nav { border-color:var(--billing-line); }
-        .billing-dashboard-strip { margin-left:230px; }
-        @media (max-width:900px) { .billing-sidebar { width:82px; } .billing-brand { padding:0; justify-content:center; } .billing-brand-copy,.billing-nav .label { display:none; } .billing-nav a { justify-content:center; padding:12px 8px; } .billing-topbar,.billing-dashboard-strip { margin-left:82px; } .billing-shell main { margin-left:82px; } }
-        @media (max-width:640px) { .billing-sidebar { display:none; } .billing-topbar,.billing-dashboard-strip,.billing-shell main { margin-left:0; } }
-        @media print { .billing-sidebar,.billing-topbar,.billing-dashboard-strip { display:none !important; } .billing-shell,.billing-shell main { margin-left:0 !important; background:white !important; } }
-      `}</style>
-
-      <aside className="billing-sidebar no-print" aria-label="Billing navigation">
-        <div className="billing-brand"><div className="billing-brand-mark">S</div><div className="billing-brand-copy"><p className="text-lg font-black tracking-tight text-[#0b2748]">SAMS</p><p className="text-[9px] font-black uppercase tracking-[.14em] text-[#0d5b4c]">Hospital Finance</p></div></div>
-        <nav className="billing-nav">
-          {nav.map(([label, href, icon]) => <a key={label} href={href} className={pathname === href ? "active" : ""}><span className="icon">{icon}</span><span className="label">{label}</span></a>)}
-        </nav>
-        <div className="px-5 pb-5 text-[9px] font-black uppercase tracking-[.18em] text-slate-400">SAMS · Hospital Finance</div>
-      </aside>
-
-      <div className="billing-topbar no-print sticky top-0 z-40 border-b border-[#eadfca] px-4 py-3 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-[1450px] items-center justify-between gap-4">
-          <div className="flex items-center gap-3"><button type="button" onClick={() => router.push("/billing")} className="rounded-xl border border-[#eadfca] bg-white px-3 py-2 text-sm font-black text-[#0b2748]">☰</button><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.25em] text-[#0d5b4c]">SAMS · Hospital Finance</p><p className="truncate text-sm font-black text-[#0b2748] sm:text-base">Billing Dashboard</p></div></div>
-          <div className="flex shrink-0 items-center gap-2"><button type="button" onClick={() => router.push("/investigations/orders")} className="flex items-center gap-2 rounded-xl border border-[#cfe0d7] bg-white px-4 py-2.5 text-xs font-black text-[#0d5b4c] shadow-sm">＋ Investigations</button><button type="button" onClick={() => router.back()} className="flex items-center gap-2 rounded-xl border border-[#eadfca] bg-white px-4 py-2.5 text-xs font-black text-[#0b2748] shadow-sm">← Back</button></div>
-        </div>
-      </div>
-
-      <div className="billing-dashboard-strip no-print mx-auto max-w-[1450px] px-4 pt-4 sm:px-6 lg:px-8"><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{["Patient Charges","Procedure / Surgery","Invoices","Payments"].map((item,index)=><div key={item} className="rounded-2xl border border-[#eadfca] bg-white/90 px-3 py-2.5 shadow-sm"><div className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#edf5ee] text-xs font-black text-[#0d5b4c]">0{index+1}</span><span className="text-[10px] font-black uppercase tracking-wide text-[#17344b] sm:text-xs">{item}</span></div></div>)}</div></div>
-      <Suspense fallback={<div className="min-h-screen bg-[#fffaf0]" />}>{children}</Suspense>
-    </div>
-  );
+  const router = useRouter(); const pathname = usePathname();
+  return <div className="billing-shell min-h-screen bg-[#fffaf0] text-[#172b3a]">
+    <style jsx global>{`
+      .billing-shell{--billing-navy:#0b2748;--billing-green:#0d5b4c;--billing-green-dark:#08483d;--billing-gold:#d7a93d;--billing-line:#eadfca}
+      .billing-sidebar{position:fixed;inset:0 auto 0 0;width:230px;z-index:45;background:#fffaf0;border-right:1px solid var(--billing-line);display:flex;flex-direction:column}
+      .billing-brand{height:88px;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid var(--billing-line)}
+      .billing-brand-mark{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--billing-green);color:#f5d47b;font-weight:900;font-size:20px}
+      .billing-nav{padding:22px 14px;display:flex;flex:1;flex-direction:column;gap:5px}.billing-nav a{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;color:#17344b;font-size:13px;font-weight:800;transition:.18s ease}.billing-nav a:hover{background:#edf5ee;color:var(--billing-green);transform:translateX(1px)}.billing-nav a.active{background:var(--billing-green);color:white;box-shadow:0 8px 20px rgba(13,91,76,.18)}.billing-nav .icon{width:22px;text-align:center;font-size:17px}
+      .billing-topbar{margin-left:230px;box-shadow:0 1px 0 var(--billing-line);background:#fffaf0}.billing-topbar button{transition:transform .18s ease,box-shadow .18s ease,background .18s ease}.billing-topbar button:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(13,91,76,.14)}
+      .billing-shell main{margin-left:230px}.billing-shell main.min-h-screen{background:#fffaf0!important}.billing-shell main>div>header{background:linear-gradient(135deg,#08483d 0%,#0d5b4c 55%,#176f5e 100%)!important;color:white!important;border:1px solid rgba(215,169,61,.35)!important;box-shadow:0 18px 45px rgba(13,91,76,.18)!important}.billing-shell main>div>header p{color:#f5d47b!important}.billing-shell main>div>header h1{color:#fff!important}.billing-shell main>div>header p:last-child{color:#e5f4ee!important}
+      .billing-shell main>div>section{box-shadow:0 7px 22px rgba(22,48,66,.055)}.billing-shell main>div>section,.billing-shell main>div>nav{border-color:var(--billing-line)}
+      .billing-shell main button[class*="bg-[#0b63ce]"]{background:var(--billing-green)!important}.billing-shell main button[class*="bg-[#0b63ce]"]:hover{background:var(--billing-green-dark)!important}
+      .billing-shell main button[class*="bg-blue"]{background:var(--billing-green)!important;color:white!important}.billing-shell main button[class*="bg-blue"]:hover{background:var(--billing-green-dark)!important}
+      .billing-dashboard-strip{margin-left:230px}
+      @media(max-width:900px){.billing-sidebar{width:82px}.billing-brand{padding:0;justify-content:center}.billing-brand-copy,.billing-nav .label{display:none}.billing-nav a{justify-content:center;padding:12px 8px}.billing-topbar,.billing-dashboard-strip{margin-left:82px}.billing-shell main{margin-left:82px}}
+      @media(max-width:640px){.billing-sidebar{display:none}.billing-topbar,.billing-dashboard-strip,.billing-shell main{margin-left:0}}
+      @media print{.billing-sidebar,.billing-topbar,.billing-dashboard-strip{display:none!important}.billing-shell,.billing-shell main{margin-left:0!important;background:white!important}}
+    `}</style>
+    <aside className="billing-sidebar no-print" aria-label="Billing navigation"><div className="billing-brand"><div className="billing-brand-mark">S</div><div className="billing-brand-copy"><p className="text-lg font-black tracking-tight text-[#0b2748]">SAMS</p><p className="text-[9px] font-black uppercase tracking-[.14em] text-[#0d5b4c]">Hospital Finance</p></div></div><nav className="billing-nav">{nav.map(([label,href,icon])=><a key={label} href={href} className={pathname===href?"active":""}><span className="icon">{icon}</span><span className="label">{label}</span></a>)}</nav><div className="px-5 pb-5 text-[9px] font-black uppercase tracking-[.18em] text-slate-400">SAMS · Hospital Finance</div></aside>
+    <div className="billing-topbar no-print sticky top-0 z-40 border-b border-[#eadfca] px-4 py-3 sm:px-6 lg:px-8"><div className="mx-auto flex max-w-[1450px] items-center justify-between gap-4"><div className="flex items-center gap-3"><button type="button" onClick={()=>router.push("/billing")} className="rounded-xl border border-[#eadfca] bg-white px-3 py-2 text-sm font-black text-[#0b2748]">☰</button><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.25em] text-[#0d5b4c]">SAMS · Hospital Finance</p><p className="truncate text-sm font-black text-[#0b2748] sm:text-base">Billing Dashboard</p></div></div><div className="flex shrink-0 items-center gap-2"><button type="button" onClick={()=>router.push("/investigations/orders")} className="flex items-center gap-2 rounded-xl border border-[#cfe0d7] bg-white px-4 py-2.5 text-xs font-black text-[#0d5b4c] shadow-sm">＋ Investigations</button><button type="button" onClick={()=>router.back()} className="flex items-center gap-2 rounded-xl border border-[#eadfca] bg-white px-4 py-2.5 text-xs font-black text-[#0b2748] shadow-sm">← Back</button></div></div></div>
+    <div className="billing-dashboard-strip no-print mx-auto max-w-[1450px] px-4 pt-4 sm:px-6 lg:px-8"><div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{["Patient Charges","Procedure / Surgery","Invoices","Payments"].map((item,index)=><div key={item} className="rounded-2xl border border-[#eadfca] bg-white/90 px-3 py-2.5 shadow-sm"><div className="flex items-center gap-2"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#edf5ee] text-xs font-black text-[#0d5b4c]">0{index+1}</span><span className="text-[10px] font-black uppercase tracking-wide text-[#17344b] sm:text-xs">{item}</span></div></div>)}</div></div>
+    <Suspense fallback={<div className="min-h-screen bg-[#fffaf0]" />}>{children}</Suspense>
+  </div>;
 }
