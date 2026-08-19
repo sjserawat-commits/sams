@@ -25,9 +25,14 @@ export default function BillingLayout({ children }: { children: ReactNode }) {
             <p className="text-[9px] font-black uppercase tracking-[.25em] text-[#0b63ce]">SAMS · Hospital Finance</p>
             <p className="truncate text-sm font-black text-[#082b61] sm:text-base">Billing Dashboard</p>
           </div>
-          <button type="button" onClick={() => router.back()} className="flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-[#082b61] shadow-sm" aria-label="Go back">
-            <span className="text-base leading-none">←</span><span>Back</span>
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={() => router.push("/investigations/orders")} className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-[#0b63ce] shadow-sm" aria-label="Open investigations">
+              <span className="text-base leading-none">＋</span><span>Investigations</span>
+            </button>
+            <button type="button" onClick={() => router.back()} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-[#082b61] shadow-sm" aria-label="Go back">
+              <span className="text-base leading-none">←</span><span>Back</span>
+            </button>
+          </div>
         </div>
       </div>
 
