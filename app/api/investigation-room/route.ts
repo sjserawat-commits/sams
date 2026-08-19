@@ -5,6 +5,70 @@ const ALLOWED_STATUS = ["ORDERED","APPROVED_FOR_SAMPLING","ACCEPTED","SAMPLE_COL
 type InvestigationStatus = (typeof ALLOWED_STATUS)[number];
 const LAB_CATEGORIES = ["Hematology","Coagulation","Biochemistry","Immunoassay","Immunology","Cardiology","Endocrinology","Vitamins & Nutrition","Tumor Markers","Serology","Autoimmunity","Clinical Pathology","Cytology","Histopathology","Hematopathology","Microbiology","Molecular Diagnostics"];
 function accession(id:number){return `SAMSLAB-${new Date().getFullYear()}-${String(id).padStart(7,"0")}`;}
+function normalise(value:string|null|undefined){return String(value||"").normalize("NFKC").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();}
+
+/**
+ * Runtime safety net for existing installations whose database was created
+ * before the Investigation Master reference-range configuration was added.
+ * Master data remains the source of truth; this only fills an empty value.
+ */
+function commonReference(name:string, code?:string|null){
+ const n=normalise(name), c=normalise(code);
+ const exact:Record<string,string>={
+  "bilirubin total":"0.2–1.2 mg/dL",
+  "ck total":"Male ~39–308 U/L; Female ~26–192 U/L",
+  "total bilirubin":"0.2–1.2 mg/dL",
+  "creatine kinase total":"Male ~39–308 U/L; Female ~26–192 U/L",
+  "24 hour urine copper":"Approximately 15–60 µg/day (adult; laboratory dependent)",
+  "24 hour urine citrate":">320 mg/day (adult; collection/laboratory dependent)",
+  "24 hour urine oxalate":"Adult approximately 4–31 mg/day",
+  "24 hour urine calcium":"Male <300 mg/day; Female <250 mg/day",
+  "24 hour urine uric acid":"Male <800 mg/day; Female <750 mg/day",
+  "24 hour urine protein":"<150 mg/day",
+  "24 hour urine creatinine":"Male ~14–26 mg/kg/day; Female ~11–20 mg/kg/day",
+  "24 hour urine sodium":"Approximately 40–220 mmol/day (diet dependent)",
+  "24 hour urine potassium":"Approximately 25–125 mmol/day (diet dependent)",
+  "hemoglobin":"Male 13–17 g/dL; Female 12–15 g/dL",
+  "total leukocyte count":"4,000–11,000/µL",
+  "platelet count":"150,000–450,000/µL",
+  "blood sugar fasting":"70–99 mg/dL",
+  "serum creatinine":"Male 0.74–1.35 mg/dL; Female 0.59–1.04 mg/dL",
+  "serum calcium":"8.5–10.5 mg/dL",
+  "serum sodium":"135–145 mmol/L",
+  "serum potassium":"3.5–5.1 mmol/L",
+  "thyroid stimulating hormone":"0.4–4.0 mIU/L",
+  "free t4":"0.8–1.8 ng/dL",
+  "free t3":"2.3–4.2 pg/mL",
+  "vitamin b12":"200–900 pg/mL",
+  "vitamin d3 25 oh vitamin d":"30–100 ng/mL",
+  "c reactive protein":"<5 mg/L",
+  "prostate specific antigen":"<4.0 ng/mL (age dependent)",
+ };
+ if(exact[n])return exact[n];
+ if(c==="bilt")return "0.2–1.2 mg/dL";
+ if(c==="ck"||c==="cpk")return "Male ~39–308 U/L; Female ~26–192 U/L";
+ if(/24 hour urine.*copper|urine.*copper.*24 hour/.test(n))return "Approximately 15–60 µg/day (adult; laboratory dependent)";
+ if(/24 hour urine.*citrate|urine.*citrate.*24 hour/.test(n))return ">320 mg/day (adult; collection/laboratory dependent)";
+ if(/24 hour urine.*protein|urine.*protein.*24 hour/.test(n))return "<150 mg/day";
+ if(/24 hour urine.*calcium|urine.*calcium.*24 hour/.test(n))return "Male <300 mg/day; Female <250 mg/day";
+ if(/24 hour urine.*oxalate|urine.*oxalate.*24 hour/.test(n))return "Adult approximately 4–31 mg/day";
+ if(/24 hour urine.*uric acid|urine.*uric acid.*24 hour/.test(n))return "Male <800 mg/day; Female <750 mg/day";
+ return null;
+}
+
+async function resolveMaster(order:any){
+ const current=order.master;
+ if(current?.referenceRange)return current;
+ const candidates=await prisma.investigationMaster.findMany({where:{active:true,name:order.investigation},select:{id:true,code:true,category:true,specimen:true,unit:true,referenceRange:true,method:true,criticalValue:true},orderBy:{id:"asc"}});
+ const configured=candidates.find((x)=>x.referenceRange?.trim());
+ if(configured)return configured;
+ const reference=commonReference(order.investigation,current?.code);
+ if(reference){
+  const target=current?.code?candidates.find(x=>x.code===current.code):candidates[0];
+  if(target){await prisma.investigationMaster.update({where:{id:target.id},data:{referenceRange:reference}});return {...target,referenceRange:reference};}
+ }
+ return current;
+}
 
 export async function GET(request:Request){
  try{
@@ -12,19 +76,19 @@ export async function GET(request:Request){
   const orders=await prisma.investigationOrder.findMany({
    where:{
     master:{category:{in:LAB_CATEGORIES}},
-    // Billing clearance gate: only fully paid investigation orders enter the Lab Room queue.
     paymentStatus:"PAID",
     ...(visitId>0?{opdVisitId:visitId}:{}),
     ...(status&&ALLOWED_STATUS.includes(status as InvestigationStatus)?{status}:{}),
     ...(q?{OR:[{investigation:{contains:q}},{opdVisit:{patient:{patientId:{contains:q}}}},{opdVisit:{patient:{firstName:{contains:q}}}},{opdVisit:{patient:{lastName:{contains:q}}}}]}:{})
    },
    include:{
-    master:{select:{code:true,category:true,specimen:true,unit:true,referenceRange:true,method:true,criticalValue:true}},
+    master:{select:{id:true,code:true,category:true,specimen:true,unit:true,referenceRange:true,method:true,criticalValue:true}},
     opdVisit:{select:{id:true,tokenNumber:true,visitType:true,patient:{select:{patientId:true,firstName:true,lastName:true,gender:true,dateOfBirth:true}},billingRecords:{select:{id:true,paymentStatus:true,paidAmount:true,balanceAmount:true,netAmount:true},orderBy:{createdAt:"desc"},take:1}}}
    },orderBy:{createdAt:"desc"}
   });
-  return NextResponse.json(orders.map(order=>{const bill=order.opdVisit.billingRecords[0]??null;return {...order,billing:bill,workflow:{paymentStatus:order.paymentStatus,outstandingAmount:Math.max(0,order.netAmount-(order.paymentStatus==="PAID"?order.netAmount:0)),samplingEligible:order.paymentStatus==="PAID",paymentRequiredBeforeSampling:order.paymentStatus!=="PAID"}};}));
- }catch{return NextResponse.json({error:"Unable to load lab room."},{status:500});}
+  const hydrated=await Promise.all(orders.map(async order=>{const master=await resolveMaster(order);const bill=order.opdVisit.billingRecords[0]??null;return {...order,master,billing:bill,workflow:{paymentStatus:order.paymentStatus,outstandingAmount:Math.max(0,order.netAmount-(order.paymentStatus==="PAID"?order.netAmount:0)),samplingEligible:order.paymentStatus==="PAID",paymentRequiredBeforeSampling:order.paymentStatus!=="PAID"}};}));
+  return NextResponse.json(hydrated);
+ }catch(error){console.error("Lab room GET failed:",error);return NextResponse.json({error:"Unable to load lab room."},{status:500});}
 }
 
 export async function PATCH(request:Request){
@@ -36,7 +100,6 @@ export async function PATCH(request:Request){
   if(!order)return NextResponse.json({error:"Laboratory investigation order not found."},{status:404});
   if(!LAB_CATEGORIES.includes(order.master?.category||""))return NextResponse.json({error:"This investigation is not assigned to the Lab Room."},{status:400});
   const paid=order.paymentStatus==="PAID";
-  // No laboratory workflow action can bypass Billing clearance.
   if(!paid&&!(["CANCELLED"] as string[]).includes(requestedStatus))return NextResponse.json({error:"Payment is pending. This investigation will appear in the Lab Room only after Billing clears the payment."},{status:403});
   if(requestedStatus==="APPROVED_FOR_SAMPLING")return NextResponse.json({error:"Billing clearance is automatic after full payment. Laboratory users cannot approve sampling."},{status:403});
   const now=new Date(),data:any={status:requestedStatus};
