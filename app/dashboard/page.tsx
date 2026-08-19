@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Patient={id:number;patientId?:string;firstName?:string;lastName?:string|null};
 type Visit={id:number;patientId:number;encounterDate?:string;chiefComplaint?:string|null;diagnosis?:string|null};
-const nav=[["Home","/home-v2","⌂"],["Reception / Front Desk","/reception","🏥"],["Patients","/patients","♙"],["Billing","/billing","₹"],["Reports","/reports","▤"],["Patient Portal","/portal","◉"],["Admin","/admin","⚙"],["Settings","/settings","⚙"]];
+const nav=[["Home","/home-v2","⌂"],["Reception / Front Desk","/reception","🏥"],["Patients","/patients","♙"],["Billing","/billing","₹"],["Patient Portal","/portal","◉"],["Admin","/admin","⚙"],["Settings","/settings","⚙"]];
 
 export default function DashboardPage(){
  const[patients,setPatients]=useState<Patient[]>([]),[visits,setVisits]=useState<Visit[]>([]),[loading,setLoading]=useState(true),[refreshing,setRefreshing]=useState(false),[now,setNow]=useState<Date|null>(null);
