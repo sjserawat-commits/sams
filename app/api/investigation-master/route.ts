@@ -167,6 +167,12 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: `Another investigation already uses this name: ${duplicate.name}.` }, { status: 409 });
     }
 
+    const clean = (value: unknown, current: string | null) => {
+      if (value === undefined) return current;
+      const text = String(value).trim();
+      return text || null;
+    };
+
     const updated = await prisma.investigationMaster.update({
       where: { id },
       data: {
@@ -174,6 +180,18 @@ export async function PATCH(request: Request) {
         rate,
         ...(body.category != null ? { category: String(body.category).trim() } : {}),
         ...(body.active != null ? { active: Boolean(body.active) } : {}),
+        ...(body.shortName !== undefined ? { shortName: clean(body.shortName, existing.shortName) } : {}),
+        ...(body.department !== undefined ? { department: clean(body.department, existing.department) } : {}),
+        ...(body.specimen !== undefined ? { specimen: clean(body.specimen, existing.specimen) } : {}),
+        ...(body.method !== undefined ? { method: clean(body.method, existing.method) } : {}),
+        ...(body.unit !== undefined ? { unit: clean(body.unit, existing.unit) } : {}),
+        ...(body.referenceRange !== undefined ? { referenceRange: clean(body.referenceRange, existing.referenceRange) } : {}),
+        ...(body.maleReferenceRange !== undefined ? { maleReferenceRange: clean(body.maleReferenceRange, existing.maleReferenceRange) } : {}),
+        ...(body.femaleReferenceRange !== undefined ? { femaleReferenceRange: clean(body.femaleReferenceRange, existing.femaleReferenceRange) } : {}),
+        ...(body.ageSpecificRange !== undefined ? { ageSpecificRange: clean(body.ageSpecificRange, existing.ageSpecificRange) } : {}),
+        ...(body.criticalValue !== undefined ? { criticalValue: clean(body.criticalValue, existing.criticalValue) } : {}),
+        ...(body.smsLabDepartment !== undefined ? { smsLabDepartment: clean(body.smsLabDepartment, existing.smsLabDepartment) } : {}),
+        ...(body.aliases !== undefined ? { aliases: clean(body.aliases, existing.aliases) } : {}),
         pricingLastVerifiedAt: new Date(),
       },
     });
