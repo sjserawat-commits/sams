@@ -7,7 +7,6 @@ export async function POST(request: Request) {
     const opdVisitId = Number(body?.opdVisitId);
     const investigationName = String(body?.investigationName ?? "").trim();
     const investigationId = Number(body?.investigationId || 0);
-    const reason = String(body?.reason ?? "Patient declined").trim() || "Patient declined";
 
     if (!Number.isInteger(opdVisitId) || opdVisitId <= 0 || !investigationName) {
       return NextResponse.json({ error: "Visit and investigation are required." }, { status: 400 });
@@ -29,11 +28,7 @@ export async function POST(request: Request) {
     }
 
     const existing = await prisma.investigationOrder.findFirst({
-      where: {
-        opdVisitId,
-        investigation: { equals: investigationName },
-        status: { not: "CANCELLED" },
-      },
+      where: { opdVisitId, investigation: { equals: investigationName }, status: { not: "CANCELLED" } },
       orderBy: { createdAt: "desc" },
     });
 
@@ -43,18 +38,14 @@ export async function POST(request: Request) {
       }
       const updated = await prisma.investigationOrder.update({
         where: { id: existing.id },
-        data: { status: "REFUSED", paymentStatus: "REFUSED", paymentMethod: reason },
+        data: { status: "REFUSED", paymentStatus: "REFUSED", paymentMethod: null },
       });
       return NextResponse.json(updated);
     }
 
     let master = null;
-    if (investigationId > 0) {
-      master = await prisma.investigationMaster.findUnique({ where: { id: investigationId } });
-    }
-    if (!master) {
-      master = await prisma.investigationMaster.findFirst({ where: { name: investigationName, active: true } });
-    }
+    if (investigationId > 0) master = await prisma.investigationMaster.findUnique({ where: { id: investigationId } });
+    if (!master) master = await prisma.investigationMaster.findFirst({ where: { name: investigationName, active: true } });
 
     const price = Number(master?.rate || 0);
     const created = await prisma.investigationOrder.create({
@@ -69,7 +60,6 @@ export async function POST(request: Request) {
         specimen: master?.specimen ?? null,
       },
     });
-
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     console.error("Investigation refusal failed:", error);
