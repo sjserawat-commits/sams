@@ -49,17 +49,16 @@ export async function POST(request: Request) {
     const sourceType = String(body?.sourceType || "REGISTERED").trim().toUpperCase();
     const requested: any[] = Array.isArray(body?.investigations) ? body.investigations : [];
     if (!requested.length) return NextResponse.json({ error: "Select at least one investigation." }, { status: 400 });
-
     const visit = await getOrCreateVisit(body);
     const ids: number[] = Array.from(new Set<number>(requested.map((x: any) => Number(x?.id)).filter((x: number) => Number.isInteger(x) && x > 0)));
     if (!ids.length) return NextResponse.json({ error: "Select valid investigations." }, { status: 400 });
-
     const masters = await prisma.investigationMaster.findMany({ where: { id: { in: ids }, active: true } });
     if (masters.length !== ids.length) return NextResponse.json({ error: "One or more investigations are invalid or inactive." }, { status: 400 });
 
     const result = await prisma.$transaction(async (tx) => {
       const existingBill = await tx.billingRecord.findFirst({ where: { opdVisitId: visit.id }, orderBy: { createdAt: "desc" } });
       if (existingBill && existingBill.paidAmount > 0) throw new Error("This visit already has a paid bill and cannot be changed.");
+      if (existingBill && !["DRAFT", "UNPAID"].includes(existingBill.paymentStatus)) throw new Error("This visit already has a processed bill and cannot be changed from Investigation Orders.");
 
       const existingOrders = await tx.investigationOrder.findMany({ where: { opdVisitId: visit.id, investigationId: { in: ids }, status: { not: "CANCELLED" } } });
       const existingIds = new Set<number>(existingOrders.map(x => x.investigationId).filter((x): x is number => typeof x === "number"));
@@ -68,18 +67,7 @@ export async function POST(request: Request) {
 
       for (const master of newMasters) {
         const rate = effectiveRate(master);
-        const order = await tx.investigationOrder.create({
-          data: {
-            opdVisitId: visit.id,
-            investigationId: master.id,
-            investigation: master.name,
-            price: rate,
-            netAmount: rate,
-            paymentStatus: "UNPAID",
-            status: "ORDERED",
-            specimen: master.specimen || null,
-          },
-        });
+        const order = await tx.investigationOrder.create({ data: { opdVisitId: visit.id, investigationId: master.id, investigation: master.name, price: rate, netAmount: rate, paymentStatus: "UNPAID", status: "ORDERED", specimen: master.specimen || null } });
         orders.push({ id: order.id, netAmount: order.netAmount, investigation: order.investigation, specimen: order.specimen });
       }
 
@@ -87,62 +75,17 @@ export async function POST(request: Request) {
       let bill = existingBill;
       if (addedTotal > 0) {
         bill = existingBill
-          ? await tx.billingRecord.update({
-              where: { id: existingBill.id },
-              data: {
-                subtotal: round(existingBill.subtotal + addedTotal),
-                netAmount: round(existingBill.netAmount + addedTotal),
-                balanceAmount: round(existingBill.balanceAmount + addedTotal),
-                paymentStatus: "UNPAID",
-              },
-            })
-          : await tx.billingRecord.create({
-              data: {
-                billNumber: billNumber(),
-                patientId: visit.patientId,
-                opdVisitId: visit.id,
-                subtotal: addedTotal,
-                netAmount: addedTotal,
-                balanceAmount: addedTotal,
-                paymentStatus: "UNPAID",
-              },
-            });
-
-        for (const order of orders) {
-          await tx.billingLineItem.create({
-            data: {
-              billingRecordId: bill.id,
-              opdVisitId: visit.id,
-              serviceType: "INVESTIGATION",
-              description: order.investigation,
-              quantity: 1,
-              unitPrice: round(order.netAmount),
-              amount: round(order.netAmount),
-              sourceType: "INVESTIGATION_ORDER",
-              sourceId: order.id,
-            },
-          });
-        }
+          ? await tx.billingRecord.update({ where: { id: existingBill.id }, data: { subtotal: round(existingBill.subtotal + addedTotal), netAmount: round(existingBill.netAmount + addedTotal), balanceAmount: round(existingBill.balanceAmount + addedTotal), paymentStatus: "DRAFT" } })
+          : await tx.billingRecord.create({ data: { billNumber: billNumber(), patientId: visit.patientId, opdVisitId: visit.id, subtotal: addedTotal, netAmount: addedTotal, balanceAmount: addedTotal, paymentStatus: "DRAFT" } });
+        for (const order of orders) await tx.billingLineItem.create({ data: { billingRecordId: bill.id, opdVisitId: visit.id, serviceType: "INVESTIGATION", description: order.investigation, quantity: 1, unitPrice: round(order.netAmount), amount: round(order.netAmount), sourceType: "INVESTIGATION_ORDER", sourceId: order.id } });
       }
-
       return { orders, existingOrders, bill, addedTotal, duplicateCount: masters.length - newMasters.length };
     });
 
-    return NextResponse.json({
-      sourceType,
-      visit: { id: visit.id, patientId: visit.patient.patientId, name: `${visit.patient.firstName} ${visit.patient.lastName}`.trim(), visitType: visit.visitType },
-      orders: result.orders,
-      existingOrders: result.existingOrders,
-      bill: result.bill,
-      duplicateCount: result.duplicateCount,
-      message: result.addedTotal > 0
-        ? `Investigation order placed successfully. ${result.orders.length} investigation(s) sent to Lab & Billing.`
-        : "These investigations are already ordered for this Visit; no duplicate order was created.",
-    }, { status: 201 });
+    return NextResponse.json({ sourceType, visit: { id: visit.id, patientId: visit.patient.patientId, name: `${visit.patient.firstName} ${visit.patient.lastName}`.trim(), visitType: visit.visitType }, orders: result.orders, existingOrders: result.existingOrders, bill: result.bill, duplicateCount: result.duplicateCount, message: result.addedTotal > 0 ? `Investigation order placed successfully. ${result.orders.length} investigation(s) added to the draft bill.` : "These investigations are already ordered for this Visit; no duplicate order was created." }, { status: 201 });
   } catch (error) {
     console.error("Investigation order POST failed:", error);
     const message = error instanceof Error ? error.message : "Unable to place investigation order.";
-    const status = message.includes("paid bill") ? 409 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: message.includes("paid bill") || message.includes("processed bill") ? 409 : 500 });
   }
 }
