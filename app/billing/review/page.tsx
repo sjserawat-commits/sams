@@ -4,7 +4,7 @@ import { useEffect,useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Line={id:number;serviceType:string;description:string;quantity:number;unitPrice:number;amount:number;sourceType:string|null};
-type Bill={id:number;billNumber:string;receiptNumber:string|null;discount:number;netAmount:number;paymentStatus:string;paymentMethod:string|null;paidAmount:number;balanceAmount:number};
+type Bill={id:number;billNumber:string;receiptNumber:string|null;subtotal:number;discount:number;netAmount:number;paymentStatus:string;paymentMethod:string|null;paidAmount:number;balanceAmount:number};
 type Data={visit:{id:number;tokenNumber:number;visitType:string;status:string;department:string|null};patient:{patientId:string;name:string;phone:string|null};lineItems:Line[];totals:{subtotal:number};bill:Bill|null;consultationFee:number};
 const money=(n:number)=>`₹${Number(n||0).toFixed(2)}`;
 const label=(x:string)=>({CONSULTATION:"Consultation",INVESTIGATION:"Investigation",PROCEDURE:"Procedure / Surgery",ELECTRODIAGNOSIS:"Electrodiagnosis",PHYSIOTHERAPY:"Physiotherapy / Rehabilitation",PHARMACY:"Pharmacy / Medicine",OTHER:"Other Service"}[x]||x);
