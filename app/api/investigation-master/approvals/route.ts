@@ -6,7 +6,9 @@ export async function GET() {
     const requests = await prisma.investigationMasterChangeRequest.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "desc" } });
     const enriched = await Promise.all(requests.map(async (item) => {
       const master = item.investigationId ? await prisma.investigationMaster.findUnique({ where: { id: item.investigationId }, select: { id: true, name: true, code: true } }) : null;
-      return { ...item, proposedData: JSON.parse(item.proposedData), current: master };
+      let proposedData: Record<string, unknown> = {};
+      try { proposedData = JSON.parse(item.proposedData); } catch { proposedData = {}; }
+      return { ...item, proposedData, current: master };
     }));
     return NextResponse.json(enriched);
   } catch (error) {
@@ -26,6 +28,20 @@ export async function PATCH(request: Request) {
 
     const change = await prisma.investigationMasterChangeRequest.findUnique({ where: { id } });
     if (!change || change.status !== "PENDING") return NextResponse.json({ error: "Approval request is not pending." }, { status: 404 });
+
+    if (change.action === "ACCESS_REQUEST") {
+      await prisma.investigationMasterChangeRequest.update({
+        where: { id },
+        data: {
+          status: decision === "APPROVE" ? "APPROVED" : "REJECTED",
+          reviewedBy: reviewer,
+          reviewedAt: new Date(),
+          reviewNote: String(body.reviewNote || (decision === "APPROVE" ? "Investigation Master settings access approved by administrator." : "Investigation Master settings access rejected by administrator.")),
+        },
+      });
+      return NextResponse.json({ status: decision === "APPROVE" ? "APPROVED" : "REJECTED", scope: "INVESTIGATION_MASTER_ONLY" });
+    }
+
     const data = JSON.parse(change.proposedData);
 
     if (decision === "REJECT") {
