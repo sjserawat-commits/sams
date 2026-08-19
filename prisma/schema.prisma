@@ -74,8 +74,8 @@ model Department {
   active    Boolean  @default(true)
   doctors   Doctor[]
   opdVisits OPDVisit[] @relation("DepartmentVisits")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Doctor {
@@ -140,6 +140,20 @@ model InvestigationMaster {
   orders                 InvestigationOrder[]
 }
 
+model InvestigationMasterChangeRequest {
+  id              Int      @id @default(autoincrement())
+  investigationId Int?
+  action          String   @default("UPDATE")
+  proposedData    String
+  requestedBy     String   @default("SYSTEM_USER")
+  status          String   @default("PENDING")
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewNote      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model InvestigationOrder {
   id                    Int       @id @default(autoincrement())
   opdVisitId            Int
@@ -180,7 +194,7 @@ model Prescription {
   id            Int      @id @default(autoincrement())
   opdVisitId    Int
   medicineName  String
-  dose          String?
+  dose           String?
   frequency     String?
   duration      String?
   instructions  String?
@@ -200,12 +214,12 @@ model BillingRecord {
   patientId     Int
   opdVisitId    Int?
   subtotal      Float             @default(0)
-  discount      Float             @default(0)
+  discount      Float              @default(0)
   netAmount     Float             @default(0)
   paymentStatus String             @default("UNPAID")
   paymentMethod String?
-  paidAmount    Float             @default(0)
-  balanceAmount Float             @default(0)
+  paidAmount    Float              @default(0)
+  balanceAmount Float              @default(0)
   paidAt        DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
