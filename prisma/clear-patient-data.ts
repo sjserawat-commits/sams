@@ -1,12 +1,10 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma";
 
 async function main() {
   console.log("Clearing all patient-related transactional data...");
 
-  // Delete child records first because several relations are not configured
-  // with cascading deletes in the current Prisma schema.
+  // Use SAMS's configured Prisma adapter so this script works with Prisma 7
+  // and targets the same SQLite database used by the application.
   const billingLineItems = await prisma.billingLineItem.deleteMany();
   const investigationOrders = await prisma.investigationOrder.deleteMany();
   const prescriptions = await prisma.prescription.deleteMany();
@@ -34,5 +32,5 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    void prisma.$disconnect();
   });
