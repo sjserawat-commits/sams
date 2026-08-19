@@ -43,8 +43,8 @@ jobs:
               raise SystemExit('Lab Summary marker not found; no change made.')
 
           before, after = text.split(marker, 1)
-          # Keep exactly one closing div for the new two-column grid.
-          before = re.sub(r'(?:</div>\\n|</div>\n)\s*$', '', before)
+          # Remove any previous malformed/literal newline and extra grid closers.
+          before = re.sub(r'(?:</div>(?:\\n|\n)\s*)+$', '', before)
           before = before.rstrip() + '\n </div>\n '
           text = before + marker + after
 
