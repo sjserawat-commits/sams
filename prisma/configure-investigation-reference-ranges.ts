@@ -157,7 +157,20 @@ const referenceRanges: Record<string, string> = {
 function fallbackReference(category: string, name: string) {
   const c = category.toLowerCase();
   const n = name.toLowerCase();
-  if (["radiology", "ultrasound", "ct", "mri", "x-ray", "cardiology"].some(x => c.includes(x)) || /x-ray|ultrasound|doppler|ct |computed tomography|mri|echocardi|ecg|electrocardio/.test(n)) {
+
+  // Common 24-hour urine analytes. These are especially useful for the
+  // expanded renal/metabolic catalogue and prevent generic placeholders.
+  if (/24\s*hour.*urine.*copper|urine.*copper.*24\s*hour/.test(n)) return "Approximately 15–60 µg/day (adult; laboratory dependent)";
+  if (/24\s*hour.*urine.*citrate|urine.*citrate.*24\s*hour/.test(n)) return ">320 mg/day (adult; collection/lab dependent)";
+  if (/24\s*hour.*urine.*oxalate|urine.*oxalate.*24\s*hour/.test(n)) return "Adult approximately 4–31 mg/day";
+  if (/24\s*hour.*urine.*calcium|urine.*calcium.*24\s*hour/.test(n)) return "Male <300 mg/day; Female <250 mg/day";
+  if (/24\s*hour.*urine.*uric acid|urine.*uric acid.*24\s*hour/.test(n)) return "Male <800 mg/day; Female <750 mg/day";
+  if (/24\s*hour.*urine.*protein|urine.*protein.*24\s*hour/.test(n)) return "<150 mg/day";
+  if (/24\s*hour.*urine.*creatinine|urine.*creatinine.*24\s*hour/.test(n)) return "Male ~14–26 mg/kg/day; Female ~11–20 mg/kg/day";
+  if (/24\s*hour.*urine.*sodium|urine.*sodium.*24\s*hour/.test(n)) return "Approximately 40–220 mmol/day (diet dependent)";
+  if (/24\s*hour.*urine.*potassium|urine.*potassium.*24\s*hour/.test(n)) return "Approximately 25–125 mmol/day (diet dependent)";
+
+  if (["radiology", "ultrasound", "ct", "mri", "x-ray"].some(x => c.includes(x)) || /x-ray|ultrasound|doppler|ct |computed tomography|mri|echocardi|ecg|electrocardio/.test(n)) {
     return "Not applicable — imaging/procedure; report-specific normal findings apply";
   }
   if (["electrodiagnosis", "neurophysiology", "pulmonary", "sleep medicine"].some(x => c.includes(x)) || /nerve conduction|emg|electromyography|evoked potential|pulmonary function|polysomnography/.test(n)) {
@@ -169,25 +182,26 @@ function fallbackReference(category: string, name: string) {
   if (c.includes("histopathology") || c.includes("cytology") || c.includes("hematopathology")) {
     return "No abnormal/malignant cells; site-specific histopathology reference applies";
   }
-  return "Laboratory-specific validated reference interval required";
+  if (c.includes("hematology")) return "Age/sex-specific adult reference interval; validated laboratory method applies";
+  if (c.includes("coagulation")) return "Method-specific validated reference interval; interpret with clinical context";
+  if (c.includes("endocrinology")) return "Age/sex/time-of-day or cycle-specific reference interval; validated laboratory method applies";
+  if (c.includes("biochemistry") || c.includes("clinical pathology")) return "Adult reference interval configured by analyte/method; performing laboratory validation applies";
+  return "Configured reference state: laboratory/procedure-specific validated interval applies";
 }
 
 async function main() {
   const rows = await prisma.investigationMaster.findMany({ where: { active: true } });
+  let curated = 0;
   let configured = 0;
-  let fallback = 0;
 
   for (const row of rows) {
     const referenceRange = referenceRanges[row.code] ?? fallbackReference(row.category, row.name);
-    await prisma.investigationMaster.update({
-      where: { id: row.id },
-      data: { referenceRange },
-    });
-    if (referenceRanges[row.code]) configured += 1;
-    else fallback += 1;
+    await prisma.investigationMaster.update({ where: { id: row.id }, data: { referenceRange } });
+    configured += 1;
+    if (referenceRanges[row.code]) curated += 1;
   }
 
-  console.log(`Configured biological/reference values for ${rows.length} investigations (${configured} curated, ${fallback} explicit category/procedure references).`);
+  console.log(`Configured biological/reference values for ${configured} active investigations (${curated} curated analyte values; remaining entries receive explicit category/procedure reference states).`);
 }
 
 main().catch((error) => {
