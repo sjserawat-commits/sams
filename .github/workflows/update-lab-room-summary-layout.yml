@@ -24,6 +24,9 @@ jobs:
           path = Path('app/investigation-room/page.tsx')
           text = path.read_text(encoding='utf-8')
 
+          # Repair an earlier run that inserted a literal backslash-n.
+          text = text.replace('</div>\\n const summaryDetail', '</div>\n const summaryDetail', 1)
+
           hero = '<section className="mt-5 rounded-[2rem] bg-[#031a38] p-7 text-white shadow-2xl">'
           grid = '<div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">'
           if grid not in text:
