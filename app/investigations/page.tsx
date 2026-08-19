@@ -51,6 +51,7 @@ export default function InvestigationsPage() {
                 <Link href="/investigation-master" className="rounded-xl border border-[#d6a443]/35 bg-[#d6a443]/10 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-[#f4d58c] transition hover:bg-[#d6a443]/20">Investigation Master</Link>
                 <Link href="/investigation-room" className="rounded-xl border border-blue-300/20 bg-blue-500/10 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-blue-100 transition hover:bg-blue-500/20">Investigation Room</Link>
                 <Link href="/investigation-reports" className="rounded-xl border border-emerald-300/20 bg-emerald-500/10 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-emerald-100 transition hover:bg-emerald-500/20">Reports</Link>
+                <Link href="/billing" className="rounded-xl border border-amber-300/30 bg-amber-500/15 px-3.5 py-2.5 text-[10px] font-black uppercase tracking-wider text-amber-100 transition hover:bg-amber-500/25">Billing</Link>
               </nav>
             </div>
           </header>
