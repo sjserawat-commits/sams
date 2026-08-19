@@ -21,11 +21,10 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+
           path = Path('app/investigation-room/page.tsx')
           text = path.read_text(encoding='utf-8')
-
-          # Repair an earlier run that inserted a literal backslash-n.
-          text = text.replace('</div>\\n const summaryDetail', '</div>\n const summaryDetail', 1)
 
           hero = '<section className="mt-5 rounded-[2rem] bg-[#031a38] p-7 text-white shadow-2xl">'
           grid = '<div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">'
@@ -40,8 +39,14 @@ jobs:
               text = text.replace(summary, summary_new, 1)
 
           marker = 'const summaryDetail=summaryOpen?summaryOrders(summaryOpen):[];'
-          if marker in text and '</div>\n ' + marker not in text and '</div>' + marker not in text:
-              text = text.replace(marker, '</div>\n ' + marker, 1)
+          if marker not in text:
+              raise SystemExit('Lab Summary marker not found; no change made.')
+
+          before, after = text.split(marker, 1)
+          # Keep exactly one closing div for the new two-column grid.
+          before = re.sub(r'(?:</div>\\n|</div>\n)\s*$', '', before)
+          before = before.rstrip() + '\n </div>\n '
+          text = before + marker + after
 
           path.write_text(text, encoding='utf-8')
           PY
