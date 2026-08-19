@@ -14,7 +14,17 @@ export async function GET() {
   try {
     const { start, end } = getIndiaDayBounds();
     const visits = await prisma.oPDVisit.findMany({
-      where: { createdAt: { gte: start, lt: end }, status: { in: ["WAITING", "IN_CONSULTATION", "COMPLETED"] } },
+      where: {
+        createdAt: { gte: start, lt: end },
+        status: { in: ["WAITING", "IN_CONSULTATION", "COMPLETED"] },
+        clinicalEncounter: { is: { clinicalNotes: { contains: "Investigations:" } } },
+        investigationOrders: {
+          some: {
+            status: { not: "CANCELLED" },
+            paymentStatus: { in: ["UNPAID", "PARTIAL"] },
+          },
+        },
+      },
       include: {
         patient: true,
         departmentMaster: { select: { id: true, name: true, code: true } },
@@ -22,7 +32,10 @@ export async function GET() {
         appointment: { select: { appointmentNo: true, appointmentTime: true, source: true } },
         clinicalEncounter: { select: { id: true, clinicalNotes: true } },
         investigationOrders: {
-          where: { status: { not: "CANCELLED" } },
+          where: {
+            status: { not: "CANCELLED" },
+            paymentStatus: { in: ["UNPAID", "PARTIAL"] },
+          },
           select: { id: true, investigationId: true, investigation: true, status: true, paymentStatus: true },
         },
       },
