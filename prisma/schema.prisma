@@ -71,11 +71,11 @@ model Department {
   id        Int       @id @default(autoincrement())
   name      String    @unique
   code      String    @unique
-  active    Boolean   @default(true)
+  active    Boolean  @default(true)
   doctors   Doctor[]
   opdVisits OPDVisit[] @relation("DepartmentVisits")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Doctor {
@@ -141,25 +141,39 @@ model InvestigationMaster {
 }
 
 model InvestigationOrder {
-  id              Int       @id @default(autoincrement())
-  opdVisitId      Int
-  investigationId Int?
-  investigation   String
-  price           Float
-  discountType    String?
-  discountValue   Float     @default(0)
-  netAmount       Float
-  paymentStatus   String    @default("UNPAID")
-  paymentMethod   String?
-  receiptNumber   String?
-  paidAt          DateTime?
-  status          String    @default("ORDERED")
-  reportText      String?
-  reportedAt      DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  opdVisit        OPDVisit  @relation(fields: [opdVisitId], references: [id])
-  master          InvestigationMaster? @relation(fields: [investigationId], references: [id])
+  id                    Int       @id @default(autoincrement())
+  opdVisitId            Int
+  investigationId       Int?
+  investigation         String
+  price                 Float
+  discountType          String?
+  discountValue         Float     @default(0)
+  netAmount             Float
+  paymentStatus         String    @default("UNPAID")
+  paymentMethod         String?
+  receiptNumber         String?
+  paidAt                DateTime?
+  status                String    @default("ORDERED")
+  specimen              String?
+  accessionNumber       String?   @unique
+  barcodeValue          String?   @unique
+  sampleCollectedAt     DateTime?
+  sampleCollectedBy     String?
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+  resultData            String?
+  reportText            String?
+  abnormalFlag          Boolean   @default(false)
+  criticalFlag          Boolean   @default(false)
+  verificationStatus    String    @default("PENDING")
+  verifiedBy            String?
+  verifiedAt            DateTime?
+  publishedAt           DateTime?
+  reportedAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  opdVisit              OPDVisit  @relation(fields: [opdVisitId], references: [id])
+  master                InvestigationMaster? @relation(fields: [investigationId], references: [id])
 }
 
 model Prescription {
