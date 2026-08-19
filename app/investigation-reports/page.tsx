@@ -80,7 +80,7 @@ export default function InvestigationReportsPage() {
 
       <aside className="no-print fixed inset-y-0 left-0 z-40 hidden w-[205px] bg-[#071a38] lg:block">
         <div className="flex h-[76px] items-center gap-3 border-b border-white/10 px-5">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d6a443] text-2xl text-[#071a38]">⚕</div>
+          <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-xl bg-white p-1"><img src="/serawat-logo.png" alt="Serawat logo" className="h-full w-full object-contain" /></div>
           <div><p className="text-lg font-black tracking-tight text-white">SAMS LAB</p><p className="text-[8px] font-black uppercase tracking-[.18em] text-[#d6a443]">Diagnostics</p></div>
         </div>
         <nav className="px-2 py-5">
@@ -91,7 +91,7 @@ export default function InvestigationReportsPage() {
 
       <div className="lg:pl-[205px]">
         <header className="no-print flex h-[76px] items-center justify-between border-b border-slate-200 bg-white px-5 shadow-sm sm:px-8">
-          <div><p className="text-[9px] font-black uppercase tracking-[.2em] text-[#d6a443]">SAMS · Laboratory</p><p className="mt-1 text-sm font-black text-[#082b61]">Serawat Advanced Multispeciality Joint &amp; Spine Centre</p></div>
+          <div className="flex min-w-0 items-center gap-3"><div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-[#d6a443]/40 bg-white p-1 shadow-sm"><img src="/serawat-logo.png" alt="Serawat logo" className="h-full w-full object-contain" /></div><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[.2em] text-[#d6a443]">SAMS · Laboratory</p><p className="mt-1 truncate text-sm font-black text-[#082b61]">Serawat Advanced Multispeciality Joint &amp; Spine Centre</p></div></div>
           <div className="flex items-center gap-3"><Link href="/investigation-room" className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black text-[#082b61] shadow-sm">← Lab Room</Link><button onClick={() => window.print()} className="rounded-xl bg-[#082b61] px-4 py-2.5 text-[10px] font-black text-white shadow-sm">Print Reports</button></div>
         </header>
 
