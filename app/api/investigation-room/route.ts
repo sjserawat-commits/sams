@@ -4,6 +4,15 @@ import { prisma } from "@/lib/prisma";
 const ALLOWED_STATUS = ["ORDERED","APPROVED_FOR_SAMPLING","ACCEPTED","SAMPLE_COLLECTED","PROCESSING","COMPLETED","VERIFIED","PUBLISHED","CANCELLED"] as const;
 type InvestigationStatus = (typeof ALLOWED_STATUS)[number];
 
+// Lab Room is exclusively for laboratory investigations. Imaging, USG,
+// ECG/EEG and electrodiagnostic (EMG/NCV) investigations have separate workflows.
+const LAB_CATEGORIES = [
+  "Hematology","Coagulation","Biochemistry","Immunoassay","Immunology",
+  "Cardiology","Endocrinology","Vitamins & Nutrition","Tumor Markers",
+  "Serology","Autoimmunity","Clinical Pathology","Cytology","Histopathology",
+  "Hematopathology","Microbiology","Molecular Diagnostics",
+];
+
 function accession(id: number) { return `SAMSLAB-${new Date().getFullYear()}-${String(id).padStart(7, "0")}`; }
 
 export async function GET(request: Request) {
@@ -14,6 +23,7 @@ export async function GET(request: Request) {
     const visitId = Number(params.get("opdVisitId") || 0);
     const orders = await prisma.investigationOrder.findMany({
       where: {
+        master: { category: { in: LAB_CATEGORIES } },
         ...(visitId > 0 ? { opdVisitId: visitId } : {}),
         ...(status && ALLOWED_STATUS.includes(status as InvestigationStatus) ? { status } : {}),
         ...(q ? { OR: [
@@ -43,7 +53,7 @@ export async function GET(request: Request) {
       const approved = ["APPROVED_FOR_SAMPLING","ACCEPTED","SAMPLE_COLLECTED","PROCESSING","COMPLETED","VERIFIED","PUBLISHED"].includes(order.status);
       return { ...order, billing: bill, workflow: { paymentStatus: bill?.paymentStatus ?? order.paymentStatus, outstandingAmount: bill?.balanceAmount ?? Math.max(0, order.netAmount), samplingEligible: paid || approved, paymentRequiredBeforeSampling: !paid && !approved } };
     }));
-  } catch { return NextResponse.json({ error: "Unable to load investigation room." }, { status: 500 }); }
+  } catch { return NextResponse.json({ error: "Unable to load lab room." }, { status: 500 }); }
 }
 
 export async function PATCH(request: Request) {
@@ -51,10 +61,11 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const id = Number(body?.id);
     const requestedStatus = String(body?.status ?? "").trim().toUpperCase();
-    if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "A valid investigation order ID is required." }, { status: 400 });
-    if (!ALLOWED_STATUS.includes(requestedStatus as InvestigationStatus)) return NextResponse.json({ error: "Invalid investigation status." }, { status: 400 });
+    if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "A valid laboratory investigation order ID is required." }, { status: 400 });
+    if (!ALLOWED_STATUS.includes(requestedStatus as InvestigationStatus)) return NextResponse.json({ error: "Invalid laboratory investigation status." }, { status: 400 });
     const order = await prisma.investigationOrder.findUnique({ where: { id }, include: { opdVisit: { include: { billingRecords: { orderBy: { createdAt: "desc" }, take: 1 } } }, master: true } });
-    if (!order) return NextResponse.json({ error: "Investigation order not found." }, { status: 404 });
+    if (!order) return NextResponse.json({ error: "Laboratory investigation order not found." }, { status: 404 });
+    if (!LAB_CATEGORIES.includes(order.master?.category || "")) return NextResponse.json({ error: "This investigation is not assigned to the Lab Room." }, { status: 400 });
     const bill = order.opdVisit.billingRecords[0] ?? null;
     const paid = !bill || bill.balanceAmount <= 0 || bill.paymentStatus === "PAID";
     const samplingApproved = ["APPROVED_FOR_SAMPLING","ACCEPTED"].includes(order.status);
@@ -70,5 +81,5 @@ export async function PATCH(request: Request) {
     if (requestedStatus === "PUBLISHED") { if (order.verificationStatus !== "VERIFIED") return NextResponse.json({ error: "Report must be verified before publication." }, { status: 400 }); data.publishedAt = now; }
     const updated = await prisma.investigationOrder.update({ where: { id }, data, include: { master: true, opdVisit: { include: { patient: true } } } });
     return NextResponse.json(updated);
-  } catch (error) { console.error("Investigation room PATCH failed:", error); return NextResponse.json({ error: "Unable to update investigation workflow." }, { status: 500 }); }
+  } catch (error) { console.error("Lab room PATCH failed:", error); return NextResponse.json({ error: "Unable to update laboratory workflow." }, { status: 500 }); }
 }
