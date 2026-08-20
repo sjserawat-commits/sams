@@ -1,0 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
+import { ensureAuthTables, verifySessionCookie } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+export async function GET(req:NextRequest){try{const s=verifySessionCookie(req.cookies.get("sams_session")?.value);if(!s||!["SUPER_ADMIN","ADMIN"].includes(s.role))return NextResponse.json({error:"Administrator permission required."},{status:403});await ensureAuthTables();const rows=await prisma.$queryRawUnsafe<Array<{id:number;userId:number|null;username:string|null;action:string;resource:string;details:string|null;createdAt:string}>>(`SELECT * FROM "SamsAuditLog" ORDER BY "id" DESC LIMIT 200`);return NextResponse.json(rows)}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Unable to load audit log."},{status:500})}}
