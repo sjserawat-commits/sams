@@ -1,0 +1,38 @@
+name: SAMS Safe DB Hardening
+
+on:
+  push:
+    branches:
+      - sams-safe-db-hardening
+  pull_request:
+    branches:
+      - sams-safe-db-hardening
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma validate
+        run: npx prisma validate
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
