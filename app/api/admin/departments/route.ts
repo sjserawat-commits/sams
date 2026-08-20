@@ -47,7 +47,7 @@ export async function DELETE(request: NextRequest) {
     const body = await request.json();
     const id = Number(body.id);
     if (!Number.isInteger(id)) return NextResponse.json({ error: "Valid department id is required." }, { status: 400 });
-    const linked = await prisma.opDVisit.count({ where: { departmentId: id } });
+    const linked = await prisma.oPDVisit.count({ where: { departmentId: id } });
     if (linked > 0) return NextResponse.json({ error: "This department is linked to existing Visits. Deactivate it instead of deleting it." }, { status: 409 });
     await prisma.department.update({ where: { id }, data: { active: false } });
     return NextResponse.json({ ok: true });
