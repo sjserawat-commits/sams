@@ -1,19 +1,5 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ensureAuthTables, verifySessionCookie } from "@/lib/auth";
+import { ensureAuthTables,verifySessionCookie,normalizeRoles } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-export async function GET(){
-  try {
-    await ensureAuthTables();
-    const c=await cookies();
-    const session=verifySessionCookie(c.get("sams_session")?.value);
-    if(!session?.sid) return NextResponse.json({authenticated:false},{status:401});
-    const rows=await prisma.$queryRawUnsafe<Array<{id:number;username:string;displayName:string;role:string;active:boolean;departmentId:string|null;doctorId:string|null}>>(`SELECT "id","username","displayName","role","active","departmentId","doctorId" FROM "SamsUser" WHERE "id"=? LIMIT 1`,session.userId);
-    const user=rows[0];
-    if(!user?.active) return NextResponse.json({authenticated:false},{status:401});
-    const sessions=await prisma.$queryRawUnsafe<Array<{id:string}>>(`SELECT "id" FROM "SamsSession" WHERE "id"=? AND "userId"=? AND "expiresAt">CURRENT_TIMESTAMP LIMIT 1`,session.sid,user.id);
-    if(!sessions[0]) return NextResponse.json({authenticated:false},{status:401});
-    return NextResponse.json({authenticated:true,user:{id:user.id,username:user.username,displayName:user.displayName,role:user.role,departmentId:user.departmentId,doctorId:user.doctorId}});
-  } catch { return NextResponse.json({authenticated:false},{status:401}); }
-}
+export async function GET(){try{await ensureAuthTables();const c=await cookies();const session=verifySessionCookie(c.get("sams_session")?.value);if(!session?.sid)return NextResponse.json({authenticated:false},{status:401});const rows=await prisma.$queryRawUnsafe<Array<{id:number;username:string;displayName:string;role:string;roles:string|null;active:boolean;departmentId:string|null;doctorId:string|null}>>(`SELECT "id","username","displayName","role","roles","active","departmentId","doctorId" FROM "SamsUser" WHERE "id"=? LIMIT 1`,session.userId);const user=rows[0];if(!user?.active)return NextResponse.json({authenticated:false},{status:401});const sessions=await prisma.$queryRawUnsafe<Array<{id:string}>>(`SELECT "id" FROM "SamsSession" WHERE "id"=? AND "userId"=? AND "expiresAt">CURRENT_TIMESTAMP LIMIT 1`,session.sid,user.id);if(!sessions[0])return NextResponse.json({authenticated:false},{status:401});return NextResponse.json({authenticated:true,user:{id:user.id,username:user.username,displayName:user.displayName,role:user.role,roles:normalizeRoles(user.roles||user.role),departmentId:user.departmentId,doctorId:user.doctorId}})}catch{return NextResponse.json({authenticated:false},{status:401})}}
