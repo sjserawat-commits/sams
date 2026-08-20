@@ -9,6 +9,7 @@ const defaultReceptionItems = [
   { href: "/opd", label: "OPD Queue", icon: "☷" },
   { href: "/patient-search", label: "Slip Registration", icon: "▤" },
   { href: "/doctor-desk", label: "Doctor Desk", icon: "🩺" },
+  { href: "/portal", label: "Patient Portal", icon: "♙" },
 ];
 const receptionItems = [
   { href: "/reception/appointments", label: "Appointments", icon: "▣" },
