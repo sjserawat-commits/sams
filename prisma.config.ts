@@ -7,8 +7,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // Keep Prisma CLI and the Next.js Prisma adapter on the same
-    // Codespace-local SQLite database.
-    url: "file:./dev.db",
+    // Keep local development on dev.db, while CI/staging can safely
+    // point Prisma CLI at an isolated database through DATABASE_URL.
+    url: process.env.DATABASE_URL ?? "file:./dev.db",
   },
 });
