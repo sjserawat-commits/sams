@@ -79,7 +79,7 @@ export default function InvestigationMasterPage() {
             <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none"><option value="">All categories</option>{categories.map((item) => <option key={item}>{item}</option>)}</select>
           </div>
           <div className="mt-4 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400"><span>{rows.length} results · {categoryCount} categories</span>{error && <span className="text-red-600">{error}</span>}</div>
-          <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-semibold text-[#082b61]">Need to change an investigation name or rate? Use <strong>Edit Master</strong> in the Action column. The Action column stays visible while the table is scrolled.</div>
+          <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-semibold text-[#082b61]">Need to change an investigation name or rate? Use <strong>Edit Master</strong> in the Action column. Changes save directly because this page is already inside the administrator-protected workspace.</div>
           <div className="mt-4 overflow-x-auto rounded-xl border border-slate-100">
             <table className="w-full min-w-[1180px] text-left text-xs">
               <thead className="bg-slate-50 text-[9px] font-black uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">Investigation</th><th className="px-4 py-3">Category</th><th className="px-4 py-3">Specimen / Method</th><th className="px-4 py-3">Biological / Reference Value</th><th className="px-4 py-3">Unit</th><th className="px-4 py-3 text-right">Rate</th><th className="sticky right-0 z-20 border-l border-slate-200 bg-slate-50 px-4 py-3 text-right">Action</th></tr></thead>
@@ -128,7 +128,7 @@ function EditInvestigation({ investigation, onSaved, onCancel }: { investigation
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to update investigation master");
       onSaved();
-      alert(data.message || "Investigation Master change submitted.");
+      alert(data.message || "Investigation Master updated successfully.");
     } catch (e) { setError(String(e)); }
     finally { setSaving(false); }
   };
@@ -149,8 +149,8 @@ function EditInvestigation({ investigation, onSaved, onCancel }: { investigation
         <label className="field">Critical Value<textarea rows={2} value={form.criticalValue} onChange={e => set("criticalValue", e.target.value)} /></label>
       </div>
       {error && <p className="mt-4 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</p>}
-      <div className="mt-6 flex justify-end gap-3"><button onClick={onCancel} className="rounded-xl border border-slate-200 px-5 py-3 text-xs font-black">Cancel</button><button disabled={saving} onClick={save} className="rounded-xl bg-[#082b61] px-6 py-3 text-xs font-black text-white disabled:opacity-50">{saving ? "Submitting…" : "Save & Submit for Approval"}</button></div>
-      <p className="mt-4 text-[10px] leading-5 text-slate-400">Changes to Investigation Master are submitted to the administrator approval queue before they become live, so billing and reports cannot be changed accidentally.</p>
+      <div className="mt-6 flex justify-end gap-3"><button onClick={onCancel} className="rounded-xl border border-slate-200 px-5 py-3 text-xs font-black">Cancel</button><button disabled={saving} onClick={save} className="rounded-xl bg-[#082b61] px-6 py-3 text-xs font-black text-white disabled:opacity-50">{saving ? "Saving…" : "Save Changes"}</button></div>
+      <p className="mt-4 text-[10px] leading-5 text-slate-400">You are already in the administrator-protected workspace. Changes are saved directly and recorded in the SAMS audit log.</p>
     </div>
     <style jsx>{`.field{display:flex;flex-direction:column;gap:.45rem;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#64748b}.field input,.field select,.field textarea{border:1px solid #dbe2ea;border-radius:.8rem;padding:.75rem 1rem;background:#fff;color:#0f172a;font-size:.875rem;font-weight:600;text-transform:none;letter-spacing:normal;outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:#0b63ce;box-shadow:0 0 0 3px #0b63ce12}`}</style>
   </section>;
