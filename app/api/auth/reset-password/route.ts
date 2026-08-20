@@ -33,7 +33,30 @@ export async function POST(req: NextRequest) {
       username,
     );
 
+    // Prisma db push can recreate the auth table during first-run development.
+    // If the database is completely empty, allow the standard admin account
+    // to be bootstrapped directly from the simple password-reset screen.
     if (!users.length) {
+      const countRows = await prisma.$queryRawUnsafe<Array<{ count: number }>>(
+        `SELECT COUNT(*) as count FROM "SamsUser"`,
+      );
+      const userCount = Number(countRows[0]?.count ?? 0);
+
+      if (userCount === 0 && username === "admin") {
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "SamsUser" ("username","displayName","passwordHash","role","active","createdAt","updatedAt") VALUES (?,?,?,?,1,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+          "admin",
+          "SAMS Administrator",
+          hashPassword(newPassword),
+          "SUPER_ADMIN",
+        );
+
+        return NextResponse.json({
+          ok: true,
+          message: "Administrator password created. You can now sign in.",
+        });
+      }
+
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
