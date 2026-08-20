@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { audit, ensureAuthTables, verifySessionCookie } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function normalizeName(value: string) {
@@ -18,6 +19,11 @@ function dedupeRows<T extends { id: number; name: string; smsBenchmarkRate: numb
   return Array.from(winners.values());
 }
 
+function adminActor(request: NextRequest) {
+  const session = verifySessionCookie(request.cookies.get("sams_session")?.value);
+  return session && ["SUPER_ADMIN", "ADMIN"].includes(session.role) ? session : null;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -35,7 +41,7 @@ export async function GET(request: Request) {
   }
 }
 
-/** Changes from the Investigation Master are submitted as requests and never become live until an administrator approves them. */
+/** New investigation creation remains an approval workflow. Existing master records are edited directly by authenticated administrators. */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -56,32 +62,61 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   try {
+    const actor = adminActor(request);
+    if (!actor) return NextResponse.json({ error: "Administrator permission required." }, { status: 403 });
+    await ensureAuthTables();
+
     const body = await request.json();
     const id = Number(body.id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "A valid investigation id is required." }, { status: 400 });
+
     const existing = await prisma.investigationMaster.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Investigation not found." }, { status: 404 });
+
     const name = body.name != null ? String(body.name).trim() : existing.name;
     const rate = body.rate != null ? Number(body.rate) : existing.rate;
     if (!name) return NextResponse.json({ error: "Investigation name is required." }, { status: 400 });
     if (!Number.isFinite(rate) || rate < 0) return NextResponse.json({ error: "Rate must be a valid non-negative number." }, { status: 400 });
+
     const canonicalName = normalizeName(name);
     const activeRows = await prisma.investigationMaster.findMany({ where: { active: true, NOT: { id } } });
     const duplicate = activeRows.find((row) => normalizeName(row.name) === canonicalName);
     if (duplicate) return NextResponse.json({ error: `Another investigation already uses this name: ${duplicate.name}.` }, { status: 409 });
-    const clean = (value: unknown, current: string | null) => { if (value === undefined) return current; const text = String(value).trim(); return text || null; };
-    const proposedData = {
-      name, rate,
-      category: body.category != null ? String(body.category).trim() : existing.category,
-      active: body.active != null ? Boolean(body.active) : existing.active,
-      shortName: clean(body.shortName, existing.shortName), department: clean(body.department, existing.department), specimen: clean(body.specimen, existing.specimen), method: clean(body.method, existing.method), unit: clean(body.unit, existing.unit), referenceRange: clean(body.referenceRange, existing.referenceRange), maleReferenceRange: clean(body.maleReferenceRange, existing.maleReferenceRange), femaleReferenceRange: clean(body.femaleReferenceRange, existing.femaleReferenceRange), ageSpecificRange: clean(body.ageSpecificRange, existing.ageSpecificRange), criticalValue: clean(body.criticalValue, existing.criticalValue), smsLabDepartment: clean(body.smsLabDepartment, existing.smsLabDepartment), aliases: clean(body.aliases, existing.aliases),
+
+    const clean = (value: unknown, current: string | null) => {
+      if (value === undefined) return current;
+      const text = String(value).trim();
+      return text || null;
     };
-    const change = await prisma.investigationMasterChangeRequest.create({ data: { investigationId: id, action: "UPDATE", proposedData: JSON.stringify(proposedData), requestedBy: String(body.requestedBy || "SYSTEM_USER") } });
-    return NextResponse.json({ status: "PENDING_APPROVAL", requestId: change.id, message: "Master-data change submitted for admin approval. Current live data remains unchanged until approval." }, { status: 202 });
+
+    const updated = await prisma.investigationMaster.update({
+      where: { id },
+      data: {
+        name,
+        rate,
+        category: body.category != null ? String(body.category).trim() : existing.category,
+        active: body.active != null ? Boolean(body.active) : existing.active,
+        shortName: clean(body.shortName, existing.shortName),
+        department: clean(body.department, existing.department),
+        specimen: clean(body.specimen, existing.specimen),
+        method: clean(body.method, existing.method),
+        unit: clean(body.unit, existing.unit),
+        referenceRange: clean(body.referenceRange, existing.referenceRange),
+        maleReferenceRange: clean(body.maleReferenceRange, existing.maleReferenceRange),
+        femaleReferenceRange: clean(body.femaleReferenceRange, existing.femaleReferenceRange),
+        ageSpecificRange: clean(body.ageSpecificRange, existing.ageSpecificRange),
+        criticalValue: clean(body.criticalValue, existing.criticalValue),
+        smsLabDepartment: clean(body.smsLabDepartment, existing.smsLabDepartment),
+        aliases: clean(body.aliases, existing.aliases),
+      },
+    });
+
+    await audit(actor.userId, actor.username, "UPDATE", "InvestigationMaster", `${id}:${existing.name} -> ${updated.name}; rate ${existing.rate} -> ${updated.rate}`);
+    return NextResponse.json({ status: "UPDATED", investigation: updated, message: "Investigation Master updated successfully." });
   } catch (error) {
     console.error("PATCH /api/investigation-master failed:", error);
-    return NextResponse.json({ error: "Unable to submit investigation master change for approval." }, { status: 500 });
+    return NextResponse.json({ error: "Unable to update investigation master." }, { status: 500 });
   }
 }
