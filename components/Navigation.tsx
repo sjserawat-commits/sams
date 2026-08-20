@@ -2,11 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 
 type NavigationProps = { variant?: "default" | "reception" | "registry" };
 
 export default function Navigation({ variant = "default" }: NavigationProps) {
   const isPatientRegistry = variant === "registry";
+  const [loggingOut, setLoggingOut] = useState(false);
+  async function logout() {
+    setLoggingOut(true);
+    try { await fetch("/api/auth/logout", { method: "POST" }); } finally { window.location.href = "/login"; }
+  }
 
   return (
     <nav className="sticky top-0 z-30 flex min-h-[76px] flex-wrap items-center gap-2 border-b border-[#d6a443]/20 bg-[linear-gradient(90deg,#061525_0%,#0a2138_55%,#071525_100%)] px-5 py-3 text-slate-200 shadow-[0_8px_28px_rgba(0,0,0,0.22)] sm:px-6">
@@ -26,6 +32,7 @@ export default function Navigation({ variant = "default" }: NavigationProps) {
           <Link href="/billing" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Billing</Link>
           <Link href="/reports" className="rounded-xl border border-transparent px-3 py-2 text-xs font-black uppercase tracking-wide text-slate-300 transition hover:border-[#d6a443]/25 hover:bg-white/5 hover:text-[#f2d38b]">Reports</Link>
         </>}
+        <button type="button" onClick={() => void logout()} disabled={loggingOut} className="rounded-xl border border-red-300/25 bg-red-400/10 px-3 py-2 text-xs font-black uppercase tracking-wide text-red-200 transition hover:bg-red-400/20 sm:px-4">{loggingOut ? "Signing out…" : "Logout"}</button>
       </div>
     </nav>
   );
