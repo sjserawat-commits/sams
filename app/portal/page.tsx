@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 
 type PatientIndex={id:number;patientId:string;firstName:string;lastName:string;gender:string|null;phone:string|null;dateOfBirth:string|null};
