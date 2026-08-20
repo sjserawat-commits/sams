@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     if (password.length < 12) return NextResponse.json({ error: "Password must be at least 12 characters." }, { status: 400 });
     const existing = await prisma.$queryRawUnsafe<Array<{id:number}>>(`SELECT "id" FROM "SamsUser" WHERE "username"=? LIMIT 1`, username);
     if (existing.length) return NextResponse.json({ error: "Username already exists." }, { status: 409 });
-    await prisma.$executeRawUnsafe(`INSERT INTO "SamsUser" ("username","displayName","passwordHash","role") VALUES (?,?,?,?)`, username, displayName, hashPassword(password), "SUPER_ADMIN" as SamsRole);
+    await prisma.$executeRawUnsafe(`INSERT INTO "SamsUser" ("username","displayName","passwordHash","role","createdAt","updatedAt") VALUES (?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, username, displayName, hashPassword(password), "SUPER_ADMIN" as SamsRole);
     const created = await prisma.$queryRawUnsafe<Array<{id:number}>>(`SELECT "id" FROM "SamsUser" WHERE "username"=? LIMIT 1`, username);
     await audit(created[0]?.id ?? null, username, "CREATE", "SamsUser", "Initial administrator created");
     return NextResponse.json({ ok: true, message: "Administrator created. Sign in to continue." });
