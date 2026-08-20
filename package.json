@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:push": "prisma generate && prisma db push",
+    "db:integrity": "node scripts/db-integrity-check.mjs",
+    "db:audit": "node scripts/db-data-audit.mjs",
     "db:clear-patient-data": "npx tsx prisma/clear-patient-data.ts",
     "seed:departments-consultants": "npx tsx prisma/seed-department-consultant-master.ts",
     "seed:investigations": "npx tsx prisma/seed-investigation-master.ts && npx tsx prisma/seed-investigation-expansion.ts && npx tsx prisma/seed-investigation-tertiary.ts && npx tsx prisma/seed-investigation-secondary.ts"
@@ -25,7 +27,7 @@
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react-dom": "19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4"
