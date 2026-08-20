@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ReactNode, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const nav = [["Billing Dashboard","/billing","▥"],["Patient Charges","/billing/patient-charges","♙"],["Procedure / Surgery","/billing?section=procedure-surgery","⌘"],["Invoices","/billing?section=invoices","▤"],["Payments","/billing?section=payments","▣"],["Receipts","/billing/receipt","▧"],["Refunds","/billing?section=refunds","↻"],["Reports","/reports","▥"],["Settings","/settings","⚙"]] as const;
+const nav = [["Billing Dashboard","/billing","▥"],["Patient Charges","/billing/patient-charges","♙"],["Procedure / Surgery","/billing?section=procedure-surgery","⌘"],["Invoices","/billing?section=invoices","▤"],["Payments","/billing?section=payments","▣"],["Receipts","/billing/receipt","▧"],["Refunds","/billing?section=refunds","↻"],["Reports","/reports","▥"]] as const;
 
 export default function BillingLayout({ children }: { children: ReactNode }) {
   const router = useRouter(); const pathname = usePathname();
