@@ -1,6 +1,9 @@
 node_modules/
 .next/
 dev.db
+dev.db-*
+ci.db
+ci.db-*
 .env
 .env.local
 next-env.d.ts
