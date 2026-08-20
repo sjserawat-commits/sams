@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 
-const dbPath = path.resolve(process.cwd(), "dev.db");
+const configuredPath = process.env.SQLITE_DB_PATH ?? "dev.db";
+const dbPath = path.resolve(process.cwd(), configuredPath);
 if (!fs.existsSync(dbPath)) {
   console.error(`SQLite database not found: ${dbPath}`);
   process.exit(1);
@@ -20,9 +21,8 @@ try {
   add("OPD visits with missing patients", `SELECT o.id, o.patientId FROM OPDVisit o LEFT JOIN Patient p ON p.id=o.patientId WHERE p.id IS NULL`);
   add("Clinical encounters with missing patients", `SELECT c.id, c.patientId FROM ClinicalEncounter c LEFT JOIN Patient p ON p.id=c.patientId WHERE c.patientId IS NOT NULL AND p.id IS NULL`);
   add("Billing records with missing patients", `SELECT b.id, b.patientId FROM BillingRecord b LEFT JOIN Patient p ON p.id=b.patientId WHERE p.id IS NULL`);
-  add("Investigation orders with missing patients", `SELECT i.id, i.patientId FROM InvestigationOrder i LEFT JOIN Patient p ON p.id=i.patientId WHERE i.patientId IS NOT NULL AND p.id IS NULL`);
-  add("Duplicate patient phones", `SELECT mobile, COUNT(*) AS count FROM Patient WHERE mobile IS NOT NULL AND TRIM(mobile) <> '' GROUP BY mobile HAVING COUNT(*) > 1`);
-  add("Duplicate patient emails", `SELECT LOWER(email) AS email, COUNT(*) AS count FROM Patient WHERE email IS NOT NULL AND TRIM(email) <> '' GROUP BY LOWER(email) HAVING COUNT(*) > 1`);
+  add("Investigation orders with missing patients", `SELECT i.id, i.patientId FROM InvestigationOrder i LEFT JOIN OPDVisit o ON o.id=i.opdVisitId LEFT JOIN Patient p ON p.id=o.patientId WHERE p.id IS NULL`);
+  add("Duplicate patient phones", `SELECT phone, COUNT(*) AS count FROM Patient WHERE phone IS NOT NULL AND TRIM(phone) <> '' GROUP BY phone HAVING COUNT(*) > 1`);
 
   const blocking = checks.filter((x) => x.count > 0 && !x.name.startsWith("Duplicate patient"));
   console.log(JSON.stringify(checks.map(({ name, count }) => ({ name, count })), null, 2));
@@ -31,7 +31,7 @@ try {
     console.error("Blocking data-integrity findings detected. No data was modified.");
     process.exit(2);
   }
-  console.log("Data integrity audit: no blocking orphan records found. No data was modified.");
+  console.log(`Data integrity audit: no blocking orphan records found [${configuredPath}]. No data was modified.`);
 } finally {
   db.close();
 }
