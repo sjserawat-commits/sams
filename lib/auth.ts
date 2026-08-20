@@ -16,53 +16,17 @@ export const ROLE_PERMISSIONS: Record<SamsRole, string[]> = {
 
 export async function ensureAuthTables() {
   await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SamsUser" ("id" INTEGER PRIMARY KEY AUTOINCREMENT,"username" TEXT NOT NULL UNIQUE,"displayName" TEXT NOT NULL,"passwordHash" TEXT NOT NULL,"recoveryKeyHash" TEXT,"role" TEXT NOT NULL,"active" BOOLEAN NOT NULL DEFAULT 1,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
-  try { await prisma.$executeRawUnsafe(`ALTER TABLE "SamsUser" ADD COLUMN "recoveryKeyHash" TEXT`); } catch { /* already exists */ }
+  try { await prisma.$executeRawUnsafe(`ALTER TABLE "SamsUser" ADD COLUMN "recoveryKeyHash" TEXT`); } catch {}
   await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SamsSession" ("id" TEXT PRIMARY KEY,"userId" INTEGER NOT NULL,"expiresAt" DATETIME NOT NULL,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
   await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SamsAuditLog" ("id" INTEGER PRIMARY KEY AUTOINCREMENT,"userId" INTEGER,"username" TEXT,"action" TEXT NOT NULL,"resource" TEXT NOT NULL,"details" TEXT,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
+  await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SamsSetting" ("key" TEXT PRIMARY KEY,"value" TEXT NOT NULL,"updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedBy" TEXT)`);
 }
 
-export function hashPassword(password: string) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
-
-export function verifyPassword(password: string, stored: string) {
-  try {
-    const [salt, expected] = stored.split(":");
-    if (!salt || !expected) return false;
-    const actual = crypto.scryptSync(password, salt, 64).toString("hex");
-    return crypto.timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(expected, "hex"));
-  } catch { return false; }
-}
-
+export function hashPassword(password: string) { const salt = crypto.randomBytes(16).toString("hex"); const hash = crypto.scryptSync(password, salt, 64).toString("hex"); return `${salt}:${hash}`; }
+export function verifyPassword(password: string, stored: string) { try { const [salt, expected] = stored.split(":"); if (!salt || !expected) return false; const actual = crypto.scryptSync(password, salt, 64).toString("hex"); return crypto.timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(expected, "hex")); } catch { return false; } }
 export function generateRecoveryKey() { return `SAMS-${crypto.randomBytes(18).toString("base64url")}`; }
 export function permissionsFor(role: SamsRole) { return ROLE_PERMISSIONS[role] ?? []; }
 export function can(role: SamsRole, permission: string) { const p = permissionsFor(role); return p.includes("*") || p.includes(permission); }
-
-export function sessionCookieValue(userId: number, username: string, role: SamsRole, expiresAt: number) {
-  const secret = process.env.SAMS_SESSION_SECRET;
-  if (!secret) throw new Error("SAMS_SESSION_SECRET is not configured.");
-  const payload = Buffer.from(JSON.stringify({ userId, username, role, exp: expiresAt })).toString("base64url");
-  const sig = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
-  return `${payload}.${sig}`;
-}
-
-export function verifySessionCookie(value: string | undefined) {
-  try {
-    const secret = process.env.SAMS_SESSION_SECRET;
-    if (!secret || !value) return null;
-    const [payload, sig] = value.split(".");
-    if (!payload || !sig) return null;
-    const expected = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as { userId:number; username:string; role:SamsRole; exp:number };
-    if (!data.exp || Date.now() >= data.exp) return null;
-    return data;
-  } catch { return null; }
-}
-
-export async function audit(userId: number | null, username: string | null, action: string, resource: string, details?: string) {
-  await ensureAuthTables();
-  await prisma.$executeRawUnsafe(`INSERT INTO "SamsAuditLog" ("userId","username","action","resource","details") VALUES (?,?,?,?,?)`, userId, username, action, resource, details ?? null);
-}
+export function sessionCookieValue(userId: number, username: string, role: SamsRole, expiresAt: number) { const secret = process.env.SAMS_SESSION_SECRET; if (!secret) throw new Error("SAMS_SESSION_SECRET is not configured."); const payload = Buffer.from(JSON.stringify({ userId, username, role, exp: expiresAt })).toString("base64url"); const sig = crypto.createHmac("sha256", secret).update(payload).digest("base64url"); return `${payload}.${sig}`; }
+export function verifySessionCookie(value: string | undefined) { try { const secret = process.env.SAMS_SESSION_SECRET; if (!secret || !value) return null; const [payload, sig] = value.split("."); if (!payload || !sig) return null; const expected = crypto.createHmac("sha256", secret).update(payload).digest("base64url"); if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null; const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as { userId:number; username:string; role:SamsRole; exp:number }; if (!data.exp || Date.now() >= data.exp) return null; return data; } catch { return null; } }
+export async function audit(userId: number | null, username: string | null, action: string, resource: string, details?: string) { await ensureAuthTables(); await prisma.$executeRawUnsafe(`INSERT INTO "SamsAuditLog" ("userId","username","action","resource","details") VALUES (?,?,?,?,?)`, userId, username, action, resource, details ?? null); }
