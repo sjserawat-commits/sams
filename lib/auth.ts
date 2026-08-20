@@ -15,7 +15,7 @@ export const ROLE_PERMISSIONS: Record<SamsRole, string[]> = {
 };
 
 export async function ensureAuthTables() {
-  await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SamsUser" ("id" INTEGER PRIMARY KEY AUTOINCREMENT,"username" TEXT NOT NULL UNIQUE,"displayName" TEXT NOT NULL,"passwordHash" TEXT NOT NULL,"role" TEXT NOT NULL,"active" BOOLEAN NOT NULL DEFAULT 1,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" DATETIME NOT NULL)`);
+  await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SamsUser" ("id" INTEGER PRIMARY KEY AUTOINCREMENT,"username" TEXT NOT NULL UNIQUE,"displayName" TEXT NOT NULL,"passwordHash" TEXT NOT NULL,"role" TEXT NOT NULL,"active" BOOLEAN NOT NULL DEFAULT 1,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
   await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SamsSession" ("id" TEXT PRIMARY KEY,"userId" INTEGER NOT NULL,"expiresAt" DATETIME NOT NULL,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
   await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SamsAuditLog" ("id" INTEGER PRIMARY KEY AUTOINCREMENT,"userId" INTEGER,"username" TEXT,"action" TEXT NOT NULL,"resource" TEXT NOT NULL,"details" TEXT,"createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`);
 }
