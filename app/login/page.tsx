@@ -41,12 +41,16 @@ export default function LoginPage() {
           <input required value={u} onChange={e => setU(e.target.value)} autoComplete="username" placeholder="Username" className="w-full rounded-xl border p-3" />
           <input required value={p} onChange={e => setP(e.target.value)} type="password" autoComplete="current-password" placeholder="Password" className="w-full rounded-xl border p-3" />
           {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
-          <button disabled={busy} className="w-full rounded-xl bg-[#0d5b4c] p-3 font-black text-white disabled:opacity-50">
+          <button type="submit" disabled={busy} className="w-full rounded-xl bg-[#0d5b4c] p-3 font-black text-white disabled:opacity-50">
             {busy ? "Signing in…" : "Sign in"}
           </button>
-          <button type="button" onClick={() => r.push("/forgot-password")} className="w-full text-sm font-bold text-[#0d5b4c] underline underline-offset-4">
+
+          <a
+            href="/forgot-password"
+            className="block w-full cursor-pointer text-center text-sm font-bold text-[#0d5b4c] underline underline-offset-4"
+          >
             Forgot password? Set a new password
-          </button>
+          </a>
         </div>
       </form>
     </main>
