@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: file:./ci.db
+      SQLITE_DB_PATH: ci.db
     steps:
       - name: Checkout
         uses: actions/checkout@v4
